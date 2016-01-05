@@ -39,6 +39,7 @@ import java.util.Set;
  
 class TaskSortAccessTransformers extends DefaultTask {
     
+    def newline = sprintf("%n")
     Set<File> files = []
     
     TaskSortAccessTransformers() {
@@ -122,24 +123,24 @@ class TaskSortAccessTransformers extends DefaultTask {
             }
         }
         
-        String outFile = "# @ ${file.name} sorted on ${new Date().dateTimeString}\n"
+        String outFile = "# @ ${file.name} sorted on ${new Date().dateTimeString}" << newline
 
         for (junk in trash) {
-            outFile <<= junk << "\n"
+            outFile <<= junk << newline
         }        
         
         for (category in tree.entrySet()) {
             if (category.value.size() > 0) {
                 if (category.key.length() > 0) {
-                    outFile <<= "\n# ${category.key}"
+                    outFile <<= newline << "# ${category.key}"
                 }
                 
                 for (pkg in category.value.entrySet()) {
-                    outFile <<= "\n"
+                    outFile <<= newline
                     for (acc in pkg.value.entrySet()) {
                         for (cls in acc.value.entrySet()) {
                             for (entry in cls.value) {
-                                outFile <<= "${acc.key} ${pkg.key}${cls.key} ${entry}\n"
+                                outFile <<= "${acc.key} ${pkg.key}${cls.key} ${entry}" << newline
                             }
                         }
                     }
