@@ -29,8 +29,11 @@ import org.gradle.api.Project
 import org.spongepowered.gradle.TaskSortClassMembers
 import org.spongepowered.gradle.TaskSortAccessTransformers
 
+/**
+ * Plugin entry point for SpongeGradle, only used currently to create the tasks
+ */
 public class SpongeGradlePlugin implements Plugin<Project> {
-    
+
     void apply(Project project) {
         project.tasks.create("sortClassFields", TaskSortClassMembers.class) {
             group = "Sponge"
