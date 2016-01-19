@@ -26,8 +26,7 @@ package org.spongepowered.gradle.plugins
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.spongepowered.gradle.TaskDecorateAnonInnerClasses
-import org.spongepowered.gradle.TaskGenerateClassRemap
+import org.spongepowered.gradle.TaskGenerateAnonInnerClassMappings
 import org.spongepowered.gradle.TaskSortAccessTransformers
 import org.spongepowered.gradle.TaskSortClassMembers
 
@@ -45,14 +44,9 @@ public class SpongeGradlePlugin implements Plugin<Project> {
             group = "Sponge"
             description = "Sort entries in AccessTransformer configurations"
         }
-        project.tasks.create("decorateSrgJar", TaskDecorateAnonInnerClasses.class) {
-            group = "Sponge"
-            description = "Decorates inner classes in the pre-decompiled jar"
-        }
-        project.tasks.create("generateClassRemap", TaskGenerateClassRemap.class) {
-            group = "Sponge"
-            description = "generates a class remap file"
-        }
-    }    
+
+        // TODO: There is probably a better way to prevent the import in the build.gradle
+        project.ext.GenerateAnonInnerClassMappings = TaskGenerateAnonInnerClassMappings.class
+    }
 
 }
