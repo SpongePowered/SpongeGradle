@@ -26,8 +26,10 @@ package org.spongepowered.gradle.plugins
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.spongepowered.gradle.TaskSortClassMembers
+import org.spongepowered.gradle.TaskDecorateAnonInnerClasses
+import org.spongepowered.gradle.TaskGenerateClassRemap
 import org.spongepowered.gradle.TaskSortAccessTransformers
+import org.spongepowered.gradle.TaskSortClassMembers
 
 /**
  * Plugin entry point for SpongeGradle, only used currently to create the tasks
@@ -42,6 +44,14 @@ public class SpongeGradlePlugin implements Plugin<Project> {
         project.tasks.create("sortAccessTransformers", TaskSortAccessTransformers.class) {
             group = "Sponge"
             description = "Sort entries in AccessTransformer configurations"
+        }
+        project.tasks.create("decorateSrgJar", TaskDecorateAnonInnerClasses.class) {
+            group = "Sponge"
+            description = "Decorates inner classes in the pre-decompiled jar"
+        }
+        project.tasks.create("generateClassRemap", TaskGenerateClassRemap.class) {
+            group = "Sponge"
+            description = "generates a class remap file"
         }
     }    
 
