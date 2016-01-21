@@ -27,13 +27,14 @@ package org.spongepowered.gradle
 import static org.objectweb.asm.Opcodes.ASM5
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
@@ -50,14 +51,11 @@ class TaskGenerateAnonInnerClassMappings extends DefaultTask {
     @OutputFile
     def outFile
 
-    @Input
-    final Map<String, String> extra = [:]
-
     @TaskAction
     void process() throws IOException {
-        def deobf = project.file(deobfJar)
-        def recomp = project.file(recompJar)
-        def output = project.file(outFile)
+        def deobf = project.file(deobfJar).toPath()
+        def recomp = project.file(recompJar).toPath()
+        def output = project.file(outFile).toPath()
 
         // Use a tree map so we can later iterate over the sorted map
         // We need to process the outer classes before the inner ones
@@ -104,7 +102,7 @@ class TaskGenerateAnonInnerClassMappings extends DefaultTask {
             }
         }
 
-        Map<String, String> result = new HashMap(extra)
+        Map<String, String> result = new LinkedHashMap()
         deobfInnerClassMap.each { name, innerClasses ->
             if (result.containsKey(name)) {
                 // Remap our name if necessary
@@ -133,15 +131,10 @@ class TaskGenerateAnonInnerClassMappings extends DefaultTask {
             }
         }
 
-        if (!output.exists()) {
-            assert output.createNewFile()
-        }
-
-        def properties = new Properties()
-        properties.putAll(result)
-
-        output.newOutputStream().withStream {
-            properties.store(it, 'Anonymous inner class mappings')
+        Files.newBufferedWriter(output, StandardOpenOption.CREATE).withWriter { writer ->
+            result.each { source, mapped ->
+                writer << "CL: $mapped $source\n"
+            }
         }
     }
 
