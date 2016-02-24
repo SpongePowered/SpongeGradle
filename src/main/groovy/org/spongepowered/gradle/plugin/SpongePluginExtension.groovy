@@ -22,31 +22,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugins
+package org.spongepowered.gradle.plugin
 
-import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.spongepowered.gradle.TaskGenerateAnonInnerClassMappings
-import org.spongepowered.gradle.TaskSortAccessTransformers
-import org.spongepowered.gradle.TaskSortClassMembers
 
-/**
- * Plugin entry point for SpongeGradle, only used currently to create the tasks
- */
-public class SpongeGradlePlugin implements Plugin<Project> {
+class SpongePluginExtension extends SpongeExtension {
 
-    void apply(Project project) {
-        project.tasks.create("sortClassFields", TaskSortClassMembers.class) {
-            group = "Sponge"
-            description = "Sort fields in specified classes, modifies source"
-        }
-        project.tasks.create("sortAccessTransformers", TaskSortAccessTransformers.class) {
-            group = "Sponge"
-            description = "Sort entries in AccessTransformer configurations"
-        }
+    final Plugin plugin
 
-        // TODO: There is probably a better way to prevent the import in the build.gradle
-        project.ext.GenerateAnonInnerClassMappings = TaskGenerateAnonInnerClassMappings.class
+    SpongePluginExtension(Project project, String id) {
+        super(project)
+        this.plugin = plugins.create(id)
+    }
+
+    void plugin(@DelegatesTo(Plugin) Closure closure) {
+        project.configure(plugin, closure)
     }
 
 }

@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle
+package org.spongepowered.gradle.task
 
 import com.google.common.io.Files
 import org.gradle.api.DefaultTask
@@ -30,13 +30,8 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
 
-import java.io.File
-import java.io.ObjectInputStream.ValidationList
 import java.nio.charset.Charset
-import java.util.Map
-import java.util.Map.Entry
-import java.util.Set
- 
+
 /**
  * Gradle tasks to sort fields in a class naively, sorts fields in between the
  * semaphore comments <tt>// SORTFIELDS:ON</tt> and <tt>// SORTFIELDS:OFF</tt>

@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle
+package org.spongepowered.gradle.task
 
 import static org.objectweb.asm.Opcodes.ASM5
 

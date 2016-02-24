@@ -1,41 +1,51 @@
-buildscript {
-    repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
-        classpath "com.gradle.publish:plugin-publish-plugin:0.9.1"
-    }
+plugins {
+    id 'java-gradle-plugin'
+    id 'groovy'
+
+    id 'eclipse'
+    id 'idea'
+
+    id 'maven'
+    id 'com.gradle.plugin-publish' version '0.9.3'
+
+    id 'net.minecrell.licenser' version '0.1.2'
 }
 
-apply plugin: 'groovy'
-apply plugin: 'license'
-apply plugin: 'maven'
-apply plugin: 'eclipse'
-apply plugin: "com.gradle.plugin-publish"
-
-defaultTasks 'licenseFormat', 'build'
+defaultTasks 'clean', 'licenseFormat', 'build'
 
 group = 'org.spongepowered'
-version = "${buildVersion}-SNAPSHOT"
-archivesBaseName = 'spongegradle'
-targetCompatibility = '1.8'
+version = '0.4-SNAPSHOT'
+
 sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+archivesBaseName = project.name.toLowerCase()
 
 repositories {
-    mavenCentral()
+    jcenter()
+
+    // TODO: Remove this before publishing on Gradle plugin portal
+    maven {
+        name = 'sponge'
+        url = 'http://repo.spongepowered.org/maven'
+    }
 }
 
 configurations {
-    deployerJars
+    compileOnly
 }
 
+sourceSets.main.compileClasspath += configurations.compileOnly
+eclipse.classpath.plusConfigurations += [configurations.compileOnly]
+idea.module.scopes.COMPILE.plus += [configurations.compileOnly]
+
 dependencies {
-    compile gradleApi()
-    compile 'com.google.guava:guava:17.0'
-    deployerJars 'org.apache.maven.wagon:wagon-ftp:2.7'
+    compile 'org.spongepowered:plugin-meta:0.1-SNAPSHOT'
+    compileOnly 'org.codehaus.groovy:groovy-all:2.4.4:indy'
+}
+
+tasks.withType(GroovyCompile) {
+    groovyOptions.optimizationOptions.indy = true
 }
 
 processResources {
@@ -43,94 +53,82 @@ processResources {
 }
 
 license {
+    header = file('HEADER.txt')
+    newLine = false
     ext {
         name = project.name
         organization = project.organization
         url = project.url
     }
+
+    include '**/*.java'
     include '**/*.groovy'
-    header file("HEADER.txt")
-    sourceSets = project.sourceSets
-    ignoreFailures false
-    strictCheck true
-    mapping {
-        java = 'SLASHSTAR_STYLE'
-    }
 }
 
-jar.manifest.mainAttributes (
-    "Built-By": System.properties['user.name'],
-    "Created-By": System.properties['java.vm.version'] + " (" + System.properties['java.vm.vendor'] + ")",
-    "Implementation-Title": name,
-    "Implementation-Version": version
+jar.manifest.attributes(
+        'Created-By': "${System.properties['java.version']} (${System.properties['java.vm.vendor']})",
+
+        'Implementation-Title': project.name,
+        'Implementation-Version': project.version,
+        'Implementation-Vendor': project.organization
 )
 
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
 task groovydocJar(type: Jar, dependsOn: groovydoc) {
-    from groovydoc.destinationDir
     classifier = 'groovydoc'
+    from groovydoc.destinationDir
 }
 
 artifacts {
-    archives jar
+    archives sourceJar
     archives groovydocJar
 }
 
 pluginBundle {
-    website = 'http://www.gradle.org/'
-    vcsUrl = 'https://github.com/SpongePowered/SpongeGradle'
-    description = 'Gradle plugin for SpongePowered projects'
-    tags = ['spongepowered', 'sponge']
+    website = "https://github.com/$project.organization/$project.name"
+    vcsUrl = website
+    description = project.description
+    tags = ['minecraft', 'sponge']
+
     plugins {
-        sponge {
-            id = 'org.spongepowered.gradle.SpongeGradlePlugin'
-            displayName = 'SpongePowered Gradle Plugin'
+        spongePluginPlugin {
+            id = 'org.spongepowered.plugin'
+            displayName = 'Sponge Plugin Gradle integration'
+            description = 'Gradle plugin providing integration for plugins made for the Sponge platform'
         }
     }
 }
 
+// Support uploading with FTP
+configurations {
+    deployerJars // Deployment dependency
+}
+
+dependencies {
+    deployerJars 'org.apache.maven.wagon:wagon-ftp:2.10'
+}
+
 uploadArchives {
     repositories {
-
         mavenDeployer {
             configuration = configurations.deployerJars
 
-            if (project.hasProperty("chRepo"))
-            {
-                repository(url: project.chRepo) {
-                    authentication(userName: project.chUsername, password: project.chPassword)
-                }
-            }
-
-            pom {
-                groupId = project.group
-                version = project.version
-                artifactId = project.archivesBaseName
-                project {
-                    name project.archivesBaseName
-                    packaging 'jar'
-                    description 'SpongeGradle'
-                    url 'http://www.spongepowered.org/'
-
-                    scm {
-                        url 'https://github.com/SpongePowered/SpongeGradle'
-                        connection 'scm:git:git://github.com/SpongePowered/SpongeGradle.git'
-                        developerConnection 'scm:git:git@github.com:SpongePowered/SpongeGradle.git'
-                    }
-
-                    issueManagement {
-                        system 'GitHub Issues'
-                        url 'https://github.com/SpongePowered/SpongeGradle/issues'
-                    }
-
-                    licenses {
-                        license {
-                            name 'MIT license'
-                            url 'http://opensource.org/licenses/MIT'
-                            distribution 'repo'
-                        }
+            // This is set by the build server when deploying to the repo
+            if (project.hasProperty('spongeRepo')) {
+                repository(url: project.spongeRepo) {
+                    if (project.hasProperty('spongeUsername') && project.hasProperty('spongePassword')) {
+                        authentication(userName: project.spongeUsername, password: project.spongePassword)
                     }
                 }
             }
         }
     }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.11'
 }
