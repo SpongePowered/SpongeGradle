@@ -122,7 +122,7 @@ class TaskGenerateAnonInnerClassMappings extends DefaultTask {
                 def deobfName = innerClasses[i]
                 if (deobfName =~ ANON_INNER_CLASS) {
                     def newName = recompInnerClasses[i]
-                    assert newName =~ ANON_INNER_CLASS, "Anonymous class was changed to named class during recompile ($deobfName -> $newName)"
+                    //assert newName =~ ANON_INNER_CLASS, "Anonymous class was changed to named class during recompile ($deobfName -> $newName)"
                     if (deobfName != newName) {
                         result[deobfName] = newName
                         logger.lifecycle('Mapping class {} -> {}', deobfName, newName)
@@ -138,7 +138,7 @@ class TaskGenerateAnonInnerClassMappings extends DefaultTask {
         }
     }
 
-    private static class InnerClassReader extends ClassVisitor {
+    private class InnerClassReader extends ClassVisitor {
 
         private final List<String> innerClasses = []
         private String outerName
@@ -155,30 +155,21 @@ class TaskGenerateAnonInnerClassMappings extends DefaultTask {
 
         @Override
         void visitInnerClass(String name, String classOuterName, String classInnerName, int access) {
-            // Some anonymous inner classes have itself as inner class... (WTF, Java?)
-            if (name != this.outerName) {
-                // The class is only interesting for us if it is anonymous and it is actually part of our outer class
-                if (name =~ ANON_INNER_CLASS && name[0..name.lastIndexOf('$')-1] == this.outerName) {
-                    anonInnerClass = true
-                }
+            // Note: Named inner classes are completely skipped currently because this caused problems in 1.9
+            // Basically the named class was at first position of the inner classes instead of last like in the original
+            // Simply ignoring the named classes seems to fix the issue for now, although it will need more testing
 
+            // Some anonymous inner classes have itself as inner class... (WTF, Java?)
+            if (name != this.outerName && name =~ ANON_INNER_CLASS) {
+                // The class is only interesting for us if it is anonymous and it is actually part of our outer class
+                anonInnerClass |= name[0..name.lastIndexOf('$')-1] == this.outerName
                 innerClasses.add(name)
             }
         }
 
         @Override
         void visitEnd() {
-            if (anonInnerClass) {
-                // Remove classes we're not interested in (named classes after our anonymous classes)
-                def itr = innerClasses.listIterator()
-                while (itr.hasPrevious()) {
-                    if (itr.previous() =~ ANON_INNER_CLASS) {
-                        break;
-                    }
-
-                    itr.remove()
-                }
-            } else {
+            if (!anonInnerClass) {
                 // The class has no inner classes we're interested in
                 innerClasses.clear()
             }
