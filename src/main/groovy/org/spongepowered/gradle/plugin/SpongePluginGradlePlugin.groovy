@@ -30,7 +30,6 @@ import static org.spongepowered.gradle.plugin.SpongeExtension.EXTENSION_NAME
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginConvention
-import org.spongepowered.gradle.SpongeGradle
 
 class SpongePluginGradlePlugin implements Plugin<Project> {
 
