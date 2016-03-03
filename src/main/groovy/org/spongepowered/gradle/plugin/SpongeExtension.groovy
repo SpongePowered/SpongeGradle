@@ -84,6 +84,7 @@ class SpongeExtension {
             Object version
             Object description
             Object url
+            Object assets
 
             List<String> authors = []
 
@@ -103,12 +104,17 @@ class SpongeExtension {
                 return SpongeGradle.resolve(this.url)
             }
 
+            String getAssetDirectory() {
+                return SpongeGradle.resolve(this.assets)
+            }
+
             @Override
             void accept(PluginMetadata meta) {
                 meta.name = getName()
                 meta.version = getVersion()
                 meta.description = getDescription()
                 meta.url = getUrl()
+                meta.assetDirectory = getAssetDirectory()
                 meta.authors.addAll(this.authors)
             }
 
