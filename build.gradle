@@ -40,7 +40,6 @@ eclipse.classpath.plusConfigurations += [configurations.compileOnly]
 idea.module.scopes.COMPILE.plus += [configurations.compileOnly]
 
 dependencies {
-    compile 'org.spongepowered:plugin-meta:0.1-SNAPSHOT'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.4:indy'
 }
 
