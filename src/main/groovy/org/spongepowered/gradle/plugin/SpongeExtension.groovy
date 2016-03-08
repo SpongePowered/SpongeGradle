@@ -106,7 +106,7 @@ class SpongeExtension {
                 return SpongeGradle.resolve(this.url)
             }
 
-            String getAssetDirectory() {
+            String getAssets() {
                 return SpongeGradle.resolve(this.assets)
             }
 
@@ -118,10 +118,10 @@ class SpongeExtension {
                 meta.url = getUrl()
                 meta.authors.addAll(this.authors)
 
-                def assets = getAssetDirectory()
+                def assets = getAssets()
                 if (assets) {
                     def extension = new SpongeMetadataExtension()
-                    extension.assetDirectory = getAssetDirectory()
+                    extension.assetDirectory = assets
                     meta.setExtension('sponge', extension)
                 }
             }
