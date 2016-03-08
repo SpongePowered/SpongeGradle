@@ -29,6 +29,7 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.spongepowered.gradle.SpongeGradle
 import org.spongepowered.plugin.meta.PluginMetadata
+import org.spongepowered.plugin.meta.SpongeExtension as SpongeMetadataExtension
 
 import java.util.function.Consumer
 
@@ -84,9 +85,10 @@ class SpongeExtension {
             Object version
             Object description
             Object url
-            Object assets
 
             List<String> authors = []
+
+            Object assets
 
             String getName() {
                 return SpongeGradle.resolve(this.name)
@@ -114,8 +116,14 @@ class SpongeExtension {
                 meta.version = getVersion()
                 meta.description = getDescription()
                 meta.url = getUrl()
-                meta.assetDirectory = getAssetDirectory()
                 meta.authors.addAll(this.authors)
+
+                def assets = getAssetDirectory()
+                if (assets) {
+                    def extension = new SpongeMetadataExtension()
+                    extension.assetDirectory = getAssetDirectory()
+                    meta.setExtension('sponge', extension)
+                }
             }
 
         }
