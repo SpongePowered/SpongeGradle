@@ -25,12 +25,6 @@ archivesBaseName = project.name.toLowerCase()
 
 repositories {
     jcenter()
-
-    // TODO: Remove this before publishing on Gradle plugin portal
-    maven {
-        name = 'sponge'
-        url = 'http://repo.spongepowered.org/maven'
-    }
 }
 
 configurations {
@@ -42,7 +36,7 @@ eclipse.classpath.plusConfigurations += [configurations.compileOnly]
 idea.module.scopes.COMPILE.plus += [configurations.compileOnly]
 
 dependencies {
-    compile 'org.spongepowered:plugin-meta:0.1.1-SNAPSHOT'
+    compile 'org.spongepowered:plugin-meta:0.1.1'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.4:indy'
 }
 
