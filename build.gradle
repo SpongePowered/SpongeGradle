@@ -97,6 +97,10 @@ pluginBundle {
             description = 'Gradle plugin providing integration for plugins made for the Sponge platform'
         }
     }
+
+    mavenCoordinates {
+        artifactId = project.archivesBaseName
+    }
 }
 
 // Support uploading with FTP
