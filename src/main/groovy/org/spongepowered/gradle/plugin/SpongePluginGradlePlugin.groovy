@@ -56,7 +56,7 @@ class SpongePluginGradlePlugin implements Plugin<Project> {
             // IntelliJ IDEA resource fix
             idea.module.inheritOutputDirs = true
 
-            def extension = extensions.create(EXTENSION_NAME, SpongePluginExtension, project, project.name.toLowerCase())
+            def extension = extensions.create(EXTENSION_NAME, SpongePluginExtension, project, project.name)
 
             plugins.apply(SpongePluginGradlePluginBase)
 
