@@ -61,24 +61,7 @@ class SpongePluginGradlePlugin implements Plugin<Project> {
             plugins.apply(SpongePluginGradlePluginBase)
 
             extension.plugin {
-                id = {
-                    def group = project.group.toString()
-                    def id = project.name.toLowerCase()
-
-                    if (project != rootProject && group.startsWith(rootProject.name)) {
-                        group = null // Ugly workaround to ignore default group
-                    }
-
-                    if (group != null) {
-                        if (!group.endsWith(".$id")) {
-                            id = group + '.' + id
-                        } else {
-                            id = group
-                        }
-                    }
-
-                    return id
-                }
+                id = project.name.toLowerCase(Locale.ENGLISH)
                 meta {
                     name = project.name
                     version = {project.version}
