@@ -175,7 +175,7 @@ class TaskSortAccessTransformers extends DefaultTask {
                     for (acc in pkg.value.entrySet()) {
                         for (cls in acc.value.entrySet()) {
                             for (entry in cls.value) {
-                                output <<= "${acc.key} ${pkg.key}${cls.key} ${entry}" << newline
+                                output <<= "${acc.key} ${pkg.key}${cls.key} ${entry}".trim() << newline
                             }
                         }
                     }
