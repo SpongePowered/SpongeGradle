@@ -24,19 +24,41 @@
  */
 package org.spongepowered.gradle.plugin
 
+import static org.gradle.api.JavaVersion.VERSION_1_8
+
+import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginConvention
+import org.spongepowered.gradle.meta.MetadataBasePlugin
 
-class SpongePluginExtension extends SpongeExtension {
+class SpongePluginPlugin implements Plugin<Project> {
 
-    final Plugin plugin
+    @Override
+    void apply(Project project) {
+        project.with {
+            plugins.apply('java')
+            plugins.apply('eclipse')
+            plugins.apply('idea')
 
-    SpongePluginExtension(Project project, String id) {
-        super(project)
-        this.plugin = plugins.create(id)
-    }
+            convention.getPlugin(JavaPluginConvention).with {
+                sourceCompatibility = VERSION_1_8
+                targetCompatibility = VERSION_1_8
+            }
 
-    void plugin(@DelegatesTo(Plugin) Closure closure) {
-        project.configure(plugin, closure)
+            repositories {
+                mavenCentral()
+                maven {
+                    name = 'sponge'
+                    url = 'http://repo.spongepowered.org/maven'
+                }
+            }
+
+            // IntelliJ IDEA resource fix
+            idea.module.inheritOutputDirs = true
+
+            plugins.apply(MetadataBasePlugin)
+            plugins.apply(SpongePluginBasePlugin)
+        }
     }
 
 }

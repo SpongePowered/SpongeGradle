@@ -22,43 +22,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugin
+package org.spongepowered.gradle.meta
 
-import static org.gradle.api.JavaVersion.VERSION_1_8
-import static org.spongepowered.gradle.plugin.SpongeExtension.EXTENSION_NAME
+import static org.spongepowered.gradle.meta.MetadataBaseExtension.getEXTENSION_NAME
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPluginConvention
 
-class SpongePluginGradlePlugin implements Plugin<Project> {
+class MetadataPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
         project.with {
-            plugins.apply('java')
-            plugins.apply('eclipse')
-            plugins.apply('idea')
-
-            convention.getPlugin(JavaPluginConvention).with {
-                sourceCompatibility = VERSION_1_8
-                targetCompatibility = VERSION_1_8
-            }
-
-            repositories {
-                mavenCentral()
-                maven {
-                    name = 'sponge'
-                    url = 'http://repo.spongepowered.org/maven'
-                }
-            }
-
-            // IntelliJ IDEA resource fix
-            idea.module.inheritOutputDirs = true
-
-            def extension = extensions.create(EXTENSION_NAME, SpongePluginExtension, project, project.name)
-
-            plugins.apply(SpongePluginGradlePluginBase)
+            def extension = extensions.create(EXTENSION_NAME, MetadataExtension, project, project.name)
+            plugins.apply(MetadataBasePlugin)
 
             extension.plugin {
                 id = project.name.toLowerCase(Locale.ENGLISH)

@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugin
+package org.spongepowered.gradle.meta
 
 import groovy.transform.ToString
 import org.gradle.api.NamedDomainObjectContainer
@@ -34,14 +34,14 @@ import org.spongepowered.plugin.meta.SpongeExtension as SpongeMetadataExtension
 import java.util.function.Consumer
 
 @ToString(includePackage = false, includeNames = true, ignoreNulls = true)
-class SpongeExtension {
+class MetadataBaseExtension {
 
     static final String EXTENSION_NAME = 'sponge'
 
     final Project project
     final NamedDomainObjectContainer<Plugin> plugins
 
-    SpongeExtension(Project project) {
+    MetadataBaseExtension(Project project) {
         this.project = project
         this.plugins = project.container(Plugin, { name ->
             return new Plugin(this, name)
@@ -55,12 +55,12 @@ class SpongeExtension {
     @ToString(includePackage = false, includeNames = true, ignoreNulls = true, excludes = 'extension')
     static class Plugin {
 
-        final SpongeExtension extension
+        final MetadataBaseExtension extension
         final String name
         Object id
         final Meta meta = new Meta()
 
-        Plugin(SpongeExtension extension, String name) {
+        Plugin(MetadataBaseExtension extension, String name) {
             this.extension = extension
             this.name = name
             this.id = name.toLowerCase()

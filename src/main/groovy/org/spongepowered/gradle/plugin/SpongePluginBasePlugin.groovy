@@ -24,24 +24,17 @@
  */
 package org.spongepowered.gradle.plugin
 
-import static org.spongepowered.gradle.plugin.SpongeExtension.EXTENSION_NAME
-
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.file.CopySpec
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.compile.JavaCompile
+import org.spongepowered.gradle.meta.MetadataBasePlugin
 import org.spongepowered.plugin.meta.McModInfo
-import org.spongepowered.plugin.meta.PluginMetadata
 
-import java.nio.file.Files
 import java.nio.file.Path
 
-class SpongePluginGradlePluginBase implements Plugin<Project> {
-
-    private static final String FILE_PREFIX = 'mcmod'
-    private static final String FILE_EXTENSION = '.info'
+class SpongePluginBasePlugin implements Plugin<Project> {
 
     private static final String PLUGIN_ANNOTATION_PROCESSOR = 'org.spongepowered.plugin.processor.PluginProcessor'
     private static final String DISABLE_ANNOTATION_PROCESSING = '-proc:none'
@@ -49,12 +42,15 @@ class SpongePluginGradlePluginBase implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.with {
-            SpongeExtension extension = extensions.findByType(SpongeExtension) ?: extensions.create(EXTENSION_NAME, SpongeExtension, project)
+            plugins.apply(MetadataBasePlugin)
+
+            tasks.compileJava.dependsOn tasks.generateMetadata
             tasks.compileJava.doFirst { JavaCompile compile ->
                 // Handle annotation processing compiler arguments
                 def args = compile.options.compilerArgs
                 if (args.contains(DISABLE_ANNOTATION_PROCESSING)) {
-                    logger.error('Cannot run plugin annotation processor; annotation processing is disabled. Plugin metadata will NOT be generated.')
+                    logger.error('Cannot run plugin annotation processor; annotation processing is disabled. ' +
+                            'Plugin metadata will NOT be merged with the @Plugin annotation!')
                     return
                 }
 
@@ -64,27 +60,14 @@ class SpongePluginGradlePluginBase implements Plugin<Project> {
                     args[pos + 1] += ',' + PLUGIN_ANNOTATION_PROCESSOR
                 }
 
-                // Set up Gradle contributed metadata
-                def tmpDir = temporaryDir.toPath()
-
-                def path = Files.createTempFile(tmpDir, FILE_PREFIX, FILE_EXTENSION)
-                def meta = extension.plugins.collect {
-                    PluginMetadata meta = new PluginMetadata(it.id)
-                    it.meta.accept(meta)
-                    return meta
-                }
-                McModInfo.DEFAULT.write(path, meta)
-
                 def java = project.convention.getPlugin(JavaPluginConvention)
-                def extra = [path.toAbsolutePath(), *findExtraMetadataFiles(java.sourceSets.main)]
+                Path generatedPath = tasks.generateMetadata.target
+
+                def extra = [generatedPath, *findExtraMetadataFiles(java.sourceSets.main)]
                 args << '-AextraMetadataFiles=' + extra.join(';')
 
                 // Set up final generated metadata file
-                def output = tmpDir.resolve(McModInfo.STANDARD_FILENAME)
-                args << '-AmetadataOutputFile=' + output.toAbsolutePath()
-
-                // Include generated metadata file in process resources task
-                ((CopySpec) tasks.processResources).from output.toFile()
+                args << '-AmetadataOutputFile=' + generatedPath
             }
         }
     }
