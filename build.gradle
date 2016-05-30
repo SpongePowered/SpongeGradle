@@ -6,7 +6,7 @@ plugins {
     id 'idea'
 
     id 'maven'
-    id 'com.gradle.plugin-publish' version '0.9.3'
+    id 'com.gradle.plugin-publish' version '0.9.4'
 
     id 'net.minecrell.licenser' version '0.1.5'
 }
@@ -16,7 +16,7 @@ defaultTasks 'clean', 'licenseFormat', 'build'
 apply plugin: 'java'
 
 group = 'org.spongepowered'
-version = '0.5.3-SNAPSHOT'
+version = '0.6-SNAPSHOT'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
