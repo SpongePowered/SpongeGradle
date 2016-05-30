@@ -35,15 +35,19 @@ import java.util.function.Supplier
 class GenerateMeta extends DefaultTask {
 
     Supplier<List<PluginMetadata>> provider = {[]}
-    Path target = temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME)
+    Path target
 
     List<PluginMetadata> getMetadata() {
         return this.provider.get()
     }
 
+    Path getTarget() {
+        return this.target ?: temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME)
+    }
+
     @TaskAction
     void generateMetadata() {
-        McModInfo.DEFAULT.write(target, metadata)
+        McModInfo.DEFAULT.write(getTarget(), metadata)
     }
 
 }

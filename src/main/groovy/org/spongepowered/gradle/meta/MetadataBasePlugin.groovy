@@ -24,7 +24,7 @@
  */
 package org.spongepowered.gradle.meta
 
-import static org.spongepowered.gradle.meta.MetadataBaseExtension.getEXTENSION_NAME
+import static org.spongepowered.gradle.meta.MetadataBaseExtension.EXTENSION_NAME
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project

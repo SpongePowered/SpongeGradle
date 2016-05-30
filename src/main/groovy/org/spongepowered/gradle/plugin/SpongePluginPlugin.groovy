@@ -29,7 +29,7 @@ import static org.gradle.api.JavaVersion.VERSION_1_8
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginConvention
-import org.spongepowered.gradle.meta.MetadataBasePlugin
+import org.spongepowered.gradle.meta.MetadataPlugin
 
 class SpongePluginPlugin implements Plugin<Project> {
 
@@ -56,7 +56,7 @@ class SpongePluginPlugin implements Plugin<Project> {
             // IntelliJ IDEA resource fix
             idea.module.inheritOutputDirs = true
 
-            plugins.apply(MetadataBasePlugin)
+            plugins.apply(MetadataPlugin)
             plugins.apply(SpongePluginBasePlugin)
         }
     }
