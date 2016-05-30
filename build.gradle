@@ -91,6 +91,11 @@ pluginBundle {
     tags = ['minecraft', 'sponge']
 
     plugins {
+        metaPlugin {
+            id = 'org.spongepowered.meta'
+            displayName = 'Sponge Plugin metadata generator'
+            description = 'Gradle plugin automatically generating a mcmod.info metadata file with the project properties'
+        }
         spongePluginPlugin {
             id = 'org.spongepowered.plugin'
             displayName = 'Sponge Plugin Gradle integration'
