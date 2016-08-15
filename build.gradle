@@ -25,6 +25,7 @@ archivesBaseName = project.name.toLowerCase()
 
 repositories {
     jcenter()
+    mavenCentral()
 }
 
 configurations {
@@ -36,6 +37,7 @@ eclipse.classpath.plusConfigurations += [configurations.compileOnly]
 idea.module.scopes.COMPILE.plus += [configurations.compileOnly]
 
 dependencies {
+    compile 'org.ow2.asm:asm:5.1'
     compile 'org.spongepowered:plugin-meta:0.1.1'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.4:indy'
 }
