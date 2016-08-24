@@ -16,7 +16,7 @@ defaultTasks 'clean', 'licenseFormat', 'build'
 apply plugin: 'java'
 
 group = 'org.spongepowered'
-version = '0.6.1-SNAPSHOT'
+version = '0.7-SNAPSHOT'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -25,18 +25,16 @@ archivesBaseName = project.name.toLowerCase()
 
 repositories {
     jcenter()
+    // TODO: Remove before uploading to Gradle's plugin portal
+    maven {
+        name = 'sponge'
+        url = 'http://repo.spongepowered.org/maven'
+    }
 }
-
-configurations {
-    compileOnly
-}
-
-sourceSets.main.compileClasspath += configurations.compileOnly
-eclipse.classpath.plusConfigurations += [configurations.compileOnly]
-idea.module.scopes.COMPILE.plus += [configurations.compileOnly]
 
 dependencies {
-    compile 'org.spongepowered:plugin-meta:0.1.1'
+    // TODO: Switch to release before uploading to Gradle's plugin portal
+    compile 'org.spongepowered:plugin-meta:0.2-SNAPSHOT'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.4:indy'
 }
 

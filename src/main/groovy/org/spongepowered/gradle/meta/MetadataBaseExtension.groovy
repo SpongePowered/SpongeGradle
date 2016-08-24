@@ -85,6 +85,7 @@ class MetadataBaseExtension {
             Object version
             Object description
             Object url
+            Object minecraftVersion
 
             List<String> authors = []
 
@@ -106,6 +107,10 @@ class MetadataBaseExtension {
                 return SpongeGradle.resolve(this.url)
             }
 
+            String getMinecraftVersion() {
+                return SpongeGradle.resolve(this.minecraftVersion)
+            }
+
             String getAssets() {
                 return SpongeGradle.resolve(this.assets)
             }
@@ -116,6 +121,7 @@ class MetadataBaseExtension {
                 meta.version = getVersion()
                 meta.description = getDescription()
                 meta.url = getUrl()
+                meta.minecraftVersion = getMinecraftVersion()
                 meta.authors.addAll(this.authors)
 
                 def assets = getAssets()

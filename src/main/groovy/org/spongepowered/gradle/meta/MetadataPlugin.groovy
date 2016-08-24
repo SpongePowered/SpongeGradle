@@ -43,6 +43,7 @@ class MetadataPlugin implements Plugin<Project> {
                     name = project.name
                     version = {project.version}
                     description = {project.description}
+                    minecraftVersion = {project.extensions.findByName('minecraft')?.version}
                 }
             }
         }
