@@ -6,9 +6,9 @@ plugins {
     id 'idea'
 
     id 'maven'
-    id 'com.gradle.plugin-publish' version '0.9.4'
+    id 'com.gradle.plugin-publish' version '0.9.5'
 
-    id 'net.minecrell.licenser' version '0.1.5'
+    id 'net.minecrell.licenser' version '0.2.1'
 }
 
 defaultTasks 'clean', 'licenseFormat', 'build'
@@ -135,5 +135,5 @@ uploadArchives {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.13'
+    gradleVersion = '2.14.1'
 }

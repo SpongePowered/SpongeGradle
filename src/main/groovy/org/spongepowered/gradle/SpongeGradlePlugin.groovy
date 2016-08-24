@@ -26,7 +26,6 @@ package org.spongepowered.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.spongepowered.gradle.task.TaskGenerateAnonInnerClassMappings
 import org.spongepowered.gradle.task.TaskSortAccessTransformers
 import org.spongepowered.gradle.task.TaskSortClassMembers
 
@@ -44,9 +43,6 @@ class SpongeGradlePlugin implements Plugin<Project> {
             group = "Sponge"
             description = "Sort entries in AccessTransformer configurations"
         }
-
-        // TODO: There is probably a better way to prevent the import in the build.gradle
-        project.ext.GenerateAnonInnerClassMappings = TaskGenerateAnonInnerClassMappings.class
     }
 
 }
