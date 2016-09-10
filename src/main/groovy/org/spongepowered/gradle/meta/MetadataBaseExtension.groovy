@@ -29,7 +29,6 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.spongepowered.gradle.SpongeGradle
 import org.spongepowered.plugin.meta.PluginMetadata
-import org.spongepowered.plugin.meta.SpongeExtension as SpongeMetadataExtension
 
 import java.util.function.Consumer
 
@@ -89,8 +88,6 @@ class MetadataBaseExtension {
 
             List<String> authors = []
 
-            Object assets
-
             String getName() {
                 return SpongeGradle.resolve(this.name)
             }
@@ -111,10 +108,6 @@ class MetadataBaseExtension {
                 return SpongeGradle.resolve(this.minecraftVersion)
             }
 
-            String getAssets() {
-                return SpongeGradle.resolve(this.assets)
-            }
-
             @Override
             void accept(PluginMetadata meta) {
                 meta.name = getName()
@@ -123,13 +116,6 @@ class MetadataBaseExtension {
                 meta.url = getUrl()
                 meta.minecraftVersion = getMinecraftVersion()
                 meta.authors.addAll(this.authors)
-
-                def assets = getAssets()
-                if (assets) {
-                    def extension = new SpongeMetadataExtension()
-                    extension.assetDirectory = assets
-                    meta.setExtension('sponge', extension)
-                }
             }
 
         }
