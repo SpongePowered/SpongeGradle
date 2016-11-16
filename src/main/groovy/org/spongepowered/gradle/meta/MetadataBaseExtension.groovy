@@ -84,7 +84,6 @@ class MetadataBaseExtension {
             Object version
             Object description
             Object url
-            Object minecraftVersion
 
             List<String> authors = []
 
@@ -104,17 +103,12 @@ class MetadataBaseExtension {
                 return SpongeGradle.resolve(this.url)
             }
 
-            String getMinecraftVersion() {
-                return SpongeGradle.resolve(this.minecraftVersion)
-            }
-
             @Override
             void accept(PluginMetadata meta) {
                 meta.name = getName()
                 meta.version = getVersion()
                 meta.description = getDescription()
                 meta.url = getUrl()
-                meta.minecraftVersion = getMinecraftVersion()
                 meta.authors.addAll(this.authors)
             }
 
