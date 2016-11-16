@@ -6,9 +6,9 @@ plugins {
     id 'idea'
 
     id 'maven'
-    id 'com.gradle.plugin-publish' version '0.9.5'
+    id 'com.gradle.plugin-publish' version '0.9.6'
 
-    id 'net.minecrell.licenser' version '0.2.1'
+    id 'net.minecrell.licenser' version '0.3'
 }
 
 defaultTasks 'clean', 'licenseFormat', 'build'
@@ -16,7 +16,7 @@ defaultTasks 'clean', 'licenseFormat', 'build'
 apply plugin: 'java'
 
 group = 'org.spongepowered'
-version = '0.7.1-SNAPSHOT'
+version = '0.8-SNAPSHOT'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -29,7 +29,7 @@ repositories {
 
 dependencies {
     compile 'org.spongepowered:plugin-meta:0.2'
-    compileOnly 'org.codehaus.groovy:groovy-all:2.4.4:indy'
+    compileOnly 'org.codehaus.groovy:groovy-all:2.4.7:indy'
 }
 
 tasks.withType(GroovyCompile) {
@@ -127,5 +127,5 @@ uploadArchives {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.14.1'
+    gradleVersion = '3.2'
 }
