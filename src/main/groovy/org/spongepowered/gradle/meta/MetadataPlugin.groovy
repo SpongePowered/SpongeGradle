@@ -34,16 +34,15 @@ class MetadataPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.with {
-            def extension = extensions.create(EXTENSION_NAME, MetadataExtension, project, project.name)
+            def extension = extensions.create(EXTENSION_NAME, MetadataExtension, project,
+                    project.name.toLowerCase(Locale.ENGLISH))
             plugins.apply(MetadataBasePlugin)
 
-            extension.plugin {
-                id = project.name.toLowerCase(Locale.ENGLISH)
-                meta {
-                    name = project.name
-                    version = {project.version}
-                    description = {project.description}
-                }
+            extension.plugin.meta.inherit(project)
+
+            afterEvaluate {
+                // Add id to list if it doesn't exist already
+                extension.plugins.maybeCreate(extension.plugin.id)
             }
         }
     }

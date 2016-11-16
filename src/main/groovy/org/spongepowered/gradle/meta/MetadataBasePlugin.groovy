@@ -39,7 +39,7 @@ class MetadataBasePlugin implements Plugin<Project> {
             plugins.apply('java-base')
 
             MetadataBaseExtension extension = extensions.findByType(MetadataBaseExtension) ?: extensions.create(EXTENSION_NAME, MetadataBaseExtension, project)
-            GenerateMeta genMeta = task('generateMetadata', type: GenerateMeta) {
+            GenerateMetadata genMeta = task('generateMetadata', type: GenerateMetadata) {
                 provider = {
                     extension.plugins.collect {
                         PluginMetadata meta = new PluginMetadata(it.id)

@@ -24,30 +24,34 @@
  */
 package org.spongepowered.gradle.meta
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
-import org.spongepowered.plugin.meta.McModInfo
-import org.spongepowered.plugin.meta.PluginMetadata
+abstract class PluginElement {
 
-import java.nio.file.Path
-import java.util.function.Supplier
+    private String id
+    private boolean registered
 
-class GenerateMeta extends DefaultTask {
-
-    Supplier<List<PluginMetadata>> provider = {[]}
-    Path target
-
-    List<PluginMetadata> getMetadata() {
-        return this.provider.get()
+    PluginElement(String id) {
+        this.id = id
     }
 
-    Path getTarget() {
-        return this.target ?: temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME)
+    final String getId() {
+        return this.id
     }
 
-    @TaskAction
-    void generateMetadata() {
-        McModInfo.DEFAULT.write(getTarget(), metadata)
+    final void setId(String id) {
+        if (this.id == id) {
+            return
+        }
+
+        assert !this.registered, "Cannot change plugin ID after element was registered"
+        this.id = id
+    }
+
+    final String getName() {
+        return this.id
+    }
+
+    void register() {
+        this.registered = true
     }
 
 }

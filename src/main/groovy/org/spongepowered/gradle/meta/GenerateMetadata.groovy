@@ -24,29 +24,30 @@
  */
 package org.spongepowered.gradle.meta
 
-import org.gradle.api.Project
+import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.TaskAction
+import org.spongepowered.plugin.meta.McModInfo
+import org.spongepowered.plugin.meta.PluginMetadata
 
-class MetadataExtension extends MetadataBaseExtension {
+import java.nio.file.Path
+import java.util.function.Supplier
 
-    final Plugin plugin
+class GenerateMetadata extends DefaultTask {
 
-    MetadataExtension(Project project, String id) {
-        super(project)
-        this.plugin = new Plugin(project, id)
+    Supplier<List<PluginMetadata>> provider = {[]}
+    Path target
+
+    List<PluginMetadata> getMetadata() {
+        return this.provider.get()
     }
 
-    @Override
-    protected Plugin createPlugin(String name) {
-        if (name == plugin.name) {
-            plugin.register()
-            return plugin
-        }
-
-        return super.createPlugin(name)
+    Path getTarget() {
+        return this.target ?: temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME)
     }
 
-    void plugin(@DelegatesTo(Plugin) Closure closure) {
-        project.configure(plugin, closure)
+    @TaskAction
+    void generateMetadata() {
+        McModInfo.DEFAULT.write(getTarget(), metadata)
     }
 
 }

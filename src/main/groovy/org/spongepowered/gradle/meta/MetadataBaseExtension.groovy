@@ -37,44 +37,37 @@ class MetadataBaseExtension {
 
     static final String EXTENSION_NAME = 'sponge'
 
-    final Project project
+    protected final Project project
     final NamedDomainObjectContainer<Plugin> plugins
 
     MetadataBaseExtension(Project project) {
         this.project = project
-        this.plugins = project.container(Plugin, { name ->
-            return new Plugin(this, name)
-        })
+        this.plugins = project.container(Plugin, this.&createPlugin)
+    }
+
+    protected Plugin createPlugin(String name) {
+        def plugin = new Plugin(project, name)
+        plugin.register()
+        return plugin
     }
 
     void plugins(Closure closure) {
-        project.configure(plugins, closure)
+        plugins.configure(closure)
     }
 
-    @ToString(includePackage = false, includeNames = true, ignoreNulls = true, excludes = 'extension')
-    static class Plugin {
+    static class Plugin extends PluginElement {
 
-        final MetadataBaseExtension extension
-        final String name
-        Object id
-        final Meta meta = new Meta()
+        protected final Project project
+        final Meta meta
 
-        Plugin(MetadataBaseExtension extension, String name) {
-            this.extension = extension
-            this.name = name
-            this.id = name.toLowerCase()
-        }
-
-        String getName() {
-            return this.name
-        }
-
-        String getId() {
-            return SpongeGradle.resolve(this.id)
+        Plugin(Project project, String id) {
+            super(id)
+            this.project = project
+            this.meta = new Meta(project)
         }
 
         void meta(@DelegatesTo(Meta) Closure<?> closure) {
-            extension.project.configure(meta, closure)
+            project.configure(meta, closure)
         }
 
         @ToString(includePackage = false, includeNames = true, ignoreNulls = true)
@@ -85,7 +78,13 @@ class MetadataBaseExtension {
             Object description
             Object url
 
+            NamedDomainObjectContainer<Dependency> dependencies
+
             List<String> authors = []
+
+            Meta(Project project) {
+                this.dependencies = project.container(Dependency)
+            }
 
             String getName() {
                 return SpongeGradle.resolve(this.name)
@@ -103,13 +102,56 @@ class MetadataBaseExtension {
                 return SpongeGradle.resolve(this.url)
             }
 
+            void inherit(Project project) {
+                this.name = project.name
+                this.version = {project.version}
+                this.description = {project.description}
+                this.url = {project.findProperty('url')}
+            }
+
+            void dependencies(Closure closure) {
+                dependencies.configure(closure)
+            }
+
             @Override
             void accept(PluginMetadata meta) {
                 meta.name = getName()
                 meta.version = getVersion()
                 meta.description = getDescription()
                 meta.url = getUrl()
+
+                dependencies.each {
+                    meta.loadAfter(it.build(), it.required)
+                }
+
                 meta.authors.addAll(this.authors)
+            }
+
+            static class Dependency extends PluginElement {
+
+                Object version
+                boolean required = false
+
+                Dependency(String id) {
+                    super(id)
+                }
+
+                String getVersion() {
+                    return SpongeGradle.resolve(version)
+                }
+
+                void forceVersion(String version) {
+                    this.version = "[$version]"
+                }
+
+                void forceVersion(Object version) {
+                    this.version = {'[' + SpongeGradle.resolve(version) + ']'}
+                }
+
+                PluginMetadata.Dependency build() {
+                    return new PluginMetadata.Dependency(id, getVersion())
+                }
+
             }
 
         }
