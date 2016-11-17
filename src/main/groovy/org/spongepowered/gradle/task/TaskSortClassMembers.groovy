@@ -237,6 +237,24 @@ class TaskSortClassMembers extends DefaultTask {
         def current = new Field()
         
         for (String line : Files.readLines(file, Charset.defaultCharset())) {
+            if (current.initialiser) {
+                if (current.initialiser.contains(';')) {
+                    if (current.type) {
+                        // Found field name and type, append the field
+                        fields += current
+                    } else {
+                        // Can't identify the field, just flush it
+                        output << current.flush()
+                    }
+
+                    current = new Field()
+                } else {
+                    // Append all lines until we find the end of the statement
+                    current.initialiser <<= newline << line;
+                    continue
+                }
+            }
+
             def semaphore = line =~ semaphores
             if (semaphore) {    // If semaphore found, switch processing state
                 if ("OFF" == semaphore.group(1) && active) {
@@ -266,14 +284,10 @@ class TaskSortClassMembers extends DefaultTask {
                 def typeAndName = line.substring(current.modifiers.length(), assignmentPos)
                 current.initialiser = line.substring(assignmentPos)
                 def idMatch = typeAndName =~ identifier
-                if (idMatch) {  // Found field name and type, append the field
+                if (idMatch) {
                     current.type = idMatch.group(1)
                     current.name = idMatch.group(2)
-                    fields += current
-                } else {        // Can't identify the field, just flush it
-                    output << current.flush()
                 }
-                current = new Field()
             } else {
                 current.comment += line
             }
