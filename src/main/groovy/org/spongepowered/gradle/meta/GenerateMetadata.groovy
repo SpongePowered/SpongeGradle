@@ -25,6 +25,8 @@
 package org.spongepowered.gradle.meta
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
 import org.spongepowered.plugin.meta.McModInfo
 import org.spongepowered.plugin.meta.PluginMetadata
@@ -37,6 +39,9 @@ class GenerateMetadata extends DefaultTask {
     Supplier<List<PluginMetadata>> provider = {[]}
     Path target
 
+    boolean mergeMetadata = true
+    List<Path> metadataFiles = []
+
     List<PluginMetadata> getMetadata() {
         return this.provider.get()
     }
@@ -47,7 +52,30 @@ class GenerateMetadata extends DefaultTask {
 
     @TaskAction
     void generateMetadata() {
+        // Find extra metadata files
+        def java = project.convention.getPlugin(JavaPluginConvention)
+        metadataFiles.addAll(findExtraMetadataFiles(java.sourceSets.main))
+
+        def metadata = getMetadata()
+        if (mergeMetadata) {
+            // Read extra metadata files
+            metadataFiles.each {
+                McModInfo.DEFAULT.read(it).each { meta ->
+                    def current = metadata.find { it.id == meta.id }
+                    if (current) {
+                        current.accept(meta)
+                    } else {
+                        metadata << meta
+                    }
+                }
+            }
+        }
+
         McModInfo.DEFAULT.write(getTarget(), metadata)
+    }
+
+    private static List<Path> findExtraMetadataFiles(SourceSet sourceSet) {
+        return sourceSet.resources.matching { include McModInfo.STANDARD_FILENAME }.collect { it.toPath().toAbsolutePath() }
     }
 
 }

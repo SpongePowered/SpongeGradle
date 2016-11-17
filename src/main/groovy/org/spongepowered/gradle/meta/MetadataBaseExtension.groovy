@@ -28,6 +28,7 @@ import groovy.transform.ToString
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.spongepowered.gradle.SpongeGradle
+import org.spongepowered.plugin.meta.PluginDependency
 import org.spongepowered.plugin.meta.PluginMetadata
 
 import java.util.function.Consumer
@@ -121,7 +122,7 @@ class MetadataBaseExtension {
                 meta.url = getUrl()
 
                 dependencies.each {
-                    meta.loadAfter(it.build(), it.required)
+                    meta.addDependency(it.build())
                 }
 
                 meta.authors.addAll(this.authors)
@@ -130,7 +131,7 @@ class MetadataBaseExtension {
             static class Dependency extends PluginElement {
 
                 Object version
-                boolean required = false
+                boolean optional = false
 
                 Dependency(String id) {
                     super(id)
@@ -148,8 +149,8 @@ class MetadataBaseExtension {
                     this.version = {'[' + SpongeGradle.resolve(version) + ']'}
                 }
 
-                PluginMetadata.Dependency build() {
-                    return new PluginMetadata.Dependency(id, getVersion())
+                PluginDependency build() {
+                    return new PluginDependency(PluginDependency.LoadOrder.BEFORE, id, getVersion(), optional)
                 }
 
             }

@@ -26,11 +26,9 @@ package org.spongepowered.gradle.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.compile.JavaCompile
+import org.spongepowered.gradle.meta.GenerateMetadata
 import org.spongepowered.gradle.meta.MetadataBasePlugin
-import org.spongepowered.plugin.meta.McModInfo
 
 import java.nio.file.Path
 
@@ -43,6 +41,8 @@ class SpongePluginBasePlugin implements Plugin<Project> {
     void apply(Project project) {
         project.with {
             plugins.apply(MetadataBasePlugin)
+
+            tasks.generateMetadata.mergeMetadata = false
 
             tasks.compileJava.dependsOn tasks.generateMetadata
             tasks.compileJava.doFirst { JavaCompile compile ->
@@ -60,20 +60,16 @@ class SpongePluginBasePlugin implements Plugin<Project> {
                     args[pos + 1] += ',' + PLUGIN_ANNOTATION_PROCESSOR
                 }
 
-                def java = project.convention.getPlugin(JavaPluginConvention)
-                Path generatedPath = tasks.generateMetadata.target
+                GenerateMetadata generateMetadata = tasks.generateMetadata
+                Path generatedPath = generateMetadata.target
 
-                def extra = [generatedPath, *findExtraMetadataFiles(java.sourceSets.main)]
+                def extra = [generatedPath, *generateMetadata.metadataFiles]
                 args << '-AextraMetadataFiles=' + extra.join(';')
 
                 // Set up final generated metadata file
                 args << '-AmetadataOutputFile=' + generatedPath
             }
         }
-    }
-
-    private static List<Path> findExtraMetadataFiles(SourceSet sourceSet) {
-        return sourceSet.resources.matching { include McModInfo.STANDARD_FILENAME }.collect { it.toPath().toAbsolutePath() }
     }
 
 }
