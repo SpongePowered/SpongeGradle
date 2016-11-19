@@ -25,16 +25,10 @@ archivesBaseName = project.name.toLowerCase()
 
 repositories {
     jcenter()
-
-    // TODO: Remove before release
-    maven {
-        name = 'sponge'
-        url = 'https://repo.spongepowered.org/maven'
-    }
 }
 
 dependencies {
-    compile 'org.spongepowered:plugin-meta:0.4-SNAPSHOT'
+    compile 'org.spongepowered:plugin-meta:0.4'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.7:indy'
 }
 
