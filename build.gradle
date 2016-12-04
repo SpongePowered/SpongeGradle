@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    compile 'org.spongepowered:plugin-meta:0.4'
+    compile 'org.spongepowered:plugin-meta:0.4.1'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.7:indy'
 }
 

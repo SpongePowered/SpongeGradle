@@ -24,6 +24,8 @@
  */
 package org.spongepowered.gradle.meta
 
+import static org.spongepowered.plugin.meta.PluginMetadata.ID_PATTERN
+
 abstract class PluginElement {
 
     private String id
@@ -43,6 +45,7 @@ abstract class PluginElement {
         }
 
         assert !this.registered, "Cannot change plugin ID after element was registered"
+        assert id ==~ ID_PATTERN, "Plugin ID must match pattern " + ID_PATTERN
         this.id = id
     }
 
@@ -51,6 +54,7 @@ abstract class PluginElement {
     }
 
     void register() {
+        assert id ==~ ID_PATTERN, "Plugin ID must match pattern " + ID_PATTERN
         this.registered = true
     }
 
