@@ -69,6 +69,10 @@ class SpongePluginBasePlugin implements Plugin<Project> {
                 // Set up final generated metadata file
                 args << '-AmetadataOutputFile=' + generatedPath
             }
+
+            // Add dependency on compileJava so we can generate the metadata using the annotation processor first
+            // See https://github.com/SpongePowered/SpongeGradle/issues/7
+            tasks.processResources.dependsOn tasks.compileJava
         }
     }
 
