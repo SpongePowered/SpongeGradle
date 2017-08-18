@@ -29,7 +29,9 @@ repositories {
 
 dependencies {
     compile 'org.spongepowered:plugin-meta:0.4.1'
+    compile 'org.ow2.asm:asm:5.2'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.7:indy'
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 }
 
 tasks.withType(GroovyCompile) {
