@@ -102,20 +102,9 @@ pluginBundle {
     }
 }
 
-// Support uploading with FTP
-configurations {
-    deployerJars // Deployment dependency
-}
-
-dependencies {
-    deployerJars 'org.apache.maven.wagon:wagon-ftp:2.10'
-}
-
 uploadArchives {
     repositories {
         mavenDeployer {
-            configuration = configurations.deployerJars
-
             // This is set by the build server when deploying to the repo
             if (project.hasProperty('spongeRepo')) {
                 repository(url: project.spongeRepo) {
