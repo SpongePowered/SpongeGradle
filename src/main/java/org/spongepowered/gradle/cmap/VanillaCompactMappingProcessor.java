@@ -87,7 +87,7 @@ class VanillaCompactMappingProcessor {
                 ClassReader reader = new ClassReader(jar);
 
                 String className = reader.getClassName();
-                ClassMappings classMappings = new ClassMappings(className, this.srgClasses.get(className));
+                ClassMappings classMappings = new ClassMappings(className, this.srgClasses.getOrDefault(className, className));
 
                 if (this.mappings.put(className, classMappings) != null) {
                     throw new AssertionError("Mappings for " + className + " exist already");

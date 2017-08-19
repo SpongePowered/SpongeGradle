@@ -69,10 +69,8 @@ final class CompactMappingsWriter {
     private static void writeLine(BufferedWriter writer, char identifier, String... args) throws IOException {
         writer.write(identifier);
         for (String arg : args) {
-            if (arg != null) {
-                writer.write(' ');
-                writer.write(arg);
-            }
+            writer.write(' ');
+            writer.write(arg);
         }
         writer.write(NEW_LINE);
     }

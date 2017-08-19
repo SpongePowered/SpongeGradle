@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 class ClassMappings {
 
     final String className;
-    @Nullable final String mappedName;
+    final String mappedName;
     @Nullable String superClass;
     @Nullable String[] interfaces;
 
@@ -41,7 +41,7 @@ class ClassMappings {
     final SortedMap<MemberDescriptor, String> methods = new TreeMap<>();
     final SortedMap<MemberDescriptor, String> inheritableMethods = new TreeMap<>();
 
-    ClassMappings(String className, @Nullable String mappedName) {
+    ClassMappings(String className, String mappedName) {
         this.className = className;
         this.mappedName = mappedName;
     }
