@@ -24,6 +24,7 @@
  */
 package org.spongepowered.gradle.meta
 
+import org.gradle.api.Action
 import org.gradle.api.Project
 
 class MetadataExtension extends MetadataBaseExtension {
@@ -43,6 +44,10 @@ class MetadataExtension extends MetadataBaseExtension {
         }
 
         return super.createPlugin(name)
+    }
+
+    void plugin(Action<Plugin> action) {
+        action.execute(plugin)
     }
 
     void plugin(@DelegatesTo(Plugin) Closure closure) {

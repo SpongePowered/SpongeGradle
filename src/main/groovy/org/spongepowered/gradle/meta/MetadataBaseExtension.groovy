@@ -25,6 +25,7 @@
 package org.spongepowered.gradle.meta
 
 import groovy.transform.ToString
+import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.spongepowered.gradle.SpongeGradle
@@ -65,6 +66,10 @@ class MetadataBaseExtension {
             super(id)
             this.project = project
             this.meta = new Meta(project)
+        }
+
+        void meta(Action<Meta> action) {
+            action.execute(meta)
         }
 
         void meta(@DelegatesTo(Meta) Closure<?> closure) {
