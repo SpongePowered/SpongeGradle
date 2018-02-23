@@ -79,10 +79,10 @@ class MetadataBaseExtension {
         @ToString(includePackage = false, includeNames = true, ignoreNulls = true)
         static class Meta implements Consumer<PluginMetadata> {
 
-            Object name
-            Object version
-            Object description
-            Object url
+            private Object name
+            private Object version
+            private Object description
+            private Object url
 
             NamedDomainObjectContainer<Dependency> dependencies
 
@@ -96,16 +96,48 @@ class MetadataBaseExtension {
                 return SpongeGradle.resolve(this.name)
             }
 
+            void setName(String name) {
+                this.name = name
+            }
+
+            void setName(Object name) {
+                this.name = name
+            }
+
             String getVersion() {
                 return SpongeGradle.resolve(this.version)
+            }
+
+            void setVersion(String version) {
+                this.version = version
+            }
+
+            void setVersion(Object version) {
+                this.version = version
             }
 
             String getDescription() {
                 return SpongeGradle.resolve(this.description)
             }
 
+            void setDescription(String description) {
+                this.description = description
+            }
+
+            void setDescription(Object description) {
+                this.description = description
+            }
+
             String getUrl() {
                 return SpongeGradle.resolve(this.url)
+            }
+
+            void setUrl(String url) {
+                this.url = url
+            }
+
+            void setUrl(Object url) {
+                this.url = url
             }
 
             void inherit(Project project) {
@@ -135,7 +167,7 @@ class MetadataBaseExtension {
 
             static class Dependency extends PluginElement {
 
-                Object version
+                private Object version
                 boolean optional = false
 
                 Dependency(String id) {
@@ -144,6 +176,14 @@ class MetadataBaseExtension {
 
                 String getVersion() {
                     return SpongeGradle.resolve(version)
+                }
+
+                void setVersion(String version) {
+                    this.version = version
+                }
+
+                void setVersion(Object version) {
+                    this.version = version
                 }
 
                 void forceVersion(String version) {
