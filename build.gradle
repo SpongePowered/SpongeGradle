@@ -28,6 +28,7 @@ repositories {
 }
 
 dependencies {
+    compile 'org.apache.httpcomponents:httpmime:4.5.3'
     compile 'org.spongepowered:plugin-meta:0.4.1'
     compile 'org.ow2.asm:asm:5.2'
     compileOnly 'org.codehaus.groovy:groovy-all:2.4.7:indy'
@@ -94,6 +95,11 @@ pluginBundle {
             id = 'org.spongepowered.plugin'
             displayName = 'Sponge Plugin Gradle integration'
             description = 'Gradle plugin providing integration for plugins made for the Sponge platform'
+        }
+        oreDeployPlugin {
+            id = 'org.spongepowered.ore'
+            displayName = 'Ore Deploy Plugin'
+            description = 'Gradle plugin providing direct deployment to Ore'
         }
     }
 
