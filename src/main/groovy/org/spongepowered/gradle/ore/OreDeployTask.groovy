@@ -51,6 +51,8 @@ class OreDeployTask extends DefaultTask {
     boolean recommended = true
     String channel
     String apiKey
+    Boolean forumPost
+    String changelog
 
     Configuration deploy = project.configurations.archives
 
@@ -90,13 +92,22 @@ class OreDeployTask extends DefaultTask {
         if (channel == null) {
             throw new InvalidUserDataException("Missing channel name.")
         }
-        HttpEntity requestEntity = MultipartEntityBuilder.create()
-            .addPart('apiKey', new StringBody(apiKey))
-            .addPart('channel', new StringBody(channel))
-            .addPart('recommended', new StringBody(recommended as String))
-            .addPart('pluginFile', new FileBody(plugin.file))
-            .addPart('pluginSig', new FileBody(sig.file))
-            .build()
+        MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
+                .addPart('apiKey', new StringBody(apiKey))
+                .addPart('channel', new StringBody(channel))
+                .addPart('recommended', new StringBody(recommended as String))
+                .addPart('pluginFile', new FileBody(plugin.file))
+                .addPart('pluginSig', new FileBody(sig.file))
+
+        if(forumPost != null) {
+            entityBuilder.addPart('forumPost', new StringBody(forumPost as String))
+        }
+
+        if(changelog != null) {
+            entityBuilder.addPart('changelog', new StringBody(changelog))
+        }
+
+        HttpEntity requestEntity = entityBuilder.build()
         logger.debug(requestEntity.toString())
 
         HttpClient http = HttpClients.createDefault()
