@@ -99,11 +99,11 @@ class OreDeployTask extends DefaultTask {
                 .addPart('pluginFile', new FileBody(plugin.file))
                 .addPart('pluginSig', new FileBody(sig.file))
 
-        if(forumPost != null) {
+        if (forumPost != null) {
             entityBuilder.addPart('forumPost', new StringBody(forumPost as String))
         }
 
-        if(changelog != null) {
+        if (changelog != null) {
             entityBuilder.addPart('changelog', new StringBody(changelog))
         }
 
