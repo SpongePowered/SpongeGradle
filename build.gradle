@@ -5,7 +5,7 @@ plugins {
     id 'eclipse'
     id 'idea'
 
-    id 'maven'
+    id 'maven-publish'
     id 'com.gradle.plugin-publish' version '0.9.6'
 
     id 'net.minecrell.licenser' version '0.3'
@@ -31,7 +31,7 @@ dependencies {
     compile 'org.apache.httpcomponents:httpmime:4.5.3'
     compile 'org.spongepowered:plugin-meta:0.4.1'
     compile 'org.ow2.asm:asm:5.2'
-    compileOnly 'org.codehaus.groovy:groovy-all:2.4.7:indy'
+    compileOnly 'org.codehaus.groovy:groovy-all:2.4.12:indy'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 }
 
@@ -42,6 +42,32 @@ tasks.withType(GroovyCompile) {
 processResources {
    from 'LICENSE.txt'
 }
+
+gradlePlugin {
+    plugins {
+        gradlePlugin {
+            id = 'org.spongepowered.gradle'
+            implementationClass = 'org.spongepowered.gradle.SpongeGradlePlugin'
+        }
+        metaBasePlugin {
+            id = 'org.spongepowered.meta.base'
+            implementationClass = 'org.spongepowered.gradle.meta.MetadataBasePlugin'
+        }
+        metaPlugin {
+            id = 'org.spongepowered.meta'
+            implementationClass = 'org.spongepowered.gradle.meta.MetadataPlugin'
+        }
+        spongePluginBasePlugin {
+            id = 'org.spongepowered.plugin.base'
+            implementationClass = 'org.spongepowered.gradle.plugin.SpongePluginBasePlugin'
+        }
+        spongePluginPlugin {
+            id = 'org.spongepowered.plugin'
+            implementationClass = 'org.spongepowered.gradle.plugin.SpongePluginPlugin'
+        }
+    }
+}
+
 
 license {
     header = file('HEADER.txt')
@@ -108,21 +134,28 @@ pluginBundle {
     }
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            // This is set by the build server when deploying to the repo
-            if (project.hasProperty('spongeRepo')) {
-                repository(url: project.spongeRepo) {
-                    if (project.hasProperty('spongeUsername') && project.hasProperty('spongePassword')) {
-                        authentication(userName: project.spongeUsername, password: project.spongePassword)
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifact sourceJar
+            artifact groovydocJar
+        }
+    }
+
+    // This is set by the build server when deploying to the repo
+    if (project.hasProperty('spongeRepo')) {
+        repositories {
+            maven {
+                url = project.spongeRepo
+                if (project.hasProperty('spongeUsername') && project.hasProperty('spongePassword')) {
+                    credentials {
+                        username = project.spongeUsername
+                        password = project.spongePassword
                     }
                 }
             }
         }
     }
-}
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '3.2.1'
 }
