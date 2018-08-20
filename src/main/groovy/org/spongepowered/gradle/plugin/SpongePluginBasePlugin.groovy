@@ -26,6 +26,7 @@ package org.spongepowered.gradle.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.specs.Specs
 import org.gradle.api.tasks.compile.JavaCompile
 import org.spongepowered.gradle.meta.GenerateMetadata
 import org.spongepowered.gradle.meta.MetadataBasePlugin
@@ -45,6 +46,11 @@ class SpongePluginBasePlugin implements Plugin<Project> {
             tasks.generateMetadata.mergeMetadata = false
 
             tasks.compileJava.dependsOn tasks.generateMetadata
+
+            // The plugin annotation processor needs to run on every build,
+            // so we need to compile the Java with the processor every time
+            tasks.compileJava.outputs.upToDateWhen(Specs.satisfyNone())
+
             tasks.compileJava.doFirst { JavaCompile compile ->
                 // Handle annotation processing compiler arguments
                 def args = compile.options.compilerArgs
