@@ -26,9 +26,11 @@ package org.spongepowered.gradle.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.CopySpec
 import org.gradle.api.tasks.compile.JavaCompile
 import org.spongepowered.gradle.meta.GenerateMetadata
 import org.spongepowered.gradle.meta.MetadataBasePlugin
+import org.spongepowered.plugin.meta.McModInfo
 
 import java.nio.file.Path
 
@@ -44,7 +46,7 @@ class SpongePluginBasePlugin implements Plugin<Project> {
 
             tasks.generateMetadata.mergeMetadata = false
 
-            tasks.compileJava.dependsOn tasks.generateMetadata
+            tasks.compileJava.inputs.files(tasks.generateMetadata)
             tasks.compileJava.doFirst { JavaCompile compile ->
                 // Handle annotation processing compiler arguments
                 def args = compile.options.compilerArgs
@@ -65,14 +67,10 @@ class SpongePluginBasePlugin implements Plugin<Project> {
 
                 def extra = [generatedPath, *generateMetadata.metadataFiles]
                 args << '-AextraMetadataFiles=' + extra.join(';')
-
-                // Set up final generated metadata file
-                args << '-AmetadataOutputFile=' + generatedPath
             }
 
-            // Add dependency on compileJava so we can generate the metadata using the annotation processor first
-            // See https://github.com/SpongePowered/SpongeGradle/issues/7
-            tasks.processResources.dependsOn tasks.compileJava
+            // mcmod.info will be added through the compileJava task
+            ((CopySpec) tasks.processResources).exclude(McModInfo.STANDARD_FILENAME)
         }
     }
 

@@ -26,6 +26,8 @@ package org.spongepowered.gradle.meta
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.specs.Specs
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
 import org.spongepowered.plugin.meta.McModInfo
@@ -42,8 +44,20 @@ class GenerateMetadata extends DefaultTask {
     boolean mergeMetadata = true
     List<Path> metadataFiles = []
 
+    GenerateMetadata() {
+        // TODO: Instead of running all the time, this should consider
+        // the given metadata as @Input together with all the extra metadata
+        // files.
+        outputs.upToDateWhen(Specs.satisfyNone())
+    }
+
     List<PluginMetadata> getMetadata() {
         return this.provider.get()
+    }
+
+    @OutputFile
+    File getOuputFile() {
+        return getTarget().toFile()
     }
 
     Path getTarget() {

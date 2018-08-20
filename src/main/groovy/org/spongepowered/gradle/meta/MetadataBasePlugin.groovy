@@ -49,8 +49,7 @@ class MetadataBasePlugin implements Plugin<Project> {
                 }
             }
 
-            tasks.processResources.dependsOn genMeta
-            ((CopySpec) tasks.processResources).from genMeta.target.toFile()
+            ((CopySpec) tasks.processResources).from genMeta
         }
     }
 
