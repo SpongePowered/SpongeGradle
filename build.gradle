@@ -137,6 +137,8 @@ pluginBundle {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            artifactId = 'spongegradle'
+
             from components.java
 
             artifact sourceJar
