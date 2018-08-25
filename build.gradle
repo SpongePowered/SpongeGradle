@@ -16,7 +16,7 @@ defaultTasks 'clean', 'licenseFormat', 'build'
 apply plugin: 'java'
 
 group = 'org.spongepowered'
-version = '0.8.2-SNAPSHOT'
+version = '0.8.2'
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
