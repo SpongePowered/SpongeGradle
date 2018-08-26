@@ -136,10 +136,8 @@ pluginBundle {
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            artifactId = 'spongegradle'
-
-            from components.java
+        pluginMaven(MavenPublication) {
+            artifactId = project.archivesBaseName
 
             artifact sourceJar
             artifact groovydocJar
