@@ -41,6 +41,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.PublishArtifact
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.plugins.signing.Signature
 
 import javax.net.ssl.SSLHandshakeException
@@ -54,18 +55,17 @@ class OreDeployTask extends DefaultTask {
     Boolean forumPost
     String changelog
 
-    Configuration deploy = project.configurations.archives
+    def artifact = project.tasks.jar
 
     @TaskAction
     void run() {
         Logger logger = project.logger
-        def artifacts = deploy.allArtifacts
-        PublishArtifact plugin = artifacts.find { a -> (a.type == "jar") }
-        PublishArtifact sig = artifacts.find { a -> (a instanceof Signature) }
-        if (plugin == null) {
+        File plugin = resolveFile(artifact)
+        if ((plugin == null) || !plugin.exists()) {
             throw new InvalidUserDataException("Plugin file not found.")
         }
-        if (sig == null) {
+        File sig = new File(plugin.getAbsolutePath() + ".asc");
+        if ((sig == null) || !plugin.exists()) {
             throw new InvalidUserDataException("Signature file not found.")
         }
 
@@ -96,8 +96,8 @@ class OreDeployTask extends DefaultTask {
                 .addPart('apiKey', new StringBody(apiKey))
                 .addPart('channel', new StringBody(channel))
                 .addPart('recommended', new StringBody(recommended as String))
-                .addPart('pluginFile', new FileBody(plugin.file))
-                .addPart('pluginSig', new FileBody(sig.file))
+                .addPart('pluginFile', new FileBody(plugin))
+                .addPart('pluginSig', new FileBody(sig))
 
         if (forumPost != null) {
             entityBuilder.addPart('forumPost', new StringBody(forumPost as String))
@@ -135,7 +135,7 @@ class OreDeployTask extends DefaultTask {
             throw new GradleException('Failed to connect to Ore.', e)
         } catch (SSLHandshakeException ignored) {
             throw new GradleException(
-                'Please update to Java version 1.8.0_121+ in order to connect to Sponge securely.')
+            'Please update to Java version 1.8.0_121+ in order to connect to Sponge securely.')
         } catch (IOException e) {
             throw new IOException('An unexpected error occurred.', e)
         } finally {
@@ -159,4 +159,25 @@ class OreDeployTask extends DefaultTask {
         }
     }
 
+    /**
+     * Resolve an object into a file.
+     * <br><br>
+     * Taken from: https://github.com/matthewprenger/CurseGradle/blob/26e926246f2ff5252d196426838c5183981e2a52/src/main/groovy/com/matthewprenger/cursegradle/Util.groovy#L26-L44
+     *
+     * @param obj The object to resolve
+     * @return A file instance
+     */
+    private File resolveFile(Object obj) {
+        if (obj == null) {
+            throw new NullPointerException("Null path")
+        }
+        if (obj instanceof File) {
+            return (File) obj
+        }
+        if (obj instanceof AbstractArchiveTask) {
+            return ((AbstractArchiveTask) obj).getArchivePath()
+        }
+
+        return project.file(obj)
+    }
 }
