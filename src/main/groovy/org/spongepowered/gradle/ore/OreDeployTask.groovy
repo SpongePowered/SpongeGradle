@@ -24,6 +24,7 @@
  */
 package org.spongepowered.gradle.ore
 
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import org.apache.http.HttpEntity
 import org.apache.http.HttpResponse
@@ -37,50 +38,55 @@ import org.apache.http.util.EntityUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.PublishArtifact
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.TaskAction
-import org.gradle.plugins.signing.Signature
 
 import javax.net.ssl.SSLHandshakeException
 
 class OreDeployTask extends DefaultTask {
 
     String instanceUrl = 'https://ore.spongepowered.org'
-    boolean recommended = true
-    String channel
+    Boolean recommended
+    NamedDomainObjectContainer<String> tags
     String apiKey
     Boolean forumPost
     String changelog
 
     Configuration deploy = project.configurations.archives
 
+    OreDeployTask(Project project) {
+        this.tags = project.container(String)
+    }
+
     @TaskAction
     void run() {
         Logger logger = project.logger
         def artifacts = deploy.allArtifacts
         PublishArtifact plugin = artifacts.find { a -> (a.type == "jar") }
-        PublishArtifact sig = artifacts.find { a -> (a instanceof Signature) }
         if (plugin == null) {
             throw new InvalidUserDataException("Plugin file not found.")
         }
-        if (sig == null) {
-            throw new InvalidUserDataException("Signature file not found.")
-        }
 
-        logger.quiet('Publishing ' + plugin.name + ' to ' + instanceUrl + '.')
+        logger.quiet('Publishing ' + plugin.name + ' to ' + instanceUrl)
         logger.quiet('  Recommended: ' + recommended)
-        logger.quiet('  Channel: ' + channel)
+        logger.quiet('  Tags: ' + tags)
+        logger.quiet('  Forum post: ' + forumPost)
+        logger.quiet('  Changelog: "' + changelog ?: "" + '"')
 
         if (instanceUrl.endsWith("/")) {
             instanceUrl = instanceUrl.substring(0, instanceUrl.length() - 1)
         }
         URL projectUrl
+        URL authUrl
         try {
             String pluginId = project.sponge.plugin.id
-            String str = instanceUrl + '/api/projects/' + pluginId + '/versions/' + project.version
+            String str = instanceUrl + '/api/v2/projects/' + pluginId + '/versions'
             projectUrl = new URL(str)
+            authUrl = new URL(instanceUrl + '/api/v2/authenticate')
             logger.debug('POST ' + str)
         } catch (MalformedURLException e) {
             throw new InvalidUserDataException("Invalid project URL", e)
@@ -89,59 +95,90 @@ class OreDeployTask extends DefaultTask {
         if (apiKey == null) {
             apiKey = project.property('oreDeploy.apiKey')
         }
-        if (channel == null) {
-            throw new InvalidUserDataException("Missing channel name.")
-        }
-        MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
-                .addPart('apiKey', new StringBody(apiKey))
-                .addPart('channel', new StringBody(channel))
-                .addPart('recommended', new StringBody(recommended as String))
-                .addPart('pluginFile', new FileBody(plugin.file))
-                .addPart('pluginSig', new FileBody(sig.file))
-
-        if (forumPost != null) {
-            entityBuilder.addPart('forumPost', new StringBody(forumPost as String))
-        }
-
-        if (changelog != null) {
-            entityBuilder.addPart('changelog', new StringBody(changelog))
-        }
-
-        HttpEntity requestEntity = entityBuilder.build()
-        logger.debug(requestEntity.toString())
 
         HttpClient http = HttpClients.createDefault()
-        HttpPost post = new HttpPost(projectUrl.toURI())
-        post.entity = requestEntity
-        HttpResponse response = null
         try {
-            response = http.execute(post)
-            HttpEntity responseEntity = response.entity
-            def status = response.statusLine
-            boolean created = status.statusCode == HttpURLConnection.HTTP_CREATED
-            if (!created) {
-                logger.error('[failure] ' + status.statusCode + ' ' + status.reasonPhrase)
-                printErrorStream responseEntity.content
-            } else {
-                def json = new JsonSlurper().parse(responseEntity.content, 'UTF-8')
-                logger.debug(json.toString())
-                logger.quiet('[success] ' + instanceUrl + (json.href as String))
+            HttpPost authRequest = new HttpPost(authUrl.toURI())
+            authRequest.addHeader('Authorization', 'ApiKey ' + apiKey)
+
+            HttpResponse authResponse = null
+            String session
+            try {
+                authResponse = http.execute(authRequest)
+
+                //We could probably cache this in the file system somewhere, but don't want to deal with the security around that
+
+                //TODO: Only get a session once per gradle run
+                def result = new JsonSlurper().parse(authResponse.entity.content, 'UTF-8')
+                if(result.error) {
+                    throw new GradleException('Failed to authenticate with Ore: ' + result.error)
+                }
+
+                session = result.session
+
+                EntityUtils.consume(authResponse.entity)
+
+            } catch (InterruptedIOException | SocketException e) {
+                throw new GradleException('Failed to connect to Ore.', e)
+            } catch (SSLHandshakeException ignored) {
+                throw new GradleException(
+                        'Please update to Java version 1.8.0_121+ in order to connect to Sponge securely.')
+            } catch (IOException e) {
+                throw new IOException('An unexpected error occurred.', e)
+            } finally {
+                if (authResponse != null) {
+                    authResponse.close()
+                }
             }
-            EntityUtils.consume(responseEntity)
-            if (!created) {
-                throw new GradleException('Deployment failed.')
+
+            def deployInfo = JsonOutput.toJson([
+                    tags: tags.asMap,
+                    recommended: recommended,
+                    create_forum_post: forumPost,
+                    description: changelog
+            ])
+
+            HttpEntity deployRequestEntity = MultipartEntityBuilder.create()
+                    .addPart('plugin-info', new StringBody(deployInfo))
+                    .addPart('plugin-file', new FileBody(plugin.file))
+                    .build()
+
+            logger.debug(deployRequestEntity.toString())
+
+            HttpPost deployRequest = new HttpPost(projectUrl.toURI())
+            deployRequest.entity = deployRequestEntity
+            deployRequest.addHeader('Authorization', 'ApiSession ' + session)
+            HttpResponse deployResponse = null
+            try {
+                deployResponse = http.execute(deployRequest)
+                def json = new JsonSlurper().parse(deployResponse.entity.content, 'UTF-8')
+                def status = deployResponse.statusLine
+                boolean created = status.statusCode == HttpURLConnection.HTTP_CREATED
+                if (!created) {
+                    logger.error('[failure] ' + status.statusCode + ' ' + status.reasonPhrase)
+                    printErrorStream json.user_error
+                } else {
+                    logger.debug(json.toString())
+                    logger.quiet("[success] $instanceUrl/${json.namespace.owner}/${json.namespace.slug}/${json.name}")
+                }
+                EntityUtils.consume(deployResponse.entity)
+                if (!created) {
+                    throw new GradleException('Deployment failed.')
+                }
+            } catch (InterruptedIOException | SocketException e) {
+                throw new GradleException('Failed to connect to Ore.', e)
+            } catch (SSLHandshakeException ignored) {
+                throw new GradleException(
+                        'Please update to Java version 1.8.0_121+ in order to connect to Sponge securely.')
+            } catch (IOException e) {
+                throw new IOException('An unexpected error occurred.', e)
+            } finally {
+                if (deployResponse != null) {
+                    deployResponse.close()
+                }
             }
-        } catch (InterruptedIOException | SocketException e) {
-            throw new GradleException('Failed to connect to Ore.', e)
-        } catch (SSLHandshakeException ignored) {
-            throw new GradleException(
-                'Please update to Java version 1.8.0_121+ in order to connect to Sponge securely.')
-        } catch (IOException e) {
-            throw new IOException('An unexpected error occurred.', e)
+
         } finally {
-            if (response != null) {
-                response.close()
-            }
             http.close()
         }
     }

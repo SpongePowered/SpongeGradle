@@ -31,7 +31,7 @@ class OreDeployPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        project.task('oreDeploy', type: OreDeployTask).dependsOn('signArchives')
+        project.task('oreDeploy', type: OreDeployTask)
     }
 
 }
