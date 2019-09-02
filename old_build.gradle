@@ -80,6 +80,7 @@ license {
 
     include '**/*.java'
     include '**/*.groovy'
+    include '**/*.kt'
 }
 
 jar.manifest.attributes(
@@ -109,23 +110,23 @@ pluginBundle {
     website = "https://github.com/$project.organization/$project.name"
     vcsUrl = website
     description = project.description
-    tags = ['minecraft', 'sponge']
+    tags = [Tags.minecraft, Tags.sponge]
 
     plugins {
         metaPlugin {
-            id = 'org.spongepowered.meta'
-            displayName = 'Sponge Plugin metadata generator'
-            description = 'Gradle plugin for automatically generating a mcmod.info metadata file with the project properties'
+            id = GradlePlugins.Meta.id
+            displayName = GradlePlugins.Meta.name
+            description = GradlePlugins.PluginPlugin.desc
         }
         spongePluginPlugin {
-            id = 'org.spongepowered.plugin'
-            displayName = 'Sponge Plugin Gradle integration'
-            description = 'Gradle plugin providing integration for plugins made for the Sponge platform'
+            id = GradlePlugins.PluginPlugin.id
+            displayName = GradlePlugins.PluginPlugin.name
+            description = GradlePlugins.PluginPlugin.desc
         }
         oreDeployPlugin {
-            id = 'org.spongepowered.ore'
-            displayName = 'Ore Deploy Plugin'
-            description = 'Gradle plugin providing direct deployment to Ore'
+            id = GradlePlugins.OreDeploy.id
+            displayName = GradlePlugins.OreDeploy.name
+            description = GradlePlugins.OreDeploy.desc
         }
     }
 

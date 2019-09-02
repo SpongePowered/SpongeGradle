@@ -22,26 +22,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle
+package org.spongepowered.gradle.sponge.impl.sort
 
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.spongepowered.gradle.task.TaskSortAccessTransformers
-import org.spongepowered.gradle.task.TaskSortClassMembers
+import org.gradle.api.NamedDomainObjectContainer
+import org.spongepowered.gradle.sponge.impl.sort.SortGroup
 
-/**
- * Plugin entry point for SpongeGradle, only used currently to create the tasks
- */
-class SpongeGradlePlugin implements Plugin<Project> {
+open class SortFieldsExtension(val group: NamedDomainObjectContainer<SortGroup>) {
 
-    void apply(Project project) {
-        project.tasks.create("sortClassFields", TaskSortClassMembers.class) {
-            group = "Sponge"
-            description = "Sort fields in specified classes, modifies source"
+    /**
+     * Used for kotlin to just declare some arrays.
+     */
+    fun group(name: String, groups: Array<out String>) {
+        group.create(name) {
+            files.addAll(groups)
         }
-        project.tasks.create("sortAccessTransformers", TaskSortAccessTransformers.class) {
-            group = "Sponge"
-            description = "Sort entries in AccessTransformer configurations"
+    }
+
+    /**
+     * Used for groovy to create collections of classes since groovy doesn't make arrays
+     */
+    fun group(name: String, groups: Collection<String>) {
+        group.create(name) {
+            files.addAll(groups)
         }
     }
 
