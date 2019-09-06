@@ -24,12 +24,15 @@ kotlin {
 }
 repositories {
     jcenter()
+    mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
     compile(Deps.httpmime)
     compile(Deps.pluginMeta)
     compile(Deps.asm)
+    implementation(Deps.licenser)
     implementation(Deps.groovy)
     implementation(Deps.jsr)
 }

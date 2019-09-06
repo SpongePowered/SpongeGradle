@@ -99,7 +99,7 @@ open class DeployImplementationExtension {
     var git: String? = null
     var scm: String? = null
     var dev: String? = null
-    var organization: String? = "org.spongepowered"
+    var organization: String? = "SpongePowered"
     var repo: String? = "spongeRepo"
     var username: String? = "spongeUsername"
     var pass: String? = "spongePassword"

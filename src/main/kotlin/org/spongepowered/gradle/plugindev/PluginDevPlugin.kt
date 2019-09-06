@@ -24,18 +24,16 @@
  */
 package org.spongepowered.gradle.plugindev
 
-import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
-import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.kotlin.dsl.creating
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.getByName
 import org.gradle.kotlin.dsl.getting
-import org.gradle.plugins.ide.idea.IdeaPlugin
+import org.spongepowered.gradle.meta.BundleMetaPlugin
 import org.spongepowered.gradle.meta.GenerateMetadata
-import org.spongepowered.gradle.meta.MetadataPlugin
 import org.spongepowered.plugin.meta.McModInfo
 
 object AP {
@@ -46,11 +44,12 @@ object AP {
 class PluginDevPlugin : Plugin<Project> {
 
     override fun apply(target: Project) {
+        target.plugins.apply(BaseDevPlugin::class.java)
 
         // Now to configure the rest of Sponge Meta such
-        target.plugins.apply(MetadataPlugin::class.java)
+        target.plugins.apply(BundleMetaPlugin::class.java)
         target.tasks.apply {
-            val genMeta = getting(GenerateMetadata::class) {
+            val genMeta = creating(GenerateMetadata::class) {
                 mergeMetadata = false
                 ouputFile
             }
