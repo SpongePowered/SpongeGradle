@@ -22,29 +22,42 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.impl.sort
+package org.spongepowered.gradle.plugindev
 
-import org.gradle.api.NamedDomainObjectContainer
-import org.spongepowered.gradle.sponge.impl.sort.SortGroup
+import org.gradle.api.JavaVersion
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.plugins.ide.idea.IdeaPlugin
 
-open class SortFieldsExtension(val group: NamedDomainObjectContainer<SortGroup>) {
+/**
+ * Applies the java base plugins along with target compatibility and adds sponge
+ * repositories for dependency resolution.
+ */
+class BaseDevPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        target.plugins.apply {
+            apply("java-library")
+            apply("eclipse")
+            apply("idea")
 
-    /**
-     * Used for kotlin to just declare some arrays.
-     */
-    fun group(name: String, groups: Array<out String>) {
-        group.create(name) {
-            files.addAll(groups)
         }
-    }
-
-    /**
-     * Used for groovy to create collections of classes since groovy doesn't make arrays
-     */
-    fun group(name: String, groups: Collection<String>) {
-        group.create(name) {
-            files.addAll(groups)
+        target.convention.getPlugin(JavaPluginConvention::class.java).apply {
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
         }
-    }
 
+        target.repositories.apply {
+            mavenLocal()
+            mavenCentral()
+            maven {
+                name = "sponge"
+                setUrl("https://repo.spongepowered.org/maven")
+            }
+        }
+        target.plugins.withType(IdeaPlugin::class.java) {
+            model.module.inheritOutputDirs = true
+        }
+
+    }
 }

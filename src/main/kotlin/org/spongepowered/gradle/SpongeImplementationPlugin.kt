@@ -22,46 +22,52 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.impl
+package org.spongepowered.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.spongepowered.gradle.sponge.impl.sort.SortClassFieldsTask
-import org.spongepowered.gradle.sponge.impl.sort.SortFieldsExtension
-import org.spongepowered.gradle.sponge.impl.sort.SortGroup
+import org.gradle.api.tasks.TaskContainer
+import org.gradle.kotlin.dsl.extra
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 
+/**
+ * The default plugin for sponge implementation. Provides the following:
+ *
+ */
 open class SpongeImplementationPlugin: Plugin<Project> {
 
     override fun apply(project: Project) {
-        val groups = project.container(SortGroup::class.java)
-        project.extensions.create("sortFields", SortFieldsExtension::class.java, groups)
-        project.extensions.add("sortGroups", groups)
-        val sortClassFields = project.tasks.register("sortClassFields", SortClassFieldsTask::class.java) {
-            group = "sponge"
-        }
+        project.tasks {
+            @Suppress("UnstableApiUsage")
+            it.register("resolveApiVersion") {
+                group = "sponge"
+                doLast {
+                    try {
+                        val byteOut = ByteArrayOutputStream()
+                        val apiVersionResult = project.exec {
+                            commandLine("git", "rev-parse", "--short", "HEAD")
+                            standardOutput = byteOut
 
-        val resolveApi = project.tasks.register("resolveApiVersion") {
-            group = "sponge"
-            try {
-                val byteOut = ByteArrayOutputStream()
-                val apiVersionResult = project.exec {
-                    commandLine("git", "rev-parse", "--short", "HEAD")
-                    standardOutput = byteOut
+                        }
+                        val output = String(byteOut.toByteArray())
 
+                        val result = apiVersionResult.exitValue
+                        if (result == 0) {
+                            project.extra.set("apiVersion", output.trim())
+                        } else {
+                            logger.warn("Failed to resolve API revision (Processed returned error code $result")
+                        }
+                    } catch (e: IOException) {
+                        logger.warn("Failed to resolve API revision: $e")
+                    }
                 }
-                val output = String(byteOut.toByteArray())
-
-                val result = apiVersionResult.exitValue
-                if (result == 0) {
-                    project.ext.apiVersion = apiVersion + '-' + output.trim()
-                } else {
-                    logger.warn('Failed to resolve API revision (Process returned error code {})', result)
-                    return
-                }
-            } catch (IOException e) {
-                logger.warn("Failed to resolve API revision: $e")
             }
         }
     }
 }
+
+private operator fun TaskContainer.invoke(consumer: (e: TaskContainer) -> Unit) {
+    consumer.invoke(this)
+}
+

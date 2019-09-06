@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.impl.sort
+package org.spongepowered.gradle.sort
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
@@ -32,7 +32,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
-import org.spongepowered.gradle.sponge.impl.util.TextConstants
+import org.spongepowered.gradle.util.TextConstants
 import java.io.File
 import java.io.FileWriter
 import java.nio.charset.Charset

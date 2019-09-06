@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.deploy
+package org.spongepowered.gradle.deploy
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -32,22 +32,6 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getPlugin
-
-open class DeployImplementationExtension {
-    var description: String? = null
-    var url: String? = null
-    var git: String? = null
-    var scm: String? = null
-    var dev: String? = null
-    var organization: String? = "org.spongepowered"
-    var repo: String? = "spongeRepo"
-    var username: String? = "spongeUsername"
-    var pass: String? = "spongePassword"
-    var license: String? = "MIT License"
-    var licenseUrl: String? = "http://opensource.org/licenses/MIT"
-    var licenseDistribution: String? = "repo"
-}
-
 
 class DeployImplementationPlugin : Plugin<Project> {
 
@@ -99,13 +83,28 @@ class DeployImplementationPlugin : Plugin<Project> {
                                 }
                             }
                         }
-                        }
                     }
-
                 }
+
             }
+        }
 
 
 
     }
+}
+open class DeployImplementationExtension {
+    var description: String? = null
+    var url: String? = null
+    var git: String? = null
+    var scm: String? = null
+    var dev: String? = null
+    var organization: String? = "org.spongepowered"
+    var repo: String? = "spongeRepo"
+    var username: String? = "spongeUsername"
+    var pass: String? = "spongePassword"
+    var license: String? = "MIT License"
+    var licenseUrl: String? = "http://opensource.org/licenses/MIT"
+    var licenseDistribution: String? = "repo"
+
 }

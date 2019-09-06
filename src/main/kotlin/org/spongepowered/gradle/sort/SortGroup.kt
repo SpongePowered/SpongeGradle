@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.impl.sort
+package org.spongepowered.gradle.sort
 
 open class SortGroup(val name: String) {
 

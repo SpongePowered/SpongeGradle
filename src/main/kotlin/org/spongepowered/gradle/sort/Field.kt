@@ -22,9 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.impl.sort
+package org.spongepowered.gradle.sort
 
-import org.spongepowered.gradle.sponge.impl.util.TextConstants
+import org.spongepowered.gradle.util.TextConstants
 
 /**
  * Field wrapper used to keep all of the component parts of a field

@@ -22,24 +22,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.impl.util
+package org.spongepowered.gradle.sort
 
-object TextConstants {
-    /**
-     * Platform-specific newline
-     */
-    val newLine = System.lineSeparator()
-    /**
-     * Regex for matching modifiers, used to identify actual field declarations
-     */
-    val modifiers = "^\\s*((public|protected|private|static|abstract|final|synchronized|transient|native|volatile)\\s+)+".toRegex()
-    /**
-     * Regex for matching identifiers, used to find the field name in the
-     * declaration
-     */
-    val identifier = "^(.*?\\s)(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*\\s*)\$".toRegex()
-    /**
-     * Regex for matching the processing semaphores
-     */
-    val semaphores = "\\/\\/\\s*SORTFIELDS\\s*:\\s*(ON|OFF)".toRegex()
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.api.tasks.TaskContainer
+
+class SpongeSortingPlugin : Plugin<Project> {
+    override fun apply(project: Project) {
+        val groups = project.container(SortGroup::class.java)
+        project.extensions.apply {
+
+            create("sortFields", SortFieldsExtension::class.java, groups)
+            add("sortGroups", groups)
+        }
+        project.tasks {
+            @Suppress("UnstableApiUsage")
+            it.register("sortClassFields", SortClassFieldsTask::class.java) {
+                group = "sponge"
+            }
+
+        }
+    }
 }
+
+private operator fun TaskContainer.invoke(consumer: (e: TaskContainer) -> Unit) {
+    consumer.invoke(this)
+}
+

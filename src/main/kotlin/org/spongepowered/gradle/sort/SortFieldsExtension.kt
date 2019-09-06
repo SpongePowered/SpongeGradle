@@ -22,11 +22,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.sponge.impl.sort
+package org.spongepowered.gradle.sort
 
 import org.gradle.api.NamedDomainObjectContainer
+import org.spongepowered.gradle.sort.SortGroup
 
-open class SortAccessTransformerExtension {
+open class SortFieldsExtension(val group: NamedDomainObjectContainer<SortGroup>) {
 
+    /**
+     * Used for kotlin to just declare some arrays.
+     */
+    fun group(name: String, groups: Array<out String>) {
+        group.create(name) {
+            files.addAll(groups)
+        }
+    }
+
+    /**
+     * Used for groovy to create collections of classes since groovy doesn't make arrays
+     */
+    fun group(name: String, groups: Collection<String>) {
+        group.create(name) {
+            files.addAll(groups)
+        }
+    }
 
 }

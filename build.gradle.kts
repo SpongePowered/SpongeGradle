@@ -19,7 +19,9 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
-
+kotlin {
+    version = "1.3.21"
+}
 repositories {
     jcenter()
 }
@@ -40,30 +42,7 @@ tasks {
 
 gradlePlugin {
     plugins {
-        create("metaBasePlugin") {
-            id = GradlePlugins.MetaBase.id
-            implementationClass = GradlePlugins.MetaBase.clazz
-        }
-        create("metaPlugin"){
-            id = GradlePlugins.Meta.id
-            implementationClass = GradlePlugins.Meta.clazz
-        }
-        create("spongePluginBasePlugin") {
-            id = GradlePlugins.PluginBase.id
-            implementationClass = GradlePlugins.PluginBase.clazz
-        }
-        create("spongePluginPlugin") {
-            id = GradlePlugins.PluginPlugin.id
-            implementationClass = GradlePlugins.PluginPlugin.clazz
-        }
-        create("spongeDistributionPlugin") {
-            id = GradlePlugins.SpongeDistribution.id
-            implementationClass = GradlePlugins.SpongeDistribution.clazz
-        }
-        create("spongeImplementationPlugin") {
-            id = GradlePlugins.ImplementationPlugin.id
-            implementationClass = GradlePlugins.ImplementationPlugin.clazz
-        }
+
     }
 }
 pluginBundle {
@@ -73,32 +52,6 @@ pluginBundle {
     tags = listOf(Tags.minecraft, Tags.sponge)
 
     plugins {
-        create("metaPlugin") {
-
-            id = GradlePlugins.Meta.id
-            displayName = GradlePlugins.Meta.name
-            description = GradlePlugins.PluginPlugin.desc
-        }
-        create("spongePluginPlugin") {
-            id = GradlePlugins.PluginPlugin.id
-            displayName = GradlePlugins.PluginPlugin.name
-            description = GradlePlugins.PluginPlugin.desc
-        }
-        create("oreDeployPlugin") {
-            id = GradlePlugins.OreDeploy.id
-            displayName = GradlePlugins.OreDeploy.name
-            description = GradlePlugins.OreDeploy.desc
-        }
-        create("spongeImplementationPlugin") {
-            id = GradlePlugins.ImplementationPlugin.id
-            displayName = GradlePlugins.ImplementationPlugin.name
-            description = GradlePlugins.ImplementationPlugin.desc
-        }
-        create("spongeDeploy") {
-            id = GradlePlugins.SpongeDistribution.id
-            displayName = GradlePlugins.SpongeDistribution.name
-            description = GradlePlugins.SpongeDistribution.desc
-        }
 
     }
 

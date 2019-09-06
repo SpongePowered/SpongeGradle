@@ -22,35 +22,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.meta
+package org.spongepowered.gradle.util
 
-import static org.spongepowered.gradle.meta.MetadataBaseExtension.EXTENSION_NAME
-
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.file.CopySpec
-import org.spongepowered.plugin.meta.PluginMetadata
-
-class MetadataBasePlugin implements Plugin<Project> {
-
-    @Override
-    void apply(Project project) {
-        project.with {
-            plugins.apply('java-base')
-
-            MetadataBaseExtension extension = extensions.findByType(MetadataBaseExtension) ?: extensions.create(EXTENSION_NAME, MetadataBaseExtension, project)
-            GenerateMetadata genMeta = task('generateMetadata', type: GenerateMetadata) {
-                provider = {
-                    extension.plugins.collect {
-                        PluginMetadata meta = new PluginMetadata(it.id)
-                        it.meta.accept(meta)
-                        return meta
-                    }
-                }
-            }
-
-            ((CopySpec) tasks.processResources).from genMeta
-        }
-    }
-
+object TextConstants {
+    /**
+     * Platform-specific newline
+     */
+    val newLine = System.lineSeparator()
+    /**
+     * Regex for matching modifiers, used to identify actual field declarations
+     */
+    val modifiers = "^\\s*((public|protected|private|static|abstract|final|synchronized|transient|native|volatile)\\s+)+".toRegex()
+    /**
+     * Regex for matching identifiers, used to find the field name in the
+     * declaration
+     */
+    val identifier = "^(.*?\\s)(\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*\\s*)\$".toRegex()
+    /**
+     * Regex for matching the processing semaphores
+     */
+    val semaphores = "\\/\\/\\s*SORTFIELDS\\s*:\\s*(ON|OFF)".toRegex()
 }

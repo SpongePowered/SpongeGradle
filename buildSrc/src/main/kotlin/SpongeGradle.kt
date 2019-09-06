@@ -5,6 +5,7 @@ object SpongeGradle {
     const val organization = "SpongePowered"
     const val url = "https://www.spongepowered.org"
     const val name = "SpongeGradle"
+    const val extension = "sponge"
 
 }
 
@@ -14,6 +15,7 @@ object Deps {
     const val asm = "${Groups.asm}:${Libs.asm}:${Versions.asm}"
     const val groovy = "${Groups.groovy}:${Libs.groovy}:${Versions.groovy}"
     const val jsr = "${Groups.findbugs}:${Libs.jsr}:${Versions.jsr305}"
+    const val licenser = "net.minecrell.licenser:net.minecrell.licenser.gradle.plugin:0.4.1"
 
     object Script {
         const val gradlePublish = "com.gradle.plugin-publish"
@@ -27,46 +29,39 @@ object Tags {
 }
 
 object GradlePlugins {
-    object Main {
-        const val id = "org.spongepowered.gradle"
-        const val clazz = "org.spongepowered.gradle.SpongeGradlePlugin"
-    }
-    object MetaBase {
-        const val id = "org.spongepowered.meta.base"
-        const val clazz = "org.spongepowered.gradle.meta.MetadataBasePlugin"
-    }
     object Meta {
         const val id = "org.spongepowered.meta"
         const val clazz = "org.spongepowered.gradle.meta.MetadataPlugin"
         const val name = "Sponge Plugin metadata generator"
         const val desc = "Gradle plugin for automatically generating a mcmod.info file with the project properties"
     }
-    object PluginBase {
-        const val id = "org.spongepowered.plugin.base"
-        const val clazz = "org.spongepowered.gradle.plugin.SpongePluginBasePlugin"
-    }
-    object PluginPlugin {
+    object PluginDevPlugin {
         const val id = "org.spongepowered.plugin"
-        const val clazz = "org.spongepowered.gradle.plugin.SpongePluginPlugin"
-        const val name = "Sponge Plugin Gradle integration"
+        const val clazz = "org.spongepowered.gradle.plugindev.PluginDevPlugin"
+        const val name = "Sponge Plugin Developer Gradle integrations"
         const val desc = "Gradle plugin providing integration for plugins made for the Sponge platform"
     }
     object OreDeploy {
         const val id = "org.spongepowered.ore"
         const val name = "Ore Deploy Plugin"
+        const val clazz = "org.spongepowered.gradle.ore.OreDeployPlugin"
         const val desc = "Gradle plugin for providing direct deployment to Ore"
     }
     object SpongeDistribution {
         const val id = "org.spongepowered.distribution"
-        const val clazz = "org.spongepowered.gradle.sponge.deploy.DeployImplementationPlugin"
+        const val clazz = "org.spongepowered.gradle.deploy.DeployImplementationPlugin"
         const val name = "Sponge Distribution Plugin"
         const val desc = "Simplified distribution setup for deploying Sponge to maven repositories"
     }
     object ImplementationPlugin {
         const val id = "org.spongepowered.implementation"
-        const val clazz = "org.spongepowered.gradle.sponge.impl.SpongeImplementationPlugin"
+        const val clazz = "org.spongepowered.gradle.impl.SpongeImplementationPlugin"
         const val name = "Sponge Implementation Support Plugin"
         const val desc = "Gradle plugin for simplified build setup for implementing Sponge"
+    }
+    object SortingPlugin {
+        const val id = "org.spongepowered.sorting"
+        const val clazz = "org.spongepowered.gradle.sort.SpongeSortingPlugin"
     }
 
 }

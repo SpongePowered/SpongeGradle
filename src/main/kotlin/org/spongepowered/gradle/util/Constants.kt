@@ -22,29 +22,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.meta
+package org.spongepowered.gradle.util
 
-import static org.spongepowered.gradle.meta.MetadataBaseExtension.EXTENSION_NAME
+object Constants {
 
-import org.gradle.api.Plugin
-import org.gradle.api.Project
+    const val METADATA_EXTENSION = "sponge"
+    const val SPONGE_DEV_EXTENSION = "spongeDev"
 
-class MetadataPlugin implements Plugin<Project> {
-
-    @Override
-    void apply(Project project) {
-        project.with {
-            def extension = extensions.create(EXTENSION_NAME, MetadataExtension, project,
-                    project.name.toLowerCase(Locale.ENGLISH))
-            plugins.apply(MetadataBasePlugin)
-
-            extension.plugin.meta.inherit(project)
-
-            afterEvaluate {
-                // Add id to list if it doesn't exist already
-                extension.plugins.maybeCreate(extension.plugin.id)
-            }
-        }
+    object Dependencies {
+        const val jUnit = "junit:junit:4.12"
     }
 
 }

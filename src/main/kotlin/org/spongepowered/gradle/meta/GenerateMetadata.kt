@@ -25,71 +25,64 @@
 package org.spongepowered.gradle.meta
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.provider.Property
 import org.gradle.api.specs.Specs
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.SourceSet
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.*
+import org.gradle.kotlin.dsl.withConvention
 import org.spongepowered.plugin.meta.McModInfo
 import org.spongepowered.plugin.meta.PluginMetadata
-
+import java.io.File
 import java.nio.file.Path
-import java.util.function.Supplier
 
-class GenerateMetadata extends DefaultTask {
+abstract class GenerateMetadata : DefaultTask() {
 
-    Supplier<List<PluginMetadata>> provider = {[]}
-    Path target
+    @get:OutputFile
+    abstract val ouputFile: File?
 
-    boolean mergeMetadata = true
-    List<Path> metadataFiles = []
+    @Input
+    var mergeMetadata = true
 
-    GenerateMetadata() {
-        // TODO: Instead of running all the time, this should consider
-        // the given metadata as @Input together with all the extra metadata
-        // files.
-        outputs.upToDateWhen(Specs.satisfyNone())
-    }
+    @get:InputFiles
+    val metadataFiles: MutableList<Path> = mutableListOf()
 
-    List<PluginMetadata> getMetadata() {
-        return this.provider.get()
-    }
-
-    @OutputFile
-    File getOuputFile() {
-        return getTarget().toFile()
-    }
-
-    Path getTarget() {
-        return this.target ?: temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME)
-    }
 
     @TaskAction
-    void generateMetadata() {
+    fun generateMetadata() {
         // Find extra metadata files
-        def java = project.convention.getPlugin(JavaPluginConvention)
-        metadataFiles.addAll(findExtraMetadataFiles(java.sourceSets.main))
+        var main: SourceSet
+        project.withConvention(JavaPluginConvention::class) {
+            main = sourceSets.getByName("main")
+            metadataFiles.addAll(findExtraMetadataFiles(main))
+        }
 
-        def metadata = getMetadata()
+        // Read extra metadata files
+        val metadata = mutableListOf<PluginMetadata>()
         if (mergeMetadata) {
-            // Read extra metadata files
-            metadataFiles.each {
-                McModInfo.DEFAULT.read(it).each { meta ->
-                    def current = metadata.find { it.id == meta.id }
-                    if (current) {
-                        current.accept(meta)
-                    } else {
-                        metadata << meta
+            metadataFiles.forEach {
+                McModInfo.DEFAULT.read(it).forEach { meta ->
+                    val find: PluginMetadata? = metadata.find {
+                        it.id == meta.id
                     }
+                    if (find != null) {
+                        find.accept(meta)
+                    } else
+                        metadata.add(meta)
                 }
+
             }
         }
 
-        McModInfo.DEFAULT.write(getTarget(), metadata)
+        val orElse = ouputFile ?: temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME).toFile()
+
+        if (orElse != null) {
+            McModInfo.DEFAULT.write(orElse.toPath(), metadata)
+        }
     }
 
-    private static List<Path> findExtraMetadataFiles(SourceSet sourceSet) {
-        return sourceSet.resources.matching { include McModInfo.STANDARD_FILENAME }.collect { it.toPath().toAbsolutePath() }
-    }
+    private fun findExtraMetadataFiles(sourceSet: SourceSet): List<Path> {
+        return sourceSet.resources.matching { include(McModInfo.STANDARD_FILENAME) }.map { it.toPath().toAbsolutePath() }
 
+    }
 }
