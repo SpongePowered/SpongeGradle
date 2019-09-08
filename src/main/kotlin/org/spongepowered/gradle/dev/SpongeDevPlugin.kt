@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugindev
+package org.spongepowered.gradle.dev
 
 import net.minecrell.gradle.licenser.LicenseExtension
 import net.minecrell.gradle.licenser.Licenser
@@ -40,7 +40,6 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.kotlin.dsl.creating
-import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.getting
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.spongepowered.gradle.deploy.DeployImplementationExtension
@@ -62,12 +61,19 @@ class SpongeDevPlugin : Plugin<Project> {
         val devExtension = project.extensions.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project, project.name.toLowerCase
         (Locale.ENGLISH))
 
+        // Apply the BaseDevPlugin for sponge repo and Java configuration
         project.plugins.apply(BaseDevPlugin::class.java)
+        // Apply Test dependencies
         project.dependencies.apply {
             add("testCompile", Constants.Dependencies.jUnit)
             add("testCompile", "org.hamcrest:hamcrest-library:1.13")
             add("testCompile", "org.mockito:mockito-core:2.8.47")
         }
+
+        // Configure Java compile
+        //  - Add javadocJar
+        //  - Add Specification info for jar manifests
+        //  - Add LICENSE.txt to the processResources for jar inclusion
         project.tasks.apply {
             val javaCompile = getting(JavaCompile::class) {
                 options.apply {
@@ -113,9 +119,9 @@ class SpongeDevPlugin : Plugin<Project> {
             val processResources = getting(ProcessResources::class) {
                 from("LICENSE.txt")
             }
-
         }
-        project.plugins.apply(CheckstylePlugin::class.java)
+
+        // Add commit and branch information to jar manifest
         val commit: String? = project.properties["commit"] as String?
         val branch: String? = project.properties["branch"] as String?
         if (commit != null) {
@@ -135,8 +141,9 @@ class SpongeDevPlugin : Plugin<Project> {
                 }
             }
         }
-        project.plugins.apply(Licenser::class.java)
 
+        // Apply Licenser
+        project.plugins.apply(Licenser::class.java)
         project.extensions.configure(LicenseExtension::class.java) {
             (this as ExtraPropertiesExtension).apply {
                 this["name"] = project.name
@@ -148,6 +155,7 @@ class SpongeDevPlugin : Plugin<Project> {
             newLine = false
         }
 
+        // Configure Checkstyle but make the task only run explicitly
         project.plugins.apply(CheckstylePlugin::class.java)
         project.extensions.configure(CheckstyleExtension::class.java) {
             toolVersion = "8.7"
@@ -170,7 +178,9 @@ class SpongeDevPlugin : Plugin<Project> {
             }
         }
 
+        // Add sorting
         project.plugins.apply(SpongeSortingPlugin::class.java)
+
         // Set up the deploy aspect
         project.plugins.apply(DeployImplementationPlugin::class.java)
         project.extensions.configure(DeployImplementationExtension::class.java) {

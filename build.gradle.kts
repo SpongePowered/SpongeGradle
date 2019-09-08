@@ -26,6 +26,10 @@ repositories {
     jcenter()
     mavenCentral()
     gradlePluginPortal()
+    maven {
+        name = "sponge"
+        setUrl("https://repo.spongepowered.org/maven")
+    }
 }
 
 dependencies {
@@ -33,6 +37,8 @@ dependencies {
     compile(Deps.pluginMeta)
     compile(Deps.asm)
     implementation(Deps.licenser)
+    implementation(Deps.mixingradle)
+    implementation(Deps.shadow)
     implementation(Deps.groovy)
     implementation(Deps.jsr)
 }

@@ -1,10 +1,9 @@
 # SpongeGradle
 
 **SpongeGradle** is a [Gradle](http://gradle.org/) plugin which provides utility tasks for the [Sponge Project](/SpongePowered).
-It is useful for not just developing against SpongeAPI, but also developing Sponge implementations, as well as some general utilities
-for minecraft related projects using sponge. 
+It focuses on developing projects related to SpongeAPI's development, SpongeAPI implementations, and projects targeting SpongeAPI.
 
-###Plugins
+### Plugins
 
 There are a few plugins that are provided by **SpongeGradle**, they're named appropriate to their function, and not
 always appropriate for it's relation to Sponge.
@@ -13,14 +12,14 @@ They are listed as: `#. `**`Plugin Name`**` org.gradle.plugin.id - Description`
 
 1. [**`BaseDevPlugin`** `org.spongepowered.gradle.base`](src/main/kotlin/org/spongepowered/gradle/plugindev/BaseDevPlugin.kt) -
 Provides a base of applying the `java-library` plugin, Java compatibility for Java 8, and adds the 
-[Sponge Maven Repo](https://repo.spongepowered.org/maven) as a repository for dependency lookups. Does not perform other, but is applied by other
- plugins.
+[Sponge Maven Repo](https://repo.spongepowered.org/maven) as a repository for dependency lookups. Does not apply other **SpongeGradle** plugins,
+ but is applied by other SpongeGradle plugins.
     - Applied Plugins:
         - `eclipse`
         - `idea`
             - Enables inheriting output directories
         - `java-library`
-    - Configurations:
+    - Applied Configurations:
         - `java.sourceCompatibility = JavaVersion.VERSION_1_8`
         - `java.targetCompatibility = JavaVersion.VERSION_1_8`
         - ```
@@ -32,21 +31,20 @@ Provides a base of applying the `java-library` plugin, Java compatibility for Ja
           }
           ```
     - Note: Applied by various plugins as a base, due to inter-plugin dependency of what each plugin uses
-1. [**`PluginDevPlugin`** `org.spongepowered.gradle.plugindev`](src/main/kotlin/org/spongepowered/gradle/plugindev/PluginDevPlugin.kt) -
-Provides Sponge's tasks and applies the generation of the various
-plugin meta generations into an `mcmod.info` for API 7> and whatever proposed new format for
-ModLauncher moving forward with SpongeAPI 8.
+1. [**`PluginDevPlugin`** `org.spongepowered.gradle.dev`](src/main/kotlin/org/spongepowered/gradle/plugindev/PluginDevPlugin.kt) -
+Applies the plugin metadata generation to create the `mcmod.info` file based on the `@Plugin` annotation, based on the SpongeAPI version.
+If nested plugins are contained within the project, it is possible to configure them, see [configuring MetaPlugin](#configuringMetaPlugins).
     - Applied Plugins:
         - `BaseDevPlugin` To associate the sponge repositories and dependencies
         - `BundleMetaPlugin`
             - Automatically applies a `PluginMetadata` creation aspect to generate an `mcmod.info` for a plugin, as well supports creating more
              plugin metas. 
-    - Task Configurations:
+    - Applied Task Configurations:
         - `JavaCompile` will apply the SpongeAPI plugin-meta Annotation Processor and attach the generated meta files
         - `processResources` will exclude the generated meta files
 1. [**`SpongeDevPlugin`** `org.spongepowered.gradle.spongedev`](src/main/kotlin/org/spongepowered/gradle/plugindev/SpongeDevPlugin.kt) - 
 Applies various Sponge Team development settings and plugins and configures them. Used for developing SpongeAPI, and it's implementations.
-    - Extension:
+    - Extension: You can use this in your build.gradle
         ```groovy
         spongeDev {
             api = project(":SpongeAPI") // Basically just need a project reference to the API
@@ -71,8 +69,29 @@ Applies various Sponge Team development settings and plugins and configures them
         - [`DeploySpongePlugin`](src/main/kotlin/org/spongepowered/gradle/deploy/DeployImplementationPlugin.kt) Configures deploying Sponge projects
             - Defines the urls based on the `spongeDev` extension and sets up a Maven deployer
             - Requires 
-
-1. [**`ImplementationDevPlugin`** `org.spongepowered.gradle.implementation`](src/main/kotlin/)
+    - Configures:
+        - Appends `Git-Commit` and `Git-Branch` to jar manifests if information is provided by gradle properties (jenkins)
+        - 
+    - Tasks:
+        - Adds `javadocJar` task creation to create a `javadoc` jar
+1. [**`MixinDevPlugin`** `org.spongepowered.gradle.mixin`] 
+1. [**`ImplementationDevPlugin`** `org.spongepowered.gradle.spongeimpl`](src/main/kotlin/) -
+Applies a "Sponge" Implementation aspect to the project. 
+    - Extension:
+        ```groovy
+        spongeImpl {
+            common = project(":SpongeCommon")
+            extraDeps += project(":SpongeCommon:SpongeAPI").sourceSets.java6
+            implementationId = "spongeforge"
+        }
+        ```
+    - Applied Buildscript Dependencies:
+        - `com.github.jengelman:shadow:4.0.4` Shadow plugin
+    - Applied Plugins:
+        - [`BaseDevPlugin`]
+        - [`SpongeDevPlugin`]
+        - `BundleMetaPlugin`
+        
 
 
 

@@ -16,6 +16,8 @@ object Deps {
     const val groovy = "${Groups.groovy}:${Libs.groovy}:${Versions.groovy}"
     const val jsr = "${Groups.findbugs}:${Libs.jsr}:${Versions.jsr305}"
     const val licenser = "net.minecrell.licenser:net.minecrell.licenser.gradle.plugin:0.4.1"
+    const val mixingradle = "org.spongepowered:mixingradle:0.6-SNAPSHOT"
+    const val shadow = "com.github.jengelman.gradle.plugins:shadow:4.0.4"
 
     object Script {
         const val gradlePublish = "com.gradle.plugin-publish"

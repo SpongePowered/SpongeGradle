@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugindev
+package org.spongepowered.gradle.dev
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project

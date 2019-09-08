@@ -26,6 +26,7 @@ package org.spongepowered.gradle.util
 
 object Constants {
 
+    const val SPONGE_IMPL_EXTENSION = "spongeImpl"
     const val METADATA_EXTENSION = "sponge"
     const val SPONGE_DEV_EXTENSION = "spongeDev"
 

@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugindev
+package org.spongepowered.gradle.dev
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -41,6 +41,17 @@ class BaseDevPlugin : Plugin<Project> {
             apply("eclipse")
             apply("idea")
 
+        }
+        target.buildscript.repositories.apply {
+            gradlePluginPortal()
+            maven {
+                name = "sponge"
+                setUrl("https://repo.spongepowered.org/maven")
+            }
+            maven {
+                name = "forge"
+                setUrl("https://files.minecraftforge.net/maven")
+            }
         }
         target.convention.getPlugin(JavaPluginConvention::class.java).apply {
             sourceCompatibility = JavaVersion.VERSION_1_8
