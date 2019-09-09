@@ -43,7 +43,6 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
         val impl = project.extensions.create(Constants.SPONGE_DEV_EXTENSION, SpongeImpl::class.java, project, common, api, mcVersion)
         // This is basically to ensure that common can be configured with the appropriate
         // conventions before we continue adding more.
-        project.evaluationDependsOn(common.path)
         super.apply(project)
 
 
@@ -61,28 +60,12 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
         }
 
 
-        project.afterEvaluate {
-            val commonJava6 = common.convention.getPlugin(JavaPluginConvention::class.java).sourceSets.findByName("java6")
-            dependencies.apply {
+        common.afterEvaluate {
+            impl.parent.dependencies.apply {
                 add("implementation", common)
-                commonJava6?.let {
-                    add("implementation", it.output)
-                }
                 add("runtime", "net.minecraftforge:forgeflower:1.5.380.23")
-            }
-
-            impl.common.let {
-
-
-                afterEvaluate {
-                    this.dependencies.apply {
-                        add("implementation", it)
-                        impl.extraDeps.forEach {
-                            add("implementation", it)
-                        }
-                        add("api", impl.api!!)
-
-                    }
+                impl.extraDeps.forEach {
+                    add("implementation", it)
                 }
             }
         }

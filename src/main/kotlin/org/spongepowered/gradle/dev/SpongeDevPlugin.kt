@@ -29,14 +29,16 @@ import net.minecrell.gradle.licenser.Licenser
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.quality.CheckstyleExtension
 import org.gradle.api.plugins.quality.CheckstylePlugin
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
-import org.gradle.kotlin.dsl.creating
 import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getting
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.spongepowered.gradle.deploy.DeployImplementationExtension
@@ -53,12 +55,7 @@ open class SpongeDevExtension(val api: Project? = null) {
 open class SpongeDevPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val devExtension =  project.extensions.let {
-            val existing = it.findByType(SpongeDevExtension::class.java)
-            if (existing == null) {
-                it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, null)
-            } else {
-                existing
-            }
+            it.findByType(SpongeDevExtension::class) ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, null)
         }
 
         // Apply the BaseDevPlugin for sponge repo and Java configuration
@@ -157,9 +154,6 @@ open class SpongeDevPlugin : Plugin<Project> {
             include("**/*.java")
             newLine = false
         }
-        project.afterEvaluate {
-
-        }
 
         // Configure Checkstyle but make the task only run explicitly
         project.plugins.apply(CheckstylePlugin::class.java)
@@ -188,6 +182,53 @@ open class SpongeDevPlugin : Plugin<Project> {
             dev = "scm:git:git@github.com:${devExtension.organization}.${project.name}.git"
             description = project.description
         }
+        val sourceJar = project.tasks.register("sourceJar", Jar::class.java) {
+            classifier = "sources"
+            group = "build"
+            from(project.configurations.named("sourceOutput"))
+        }
+        if (devExtension is CommonDevExtension) {
+            devExtension.api?.afterEvaluate {
+                sourceJar.configure {
+                    from(devExtension.api.configurations.named("sourceOutput"))
+                }
+            }
+        }
+        if (devExtension is SpongeImpl) {
+            devExtension.common.afterEvaluate {
+                sourceJar.configure {
+                    from(devExtension.common.configurations.named("sourceOutput"))
+                }
+            }
+        }
+
+        project.artifacts {
+            add("archives", sourceJar)
+        }
+
+
+        project.configurations.register("devOutput")
+        project.dependencies.apply {
+            add("devOutput", project.fileTree(project.sourceSets("main").output))
+            project.sourceSet("ap")?.let {
+                this.add("devOutput", it.output)
+            }
+        }
+        project.configurations.register("sourceOutput")
+        project.dependencies.apply {
+            project.sourceSets("main").allSource.srcDirs.forEach {
+                add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+            }
+            project.sourceSet("ap")?.let {
+                it.java.sourceDirectories.forEach {
+                    add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+                }
+            }
+        }
 
     }
 }
+
+
+fun Project.sourceSets(name: String): SourceSet = convention.getPlugin(JavaPluginConvention::class.java).sourceSets.getByName(name)
+fun Project.sourceSet(name: String): SourceSet? = convention.getPlugin(JavaPluginConvention::class.java).sourceSets.findByName(name)

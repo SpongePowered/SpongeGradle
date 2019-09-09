@@ -4,10 +4,12 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.kotlin.dsl.existing
+import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getting
+import org.gradle.kotlin.dsl.provideDelegate
 import org.spongepowered.gradle.meta.BundleMetaPlugin
 import org.spongepowered.gradle.meta.GenerateMetadata
 import org.spongepowered.gradle.sort.SpongeSortingPlugin
@@ -22,7 +24,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         // This will ignore creating the extension if we're a parent
         // implementation project that has already created the extension
         val dev = project.extensions.let {
-            val existing = it.findByType(CommonDevExtension::class.java)
+            val existing = it.findByType(CommonDevExtension::class)
             if (existing == null) {
                 val api = project.project("SpongeAPI")
                 val mcVersion = project.property("minecraftVersion")!! as String
@@ -35,7 +37,6 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         dev.licenseProject = "Sponge"
         val api = dev.api!!
         dev.common.version = dev.getImplementationVersion()
-        dev.common.evaluationDependsOn(api.path)
         super.apply(project)
         project.plugins.apply {
             apply("java-library")
@@ -46,7 +47,18 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         project.dependencies.apply {
             add("api", dev.api)
         }
-        val java6 = project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets.create("java6")
+        val java6 = project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets.register("java6") {
+            this.output.dirs.forEach {
+                project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
+            }
+            allSource.srcDirs.forEach {
+                project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+            }
+
+            if (dev is SpongeImpl) {
+                dev.extraDeps.add(this.output)
+            }
+        }
         project.tasks.apply {
             getting(JavaCompile::class) {
                 options.compilerArgs.add("-Xlint:-processing")
@@ -66,7 +78,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             }
             val jar: Task? = findByName("jar")?.apply {
                 (this as Jar).apply {
-                    from(java6.output)
+                    from(java6.map { it.output })
                     manifest {
                         attributes.putAll(mapOf(
                                 "Implementation-Title" to dev.common.name,
@@ -87,31 +99,28 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                 (jar as? Jar)?.let {
                     this.manifest.from(it.manifest)
                 }
-                from(project.sourceSets("main").output)
-                from(project.sourceSets("java6").output)
+                from(project.configurations.named("devOutput"))
+            }
 
-                from(api.sourceSets("main").output)
-                from(api.sourceSets("ap").output)
-                api.tasks.findByName("genEventImpl")?.let {
-                    from(it)
+            // task configuration avoidance ftw. This allows us to avoid depending on
+            // subproject evaluation.
+            api.afterEvaluate {
+                devJar.configure {
+                    from(api.configurations.named("devOutput"))
+                    from(api.tasks.named("genEventImpl"))
+                }
+
+            }
+            if (dev is SpongeImpl) {
+                dev.common.afterEvaluate {
+                    devJar.configure {
+                        from(dev.common.configurations.named("devOutput"))
+                    }
                 }
             }
-            findByName("sourceJar")?.apply {
-                project.tasks.remove(this)
-            }
 
-            val sourceJar = register("sourceJar", Jar::class.java) {
-                classifier = "sources"
-                group = "build"
-                from(project.sourceSets("main").allSource)
-                from(project.sourceSets("java6").allSource)
-
-                from(api.sourceSets("main").allSource)
-                from(api.sourceSets("ap").allSource)
-            }
 
             project.artifacts.apply {
-                add("archives", sourceJar)
                 add("archives", devJar)
             }
 
@@ -181,5 +190,3 @@ open class CommonDevExtension(val common: Project, api: Project, val minecraftVe
     }
 
 }
-
-fun Project.sourceSets(name: String): SourceSet = convention.getPlugin(JavaPluginConvention::class.java).sourceSets.getByName(name)
