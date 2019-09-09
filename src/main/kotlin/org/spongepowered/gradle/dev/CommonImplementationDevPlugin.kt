@@ -25,19 +25,26 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             val existing = it.findByType(CommonDevExtension::class.java)
             if (existing == null) {
                 val api = project.project("SpongeAPI")
-                it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project, api)
+                val mcVersion = project.property("minecraftVersion")!! as String
+                it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project, api, mcVersion)
             } else {
                 existing
             }
         }
+
         dev.licenseProject = "Sponge"
         val api = dev.api!!
         dev.common.version = dev.getImplementationVersion()
+        dev.common.evaluationDependsOn(api.path)
         super.apply(project)
         project.plugins.apply {
             apply("java-library")
             apply(BundleMetaPlugin::class.java)
             apply(SpongeSortingPlugin::class.java)
+        }
+
+        project.dependencies.apply {
+            add("api", dev.api)
         }
         val java6 = project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets.create("java6")
         project.tasks.apply {
@@ -119,7 +126,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
     }
 }
 
-open class CommonDevExtension(val common: Project, api: Project) : SpongeDevExtension(api) {
+open class CommonDevExtension(val common: Project, api: Project, val minecraftVersion: String) : SpongeDevExtension(api) {
 
     private var apiTrimmed: String = "-1"
     private var apiReleased: String = "-1"
@@ -132,7 +139,7 @@ open class CommonDevExtension(val common: Project, api: Project) : SpongeDevExte
     fun getSplitApiVersion(): List<String> {
         if (apiSplit.isEmpty()) {
             apiTrimmed = api?.version.toString().replace("-SNAPSHOT", "")
-            apiSplit = apiTrimmed.split("\\.")
+            apiSplit = apiTrimmed.split(".")
         }
         return apiSplit
     }
@@ -163,7 +170,7 @@ open class CommonDevExtension(val common: Project, api: Project) : SpongeDevExte
     }
 
     fun getApiSuffix(): String {
-        return if ((api?.version as? String)?.endsWith("-SNAPSHOT") == true) apiSplit[0] + "." + fetchApiMinorVersion() else getApiReleasedVersion()
+        return if ((api?.version as? String)?.endsWith("-SNAPSHOT") == true) getSplitApiVersion()[0] + "." + fetchApiMinorVersion() else getApiReleasedVersion()
     }
 
     fun getImplementationVersion(): String {

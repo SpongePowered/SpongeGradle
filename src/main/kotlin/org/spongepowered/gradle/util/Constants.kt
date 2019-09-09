@@ -28,6 +28,9 @@ object Constants {
 
     const val METADATA_EXTENSION = "sponge"
     const val SPONGE_DEV_EXTENSION = "spongeDev"
+    const val MINECRAFT_VERSION = "minecraftVersion"
+    const val MAPPINGS_TYPE = "mcpType"
+    const val MAPPINGS_VERSION = "mcpMappings"
 
     object Dependencies {
         const val jUnit = "junit:junit:4.12"

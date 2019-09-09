@@ -102,7 +102,7 @@ open class SpongeDevPlugin : Plugin<Project> {
                     }
                 }
             }
-            val javadocJar = creating(Jar::class) {
+            register("javadocJar", Jar::class.java) {
                 dependsOn(javadoc)
                 group = "build"
                 classifier = "javadoc"

@@ -26,6 +26,7 @@ repositories {
         name = "sponge"
         setUrl("https://repo.spongepowered.org/maven")
     }
+    maven("https://files.minecraftforge.net/maven")
 }
 
 dependencies {
@@ -39,6 +40,7 @@ dependencies {
         exclude(group = "org.codehaus.groovy")
     }
     implementation(Deps.jsr)
+    implementation("net.minecraftforge.gradle:ForgeGradle:3.+")
 }
 
 tasks.withType(JavaCompile::class.java) {

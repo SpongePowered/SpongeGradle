@@ -39,7 +39,11 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
     override fun apply(project: Project) {
         val common = project.project(":SpongeCommon")
         val api = common.project("SpongeAPI")
-        val impl = project.extensions.create(Constants.SPONGE_DEV_EXTENSION, SpongeImpl::class.java, project, common, api)
+        val mcVersion = common.property("minecraftVersion")!! as String
+        val impl = project.extensions.create(Constants.SPONGE_DEV_EXTENSION, SpongeImpl::class.java, project, common, api, mcVersion)
+        // This is basically to ensure that common can be configured with the appropriate
+        // conventions before we continue adding more.
+        project.evaluationDependsOn(common.path)
         super.apply(project)
 
 
@@ -49,13 +53,14 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
                 compileClasspath = project.files(mainImpl.compileClasspath, mainImpl.output)
             }
         }
+        project.dependencies.apply {
+            add("implementation", common)
+        }
         project.repositories {
             maven("https://files.minecraftforge.net/maven")
         }
 
-        // This is basically to ensure that common can be configured with the appropriate
-        // conventions before we continue adding more.
-        project.evaluationDependsOn(common.path)
+
         project.afterEvaluate {
             val commonJava6 = common.convention.getPlugin(JavaPluginConvention::class.java).sourceSets.findByName("java6")
             dependencies.apply {
@@ -108,7 +113,7 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
     }
 }
 
-open class SpongeImpl(val parent: Project, common: Project, api: Project) : CommonDevExtension(common, api) {
+open class SpongeImpl(val parent: Project, common: Project, api: Project, mcVersion: String) : CommonDevExtension(common, api, mcVersion) {
 
     val extraDeps: MutableList<SourceSetOutput> = mutableListOf()
 
