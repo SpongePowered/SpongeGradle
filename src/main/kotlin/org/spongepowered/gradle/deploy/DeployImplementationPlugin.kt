@@ -38,6 +38,8 @@ class DeployImplementationPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         val base = target.convention.getPlugin(BasePluginConvention::class)
         val config = target.extensions.create("deploySponge", DeployImplementationExtension::class.java)
+        target.plugins.apply("maven-publish")
+//        target.plugins.apply("signing")
 
 
         val description = config.description

@@ -10,7 +10,7 @@ always appropriate for it's relation to Sponge.
 
 They are listed as: `#. `**`Plugin Name`**` org.gradle.plugin.id - Description`
 
-1. [**`BaseDevPlugin`** `org.spongepowered.gradle.base`](src/main/kotlin/org/spongepowered/gradle/plugindev/BaseDevPlugin.kt) -
+1. [**`BaseDevPlugin`**](src/main/kotlin/org/spongepowered/gradle/dev/BaseDevPlugin.kt) `org.spongepowered.gradle.base` -
 Provides a base of applying the `java-library` plugin, Java compatibility for Java 8, and adds the 
 [Sponge Maven Repo](https://repo.spongepowered.org/maven) as a repository for dependency lookups. Does not apply other **SpongeGradle** plugins,
  but is applied by other SpongeGradle plugins.
@@ -31,7 +31,11 @@ Provides a base of applying the `java-library` plugin, Java compatibility for Ja
           }
           ```
     - Note: Applied by various plugins as a base, due to inter-plugin dependency of what each plugin uses
-1. [**`PluginDevPlugin`** `org.spongepowered.gradle.dev`](src/main/kotlin/org/spongepowered/gradle/plugindev/PluginDevPlugin.kt) -
+1. [**`MetadataPlugin`**](src/main/kotlin/org/spongepowered/gradle/meta/MetadataPlugin.kt) `org.spongepowered.gradle.meta` -
+Provides [PluginMeta]() generation and configuration for exposing into a `mcmod.info` file.
+1. [**`BundleMetaPlugin`**](src/main/kotlin/org/spongepowered/gradle/meta/MetadataPlugin.kt) `org.spongepowered.gradle.meta.bundle` -
+Provides bundling capabilities for nested `PluginMeta`s to exist within a project. Useful if 
+1. [**`PluginDevPlugin`**](src/main/kotlin/org/spongepowered/gradle/dev/PluginDevPlugin.kt) `org.spongepowered.gradle.plugin` -
 Applies the plugin metadata generation to create the `mcmod.info` file based on the `@Plugin` annotation, based on the SpongeAPI version.
 If nested plugins are contained within the project, it is possible to configure them, see [configuring MetaPlugin](#configuringMetaPlugins).
     - Applied Plugins:
@@ -42,7 +46,7 @@ If nested plugins are contained within the project, it is possible to configure 
     - Applied Task Configurations:
         - `JavaCompile` will apply the SpongeAPI plugin-meta Annotation Processor and attach the generated meta files
         - `processResources` will exclude the generated meta files
-1. [**`SpongeDevPlugin`** `org.spongepowered.gradle.spongedev`](src/main/kotlin/org/spongepowered/gradle/plugindev/SpongeDevPlugin.kt) - 
+1. [**`SpongeDevPlugin`**](src/main/kotlin/org/spongepowered/gradle/dev/SpongeDevPlugin.kt) `org.spongepowered.gradle.sponge.dev` - 
 Applies various Sponge Team development settings and plugins and configures them. Used for developing SpongeAPI, and it's implementations.
     - Extension: You can use this in your build.gradle
         ```groovy
@@ -53,7 +57,7 @@ Applies various Sponge Team development settings and plugins and configures them
         }   
         ```
     - Applied Plugins:
-        - [`BaseDevPlugin`](src/main/kotlin/org/spongepowered/gradle/plugindev/BaseDevPlugin.kt)
+        - [`BaseDevPlugin`](src/main/kotlin/org/spongepowered/gradle/dev/BaseDevPlugin.kt)
         - [`net.minecrell.licenser`](https://github.com/minecrell/Licenser/) Default licensing plugin
             - Configured to use the project  name, dev organization, and dev url for licenses
             - Includes the project's API `HEADER.txt`
@@ -75,7 +79,7 @@ Applies various Sponge Team development settings and plugins and configures them
     - Tasks:
         - Adds `javadocJar` task creation to create a `javadoc` jar
 1. [**`MixinDevPlugin`** `org.spongepowered.gradle.mixin`] 
-1. [**`ImplementationDevPlugin`** `org.spongepowered.gradle.spongeimpl`](src/main/kotlin/) -
+1. [**`ImplementationDevPlugin`**](src/main/kotlin/) `org.spongepowered.gradle.sponge.impl` -
 Applies a "Sponge" Implementation aspect to the project. 
     - Extension:
         ```groovy

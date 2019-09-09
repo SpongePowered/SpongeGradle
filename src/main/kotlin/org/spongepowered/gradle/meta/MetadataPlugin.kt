@@ -28,6 +28,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
 import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.getting
+import org.gradle.language.jvm.tasks.ProcessResources
 import org.spongepowered.gradle.util.Constants
 import org.spongepowered.plugin.meta.PluginMetadata
 import java.util.*
@@ -37,7 +39,7 @@ import java.util.*
  * Applied by "org.spongepowered.meta.base"
  *
  */
-class MetadataPlugin : Plugin<Project> {
+open class MetadataPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val metaExtension: MetadataBaseExtension = project.extensions.let {
             val existing = it.findByType(MetadataBaseExtension::class.java)
@@ -53,13 +55,15 @@ class MetadataPlugin : Plugin<Project> {
         val genMeta = project.tasks.register("generateMetadata", GenerateMetadata::class.java) {
             doFirst {
                 metaExtension.plugins.map {
-                    val meta = PluginMetadata(it.id)
+                    val meta = PluginMetadata(it.id!!)
                     it.meta.accept(meta)
                 }
             }
         }
 
-        (project.tasks["processRosources"] as CopySpec).from(genMeta)
+        project.tasks.getting(ProcessResources::class) {
+            from(genMeta)
+        }
     }
 
 }
@@ -70,7 +74,7 @@ class MetadataPlugin : Plugin<Project> {
  * [plugin meta](https://github.com/spongepowered/plugin-meta) AP the metadata
  * based on the project.
  */
-class BundleMetaPlugin : Plugin<Project> {
+open class BundleMetaPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val metaExt = project.extensions.create(Constants.METADATA_EXTENSION, MetadataExtension::class.java, project, project.name.toLowerCase(Locale.ENGLISH))
 
@@ -78,7 +82,7 @@ class BundleMetaPlugin : Plugin<Project> {
 
         metaExt.plugin.meta.inherit(project)
         project.afterEvaluate {
-            metaExt.plugins.maybeCreate(metaExt.plugin.id)
+            metaExt.plugins.maybeCreate(metaExt.plugin.id!!)
         }
 
     }

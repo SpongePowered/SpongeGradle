@@ -1,7 +1,6 @@
 plugins {
     `java-gradle-plugin`
     `kotlin-dsl`
-    groovy
     eclipse
     idea
     `maven-publish`
@@ -19,9 +18,6 @@ java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
-kotlin {
-    version = "1.3.21"
-}
 repositories {
     jcenter()
     mavenCentral()
@@ -37,20 +33,54 @@ dependencies {
     compile(Deps.pluginMeta)
     compile(Deps.asm)
     implementation(Deps.licenser)
-    implementation(Deps.mixingradle)
-    implementation(Deps.shadow)
-    implementation(Deps.groovy)
+//    implementation(Deps.mixingradle)
+    // Yay, we can depend on the shadow classes to configure them statically!
+    implementation(Deps.shadow) {
+        exclude(group = "org.codehaus.groovy")
+    }
     implementation(Deps.jsr)
 }
 
-tasks {
-    withType(GroovyCompile::class.java) {
-        groovyOptions.optimizationOptions?.set("indy", true)
-    }
+tasks.withType(JavaCompile::class.java) {
+    // This is needed because shadow shades Log4j annotation processor
+    // and it breaks java compilation because some option is not set or class is not provided.
+    options.compilerArgs.add("-proc:none")
 }
 
 gradlePlugin {
     plugins {
+        create("BaseDevPlugin") {
+            id = GradlePlugins.BaseDevPlugin.id
+            implementationClass = GradlePlugins.BaseDevPlugin.clazz
+        }
+        create("MetadataPlugin") {
+            id = GradlePlugins.Meta.id
+            implementationClass = GradlePlugins.Meta.clazz
+        }
+        create("BundleMetaPlugin") {
+            id = GradlePlugins.BundleMeta.id
+            implementationClass = GradlePlugins.BundleMeta.clazz
+        }
+        create("PluginDevPlugin") {
+            id = GradlePlugins.PluginDevPlugin.id
+            implementationClass = GradlePlugins.PluginDevPlugin.clazz
+        }
+        create("SpongeDevPlugin") {
+            id = GradlePlugins.SpongeDev.id
+            implementationClass = GradlePlugins.SpongeDev.clazz
+        }
+        create("DeploySpongePlugin") {
+            id = GradlePlugins.SpongeDeploy.id
+            implementationClass = GradlePlugins.SpongeDeploy.clazz
+        }
+        create("SpongeSortingPlugin") {
+            id = GradlePlugins.SpongeSort.id
+            implementationClass = GradlePlugins.SpongeSort.clazz
+        }
+        create("ImplementationDevPlugin") {
+            id = GradlePlugins.ImplementationPlugin.id
+            implementationClass = GradlePlugins.ImplementationPlugin.clazz
+        }
 
     }
 }
@@ -61,7 +91,46 @@ pluginBundle {
     tags = listOf(Tags.minecraft, Tags.sponge)
 
     plugins {
-
+        create("BaseDevPlugin") {
+            id = GradlePlugins.BaseDevPlugin.id
+            displayName = GradlePlugins.BaseDevPlugin.name
+            description = GradlePlugins.BaseDevPlugin.desc
+        }
+        create("MetadataPlugin") {
+            id = GradlePlugins.Meta.id
+            displayName = GradlePlugins.Meta.name
+            description = GradlePlugins.Meta.desc
+        }
+        create("BundleMetaPlugin") {
+            id = GradlePlugins.BundleMeta.id
+            displayName = GradlePlugins.BundleMeta.name
+            description = GradlePlugins.BundleMeta.desc
+        }
+        create("PluginDevPlugin") {
+            id = GradlePlugins.PluginDevPlugin.id
+            displayName = GradlePlugins.PluginDevPlugin.name
+            description = GradlePlugins.PluginDevPlugin.desc
+        }
+        create("SpongeDevPlugin") {
+            id = GradlePlugins.SpongeDev.id
+            displayName = GradlePlugins.SpongeDev.name
+            description = GradlePlugins.SpongeDev.desc
+        }
+        create("DeploySpongePlugin") {
+            id = GradlePlugins.SpongeDeploy.id
+            displayName = GradlePlugins.SpongeDeploy.name
+            description = GradlePlugins.SpongeDeploy.desc
+        }
+        create("SpongeSortingPlugin") {
+            id = GradlePlugins.SpongeSort.id
+            displayName = GradlePlugins.SpongeSort.name
+            description = GradlePlugins.SpongeSort.desc
+        }
+        create("ImplementationDevPlugin") {
+            id = GradlePlugins.ImplementationPlugin.id
+            displayName = GradlePlugins.ImplementationPlugin.name
+            description = GradlePlugins.ImplementationPlugin.desc
+        }
     }
 
     mavenCoordinates {
@@ -99,20 +168,10 @@ tasks {
 
 val sourceJar by tasks.creating(Jar::class) {
     classifier = "sources"
-    from(java.sourceSets["main"]!!.allSource)
+    from(sourceSets["main"]!!.allSource)
 }
-
-val groovydoc by tasks.getting(Groovydoc::class)
-
-val groovydocJar by tasks.creating(Jar::class) {
-    dependsOn(groovydoc)
-    classifier = "groovydoc"
-    from(groovydoc.destinationDir)
-}
-
 artifacts {
     add("archives", sourceJar)
-    add("archives", groovydocJar)
 }
 
 
@@ -122,7 +181,6 @@ publishing {
         pluginMaven.apply {
             artifactId = SpongeGradle.name
             artifact(sourceJar)
-            artifact(groovydocJar)
 
         }
     }

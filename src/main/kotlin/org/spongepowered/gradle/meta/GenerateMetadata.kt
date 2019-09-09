@@ -36,10 +36,10 @@ import org.spongepowered.plugin.meta.PluginMetadata
 import java.io.File
 import java.nio.file.Path
 
-abstract class GenerateMetadata : DefaultTask() {
+open class GenerateMetadata : DefaultTask() {
 
     @get:OutputFile
-    abstract val ouputFile: File?
+    var ouputFile: File? = null
 
     @Input
     var mergeMetadata = true

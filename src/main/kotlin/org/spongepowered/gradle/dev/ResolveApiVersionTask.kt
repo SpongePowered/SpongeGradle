@@ -6,9 +6,11 @@ import org.gradle.kotlin.dsl.extra
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
-class ResolveApiVersionTask: DefaultTask() {
+open class ResolveApiVersionTask: DefaultTask() {
 
-    override fun getGroup(): String? = "sponge"
+    init {
+        group = "sponge"
+    }
 
     @TaskAction
     fun resolveApiVersion() {

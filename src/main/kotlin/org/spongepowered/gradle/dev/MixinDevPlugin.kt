@@ -2,16 +2,23 @@ package org.spongepowered.gradle.dev
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.spongepowered.asm.gradle.plugins.MixinGradlePlugin
 
-class MixinDevPlugin : Plugin<Project> {
-    override fun apply(target: Project) {
+open class MixinDevPlugin : Plugin<Project> {
+    override fun apply(project: Project) {
         // First things first, apply the Java setup
-        target.plugins.apply(BaseDevPlugin::class.java)
-        target.buildscript.dependencies.apply {
-            add("classpath", "org.spongepowered:mixingradle:0.6-SNAPSHOT")
-            add("classpath", "gradle.plugin.net.minecrell:vanillagradle:2.2-5")
+        project.plugins.apply(BaseDevPlugin::class.java)
+
+
+        project.repositories.apply {
+            maven {
+                name = "forge"
+                setUrl("https://files.minecraftforge.net/repo")
+            }
         }
-        target.plugins.apply(MixinGradlePlugin::class.java)
+        project.dependencies.apply {
+            // Added for runtime decompiling with Mixins for debugging
+            add("runtime", "net.minecraftforge:forgeflower:1.5.380.23")
+        }
+        // TODO - Apply Mixin Gradle and configure it
     }
 }

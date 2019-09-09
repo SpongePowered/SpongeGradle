@@ -28,18 +28,16 @@ import net.minecrell.gradle.licenser.LicenseExtension
 import net.minecrell.gradle.licenser.Licenser
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.file.DuplicatesStrategy
-import org.gradle.api.plugins.ExtraPropertiesExtension
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.quality.Checkstyle
 import org.gradle.api.plugins.quality.CheckstyleExtension
 import org.gradle.api.plugins.quality.CheckstylePlugin
-import org.gradle.api.tasks.bundling.AbstractArchiveTask
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.kotlin.dsl.creating
+import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.getting
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.spongepowered.gradle.deploy.DeployImplementationExtension
@@ -48,7 +46,7 @@ import org.spongepowered.gradle.sort.SpongeSortingPlugin
 import org.spongepowered.gradle.util.Constants
 import java.util.*
 
-class SpongeDevExtension {
+open class SpongeDevExtension() {
 
     var api: Project? = null
     var organization = "SpongePowered"
@@ -56,17 +54,23 @@ class SpongeDevExtension {
 
 }
 
-class SpongeDevPlugin : Plugin<Project> {
+open class SpongeDevPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val devExtension = project.extensions.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project, project.name.toLowerCase
-        (Locale.ENGLISH))
+        val devExtension =  project.extensions.let {
+            val existing = it.findByType(SpongeDevExtension::class.java)
+            if (existing == null) {
+                it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java)
+            } else {
+                existing
+            }
+        }
 
         // Apply the BaseDevPlugin for sponge repo and Java configuration
         project.plugins.apply(BaseDevPlugin::class.java)
         // Apply Test dependencies
         project.dependencies.apply {
             add("testCompile", Constants.Dependencies.jUnit)
-            add("testCompile", "org.hamcrest:hamcrest-library:1.13")
+            add("testCompile", "org.hamcrest:hamcrest-library:1.3")
             add("testCompile", "org.mockito:mockito-core:2.8.47")
         }
 
@@ -82,34 +86,38 @@ class SpongeDevPlugin : Plugin<Project> {
                     encoding = "UTF-8"
                 }
             }
-            val javadoc by getting(Javadoc::class)
-            javadoc.options {
-                encoding = "UTF-8"
-                charset("UTF-8")
-                (this as StandardJavadocDocletOptions).apply {
-                    links?.addAll(mutableListOf(
-                            "http://www.slf4j.org/apidocs/",
-                            "https://google.github.io/guava/releases/21.0/api/docs/",
-                            "https://google.github.io/guice/api-docs/4.1/javadoc/",
-                            "https://zml2008.github.io/configurate/configurate-core/apidocs/",
-                            "https://zml2008.github.io/configurate/configurate-hocon/apidocs/",
-                            "https://flow.github.io/math/",
-                            "https://flow.github.io/noise/",
-                            "http://asm.ow2.org/asm50/javadoc/user/",
-                            "https://docs.oracle.com/javase/8/docs/api/"
-                    ))
-                    addStringOption("-Xdoclint:none", "-quiet")
+            val javadoc = getting(Javadoc::class) {
+                options {
+                    encoding = "UTF-8"
+                    charset("UTF-8")
+                    (this as StandardJavadocDocletOptions).apply {
+                        links?.addAll(mutableListOf(
+                                "http://www.slf4j.org/apidocs/",
+                                "https://google.github.io/guava/releases/21.0/api/docs/",
+                                "https://google.github.io/guice/api-docs/4.1/javadoc/",
+                                "https://zml2008.github.io/configurate/configurate-core/apidocs/",
+                                "https://zml2008.github.io/configurate/configurate-hocon/apidocs/",
+                                "https://flow.github.io/math/",
+                                "https://flow.github.io/noise/",
+                                "http://asm.ow2.org/asm50/javadoc/user/",
+                                "https://docs.oracle.com/javase/8/docs/api/"
+                        ))
+                        addStringOption("-Xdoclint:none", "-quiet")
+                    }
                 }
             }
             val javadocJar = creating(Jar::class) {
                 dependsOn(javadoc)
                 classifier = "javadoc"
-                from(javadoc.destinationDir)
+                from(javadoc)
             }
+
             val jar = getting(Jar::class) {
                 manifest {
-                    attributes["Specification-Title"] = devExtension.api!!.name
-                    attributes["Specification-Version"] = devExtension.api!!.version
+                    devExtension.api?.let {
+                        attributes["Specification-Title"] = it.name
+                        attributes["Specification-Version"] = it.version
+                    }
                     attributes["Specification-Vendor"] = devExtension.organization
                     attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})"
                 }
@@ -134,47 +142,40 @@ class SpongeDevPlugin : Plugin<Project> {
                 }
             }
         }
-        project.afterEvaluate {
-            val archive = tasks.getting(AbstractArchiveTask::class) {
-                if (duplicatesStrategy == DuplicatesStrategy.INCLUDE) {
-                    duplicatesStrategy = DuplicatesStrategy.FAIL
-                }
-            }
-        }
+        // Archives task configuration
+        // todo
 
         // Apply Licenser
         project.plugins.apply(Licenser::class.java)
+
         project.extensions.configure(LicenseExtension::class.java) {
-            (this as ExtraPropertiesExtension).apply {
+            (this as ExtensionAware).extra.apply {
                 this["name"] = project.name
                 this["organization"] = devExtension.organization
                 this["url"] = devExtension.url
             }
-            header = devExtension.api!!.file("HEADER.txt")
+            devExtension.api?.let {
+                header = it.file("HEADER.txt")
+            }
             include("**/*.java")
             newLine = false
+        }
+        project.afterEvaluate {
+
         }
 
         // Configure Checkstyle but make the task only run explicitly
         project.plugins.apply(CheckstylePlugin::class.java)
         project.extensions.configure(CheckstyleExtension::class.java) {
-            toolVersion = "8.7"
-            configFile = devExtension.api!!.file("checkstyle.xml")
+            toolVersion = "8.16.8"
+            devExtension.api?.let {
+                configFile = it.file("checkstyle.xml")
+
+            }
             configProperties.apply {
                 put("basedir", project.projectDir)
                 put("suppressions", project.file("checkstyle-suppressions.xml"))
                 put("severity", "warning")
-            }
-        }
-
-        // Disables checkstyle tasks by default, running the checkstyle task explicitly enables
-        // all default provided checksstyle tasks
-        val checkstyle = project.tasks.getting(Checkstyle::class) {
-            dependsOn("checkstyle")
-        }
-        project.gradle.taskGraph.whenReady {
-            if (!allTasks.contains(checkstyle as Task)) {
-                allTasks.filter { it.name.startsWith("checkstyle") }.forEach { it.enabled = false }
             }
         }
 

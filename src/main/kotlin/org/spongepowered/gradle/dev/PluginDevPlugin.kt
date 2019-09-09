@@ -41,7 +41,7 @@ object AP {
     const val processing = "-proc:none"
 }
 
-class PluginDevPlugin : Plugin<Project> {
+open class PluginDevPlugin : Plugin<Project> {
 
     override fun apply(target: Project) {
         target.plugins.apply(BaseDevPlugin::class.java)

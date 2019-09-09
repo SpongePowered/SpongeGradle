@@ -34,7 +34,7 @@ import org.gradle.plugins.ide.idea.IdeaPlugin
  * Applies the java base plugins along with target compatibility and adds sponge
  * repositories for dependency resolution.
  */
-class BaseDevPlugin : Plugin<Project> {
+open class BaseDevPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         target.plugins.apply {
             apply("java-library")
