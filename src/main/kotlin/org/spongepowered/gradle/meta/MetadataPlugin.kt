@@ -53,6 +53,7 @@ open class MetadataPlugin : Plugin<Project> {
         project.plugins.apply("java-library")
 
         val genMeta = project.tasks.register("generateMetadata", GenerateMetadata::class.java) {
+            group = "sponge"
             doFirst {
                 metaExtension.plugins.map {
                     val meta = PluginMetadata(it.id!!)

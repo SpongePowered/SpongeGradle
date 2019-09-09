@@ -10,6 +10,7 @@ open class OreDeployPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.tasks.findByName("signArchives")?.let {
             project.tasks.register("oreDeploy", OreDeployTask::class.java) {
+                group = "sponge"
                 dependsOn(it)
             }
         }

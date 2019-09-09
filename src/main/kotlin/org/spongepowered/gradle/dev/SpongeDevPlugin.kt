@@ -29,7 +29,6 @@ import net.minecrell.gradle.licenser.Licenser
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.api.plugins.quality.Checkstyle
 import org.gradle.api.plugins.quality.CheckstyleExtension
 import org.gradle.api.plugins.quality.CheckstylePlugin
 import org.gradle.api.tasks.bundling.Jar
@@ -44,14 +43,11 @@ import org.spongepowered.gradle.deploy.DeployImplementationExtension
 import org.spongepowered.gradle.deploy.DeployImplementationPlugin
 import org.spongepowered.gradle.sort.SpongeSortingPlugin
 import org.spongepowered.gradle.util.Constants
-import java.util.*
 
-open class SpongeDevExtension() {
-
-    var api: Project? = null
+open class SpongeDevExtension(val api: Project? = null) {
     var organization = "SpongePowered"
     var url: String = "https://www.spongepowered.org"
-
+    var licenseProject: String = "SpongeAPI"
 }
 
 open class SpongeDevPlugin : Plugin<Project> {
@@ -59,7 +55,7 @@ open class SpongeDevPlugin : Plugin<Project> {
         val devExtension =  project.extensions.let {
             val existing = it.findByType(SpongeDevExtension::class.java)
             if (existing == null) {
-                it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java)
+                it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, null)
             } else {
                 existing
             }
@@ -108,6 +104,7 @@ open class SpongeDevPlugin : Plugin<Project> {
             }
             val javadocJar = creating(Jar::class) {
                 dependsOn(javadoc)
+                group = "build"
                 classifier = "javadoc"
                 from(javadoc)
             }
@@ -150,7 +147,7 @@ open class SpongeDevPlugin : Plugin<Project> {
 
         project.extensions.configure(LicenseExtension::class.java) {
             (this as ExtensionAware).extra.apply {
-                this["name"] = project.name
+                this["name"] = devExtension.licenseProject
                 this["organization"] = devExtension.organization
                 this["url"] = devExtension.url
             }

@@ -77,6 +77,10 @@ gradlePlugin {
             id = GradlePlugins.SpongeSort.id
             implementationClass = GradlePlugins.SpongeSort.clazz
         }
+        create("CommonImplementationDevPlugin") {
+            id = GradlePlugins.CommonImplementationPlugin.id
+            implementationClass = GradlePlugins.CommonImplementationPlugin.clazz
+        }
         create("ImplementationDevPlugin") {
             id = GradlePlugins.ImplementationPlugin.id
             implementationClass = GradlePlugins.ImplementationPlugin.clazz
@@ -130,6 +134,11 @@ pluginBundle {
             id = GradlePlugins.ImplementationPlugin.id
             displayName = GradlePlugins.ImplementationPlugin.name
             description = GradlePlugins.ImplementationPlugin.desc
+        }
+        create("CommonImplementationDevPlugin") {
+            id = GradlePlugins.CommonImplementationPlugin.id
+            displayName = GradlePlugins.CommonImplementationPlugin.name
+            description = GradlePlugins.CommonImplementationPlugin.desc
         }
     }
 

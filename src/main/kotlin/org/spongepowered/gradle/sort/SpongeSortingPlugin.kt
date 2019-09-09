@@ -42,6 +42,9 @@ open class SpongeSortingPlugin : Plugin<Project> {
                 group = "sponge"
             }
 
+            it.register("sortAccessTransformer", SortAccessTransformersTask::class.java) {
+                group = "sponge"
+            }
         }
     }
 }

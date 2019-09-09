@@ -84,9 +84,11 @@ object GradlePlugins {
         const val name = "Sponge Implementation Support Plugin"
         const val desc = "Gradle plugin for simplified build setup for implementing Sponge"
     }
-    object SortingPlugin {
-        const val id = "org.spongepowered.gradle.sorting"
-        const val clazz = "org.spongepowered.gradle.sort.SpongeSortingPlugin"
+    object CommonImplementationPlugin {
+        const val id = "org.spongepowered.gradle.sponge.common"
+        const val clazz = "org.spongepowered.gradle.dev.CommonImplementationDevPlugin"
+        const val name = "Sponge Common implementation support plugin"
+        const val desc = "Gradle plugin for setting up SpongeCommon's implementation setup"
     }
 
 }
