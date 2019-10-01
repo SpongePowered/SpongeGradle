@@ -3,6 +3,7 @@ plugins {
     `kotlin-dsl`
     eclipse
     idea
+    maven
     `maven-publish`
     `java-library`
     id(Deps.Script.gradlePublish) version Versions.gradlePublish
