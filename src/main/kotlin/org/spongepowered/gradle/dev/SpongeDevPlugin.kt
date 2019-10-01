@@ -55,7 +55,7 @@ open class SpongeDevExtension(val api: Project? = null) {
 open class SpongeDevPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val devExtension =  project.extensions.let {
-            it.findByType(SpongeDevExtension::class) ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, null)
+            it.findByType(SpongeDevExtension::class) ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project)
         }
 
         // Apply the BaseDevPlugin for sponge repo and Java configuration
@@ -158,7 +158,7 @@ open class SpongeDevPlugin : Plugin<Project> {
         // Configure Checkstyle but make the task only run explicitly
         project.plugins.apply(CheckstylePlugin::class.java)
         project.extensions.configure(CheckstyleExtension::class.java) {
-            toolVersion = "8.16.8"
+            toolVersion = "8.24"
             devExtension.api?.let {
                 configFile = it.file("checkstyle.xml")
 
