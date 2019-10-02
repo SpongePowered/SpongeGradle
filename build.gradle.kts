@@ -41,7 +41,6 @@ dependencies {
         exclude(group = "org.codehaus.groovy")
     }
     implementation(Deps.jsr)
-    implementation("net.minecraftforge.gradle:ForgeGradle:3.+")
 }
 
 tasks.withType(JavaCompile::class.java) {
