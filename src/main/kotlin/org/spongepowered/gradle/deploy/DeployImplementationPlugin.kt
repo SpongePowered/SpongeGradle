@@ -39,52 +39,18 @@ class DeployImplementationPlugin : Plugin<Project> {
         val base = target.convention.getPlugin(BasePluginConvention::class)
         val config = target.extensions.create("deploySponge", DeployImplementationExtension::class.java)
         target.plugins.apply("maven-publish")
-//        target.plugins.apply("signing")
 
 
-        val description = config.description
         target.extensions.configure(PublishingExtension::class.java) {
+            val container = this
             publications {
                 create<MavenPublication>("mavenJava") {
-
-                    config.repo?.let {
-                        target.findProperty(it)?.let { repo -> repo as String
-                            repositories {
-                                (create(repo) as MavenArtifactRepository).apply {
-                                    credentials {
-                                        config.username?.let {
-                                            username = target.findProperty(it) as String?
-                                        }
-                                        config.pass?.let {
-                                            password = target.findProperty(it) as String?
-                                        }
-                                    }
-                                }
-                                artifactId = base.archivesBaseName
-                                pom {
-                                    name.set(base.archivesBaseName)
-                                    description!!
-                                    packaging = "jar"
-                                    url.set(config.url)
-                                    scm {
-                                        url.set(config.git)
-                                        connection.set(config.scm)
-                                        developerConnection.set(config.dev)
-                                    }
-                                    issueManagement {
-                                        system.set("GitHub Issues")
-                                        url.set("https://github.com/${config.organization}/${target.name}/issues")
-                                    }
-                                    licenses {
-                                        license {
-                                            name.set(config.license)
-                                            url.set(config.licenseUrl)
-                                            distribution.set(config.licenseDistribution)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    val publication = this
+                    config.releaseRepo?.let {
+                        setupRepository(it, config, target, container, publication)
+                    }
+                    config.snapshotRepo?.let {
+                        setupRepository(it, config, target, container, publication)
                     }
                 }
 
@@ -92,9 +58,54 @@ class DeployImplementationPlugin : Plugin<Project> {
         }
 
 
+    }
 
+    @Suppress("UnstableApiUsage")
+    private fun setupRepository(repoType: String, config: DeployImplementationExtension, target: Project, publishingExtension: PublishingExtension,
+                                mavenPublication: MavenPublication) {
+        val base = target.convention.getPlugin(BasePluginConvention::class)
+        val repoDesc = config.description
+        target.findProperty(repoType)?.let { repo ->
+            repo as String
+            publishingExtension.repositories {
+                (publishingExtension.publications.create(repo) as MavenArtifactRepository).apply {
+                    credentials {
+                        config.username?.let {
+                            username = target.findProperty(it) as String?
+                        }
+                        config.pass?.let {
+                            password = target.findProperty(it) as String?
+                        }
+                    }
+                }
+                mavenPublication.artifactId = base.archivesBaseName
+                mavenPublication.pom {
+                    name.set(base.archivesBaseName)
+                    repoDesc?.let { description.set(it) }
+                    packaging = "jar"
+                    url.set(config.url)
+                    scm {
+                        url.set(config.git)
+                        connection.set(config.scm)
+                        developerConnection.set(config.dev)
+                    }
+                    issueManagement {
+                        system.set("GitHub Issues")
+                        url.set("https://github.com/${config.organization}/${target.name}/issues")
+                    }
+                    licenses {
+                        license {
+                            name.set(config.license)
+                            url.set(config.licenseUrl)
+                            distribution.set(config.licenseDistribution)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
+
 open class DeployImplementationExtension {
     var description: String? = null
     var url: String? = null
@@ -102,7 +113,8 @@ open class DeployImplementationExtension {
     var scm: String? = null
     var dev: String? = null
     var organization: String? = "SpongePowered"
-    var repo: String? = "spongeRepo"
+    var snapshotRepo: String? = "spongeRepoSnapshot"
+    var releaseRepo: String? = "spongeRepoRelease"
     var username: String? = "spongeUsername"
     var pass: String? = "spongePassword"
     var license: String? = "MIT License"

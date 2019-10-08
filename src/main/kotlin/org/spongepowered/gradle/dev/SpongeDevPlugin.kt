@@ -182,10 +182,11 @@ open class SpongeDevPlugin : Plugin<Project> {
             dev = "scm:git:git@github.com:${devExtension.organization}.${project.name}.git"
             description = project.description
         }
+        val sourceOutputConf = project.configurations.register("sourceOutput")
         val sourceJar = project.tasks.register("sourceJar", Jar::class.java) {
             classifier = "sources"
             group = "build"
-            from(project.configurations.named("sourceOutput"))
+            from(sourceOutputConf)
         }
         if (devExtension is CommonDevExtension) {
             devExtension.api?.afterEvaluate {
@@ -214,7 +215,7 @@ open class SpongeDevPlugin : Plugin<Project> {
                 this.add("devOutput", it.output)
             }
         }
-        project.configurations.register("sourceOutput")
+        sourceOutputConf
         project.dependencies.apply {
             project.sourceSets("main").allSource.srcDirs.forEach {
                 add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
