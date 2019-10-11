@@ -201,8 +201,8 @@ publishing {
         repositories {
             maven {
                 setUrl(repo)
-                val spongeUsername: String? by project.properties
-                val spongePassword: String? by project.properties
+                val spongeUsername: String? = project.property("spongeUsername") as String?
+                val spongePassword: String? = project.property("spongePassword") as String?
                 spongeUsername?.let {
                     spongePassword?.let {
                         credentials {
