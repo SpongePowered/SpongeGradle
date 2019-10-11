@@ -45,8 +45,8 @@ class DeployImplementationPlugin : Plugin<Project> {
             val repoDesc = config.description
             publications {
                 create<MavenPublication>("mavenJava") {
-                    artifact(target.tasks.findByName("sourcesJar"))
-                    artifact(target.tasks.findByName("javadocJar"))
+                    target.tasks.findByName("sourcesJar")?.let { artifact(it) }
+                    target.tasks.findByName("javadocJar")?.let { artifact(it) }
                     (this as? MavenArtifactRepository)?.let {
                         credentials {
                             config.username?.let {
