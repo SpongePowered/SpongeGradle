@@ -37,6 +37,7 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
+import org.gradle.kotlin.dsl.creating
 import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getting
@@ -99,7 +100,7 @@ open class SpongeDevPlugin : Plugin<Project> {
                     }
                 }
             }
-            register("javadocJar", Jar::class.java) {
+            val javadocJar  = creating(Jar::class) {
                 dependsOn(javadoc)
                 group = "build"
                 classifier = "javadoc"
