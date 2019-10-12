@@ -57,6 +57,7 @@ class DeployImplementationPlugin : Plugin<Project> {
                             }
                         }
                     }
+                    groupId = target.group as String
                     artifactId = base.archivesBaseName
                     pom {
                         name.set(base.archivesBaseName)
