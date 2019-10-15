@@ -1,3 +1,5 @@
+import java.util.Locale
+
 plugins {
     `java-gradle-plugin`
     `kotlin-dsl`
@@ -190,7 +192,7 @@ publishing {
     publications {
         val pluginMaven = (get("pluginMaven") as MavenPublication)
         pluginMaven.apply {
-            artifactId = SpongeGradle.name
+            artifactId = SpongeGradle.name.toLowerCase(Locale.ENGLISH)
             artifact(sourceJar)
 
         }
