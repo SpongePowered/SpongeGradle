@@ -32,6 +32,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getPlugin
+import java.util.*
 
 class DeployImplementationPlugin : Plugin<Project> {
 
@@ -44,9 +45,7 @@ class DeployImplementationPlugin : Plugin<Project> {
             val container = this
             val repoDesc = config.description
             publications {
-                create<MavenPublication>("mavenJava") {
-                    target.tasks.findByName("sourcesJar")?.let { artifact(it) }
-                    target.tasks.findByName("javadocJar")?.let { artifact(it) }
+                val publish = create<MavenPublication>("mavenJava") {
                     (this as? MavenArtifactRepository)?.let {
                         credentials {
                             config.username?.let {
@@ -58,9 +57,9 @@ class DeployImplementationPlugin : Plugin<Project> {
                         }
                     }
                     groupId = target.group as String
-                    artifactId = base.archivesBaseName
+                    artifactId = base.archivesBaseName.toLowerCase(Locale.ENGLISH)
                     pom {
-                        name.set(base.archivesBaseName)
+                        name.set(base.archivesBaseName.toLowerCase(Locale.ENGLISH))
                         repoDesc?.let { description.set(it) }
                         packaging = "jar"
                         url.set(config.url)
@@ -85,9 +84,13 @@ class DeployImplementationPlugin : Plugin<Project> {
                 }
 
             }
-            repositories {
-                maven {
-                    setUrl(if ((target.version as String).endsWith("SNAPSHOT")) config.snapshotRepo!! else config.releaseRepo!!)
+
+            val repoUrlKey = if ((target.version as String).endsWith("SNAPSHOT")) config.snapshotRepo!! else config.releaseRepo!!
+            target.findProperty(repoUrlKey)?.let {
+                repositories {
+                    maven {
+                        setUrl(it)
+                    }
                 }
             }
         }

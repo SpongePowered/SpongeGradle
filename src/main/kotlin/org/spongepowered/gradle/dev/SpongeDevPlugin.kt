@@ -28,19 +28,21 @@ import net.minecrell.gradle.licenser.LicenseExtension
 import net.minecrell.gradle.licenser.Licenser
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.quality.CheckstyleExtension
 import org.gradle.api.plugins.quality.CheckstylePlugin
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
-import org.gradle.kotlin.dsl.creating
-import org.gradle.kotlin.dsl.extra
-import org.gradle.kotlin.dsl.findByType
-import org.gradle.kotlin.dsl.getting
+import org.gradle.kotlin.dsl.*
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.spongepowered.gradle.deploy.DeployImplementationExtension
 import org.spongepowered.gradle.deploy.DeployImplementationPlugin
@@ -59,6 +61,7 @@ open class SpongeDevPlugin : Plugin<Project> {
             it.findByType(SpongeDevExtension::class) ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project)
         }
 
+
         // Apply the BaseDevPlugin for sponge repo and Java configuration
         project.plugins.apply(BaseDevPlugin::class.java)
         // Apply Test dependencies
@@ -72,56 +75,54 @@ open class SpongeDevPlugin : Plugin<Project> {
         //  - Add javadocJar
         //  - Add Specification info for jar manifests
         //  - Add LICENSE.txt to the processResources for jar inclusion
-        project.tasks.apply {
-            val javaCompile = getting(JavaCompile::class) {
-                options.apply {
-                    compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-parameters"))
-                    isDeprecation = false
-                    encoding = "UTF-8"
+        val javaCompile = project.tasks.getting(JavaCompile::class) {
+            options.apply {
+                compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-parameters"))
+                isDeprecation = false
+                encoding = "UTF-8"
+            }
+        }
+        val javadoc = project.tasks.getting(Javadoc::class) {
+            options {
+                encoding = "UTF-8"
+                charset("UTF-8")
+                isFailOnError = false
+                (this as StandardJavadocDocletOptions).apply {
+                    links?.addAll(mutableListOf(
+                            "http://www.slf4j.org/apidocs/",
+                            "https://google.github.io/guava/releases/21.0/api/docs/",
+                            "https://google.github.io/guice/api-docs/4.1/javadoc/",
+                            "https://zml2008.github.io/configurate/configurate-core/apidocs/",
+                            "https://zml2008.github.io/configurate/configurate-hocon/apidocs/",
+                            "https://flow.github.io/math/",
+                            "https://flow.github.io/noise/",
+                            "http://asm.ow2.org/asm50/javadoc/user/",
+                            "https://docs.oracle.com/javase/8/docs/api/"
+                    ))
+                    addStringOption("-Xdoclint:none", "-quiet")
                 }
             }
-            val javadoc = getting(Javadoc::class) {
-                options {
-                    encoding = "UTF-8"
-                    charset("UTF-8")
-                    (this as StandardJavadocDocletOptions).apply {
-                        links?.addAll(mutableListOf(
-                                "http://www.slf4j.org/apidocs/",
-                                "https://google.github.io/guava/releases/21.0/api/docs/",
-                                "https://google.github.io/guice/api-docs/4.1/javadoc/",
-                                "https://zml2008.github.io/configurate/configurate-core/apidocs/",
-                                "https://zml2008.github.io/configurate/configurate-hocon/apidocs/",
-                                "https://flow.github.io/math/",
-                                "https://flow.github.io/noise/",
-                                "http://asm.ow2.org/asm50/javadoc/user/",
-                                "https://docs.oracle.com/javase/8/docs/api/"
-                        ))
-                        addStringOption("-Xdoclint:none", "-quiet")
-                    }
+        }
+        val javadocJar: Jar = project.tasks.create("javadocJar", Jar::class) {
+            group = "build"
+            classifier = "javadoc"
+            from(project.tasks["javadoc"])
+        }
+
+        val jar = project.tasks.getting(Jar::class) {
+            manifest {
+                devExtension.api?.let {
+                    attributes["Specification-Title"] = it.name
+                    attributes["Specification-Version"] = it.version
                 }
-            }
-            val javadocJar  = creating(Jar::class) {
-                dependsOn(javadoc)
-                group = "build"
-                classifier = "javadoc"
-                from(javadoc)
+                attributes["Specification-Vendor"] = devExtension.organization
+                attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})"
             }
 
-            val jar = getting(Jar::class) {
-                manifest {
-                    devExtension.api?.let {
-                        attributes["Specification-Title"] = it.name
-                        attributes["Specification-Version"] = it.version
-                    }
-                    attributes["Specification-Vendor"] = devExtension.organization
-                    attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})"
-                }
+        }
 
-            }
-
-            val processResources = getting(ProcessResources::class) {
-                from("LICENSE.txt")
-            }
+        val processResources = project.tasks.getting(ProcessResources::class) {
+            from("LICENSE.txt")
         }
 
         // Add commit and branch information to jar manifest
@@ -174,7 +175,7 @@ open class SpongeDevPlugin : Plugin<Project> {
         // Add sorting
         project.plugins.apply(SpongeSortingPlugin::class.java)
 
-        // Set up the deploy aspect
+        // Set up the deploy aspect - after we've created the configurations for sources and dev jars.
         project.plugins.apply(DeployImplementationPlugin::class.java)
         project.extensions.configure(DeployImplementationExtension::class.java) {
             url = "https://github.com/${devExtension.organization}/${project.name}"
@@ -184,21 +185,31 @@ open class SpongeDevPlugin : Plugin<Project> {
             description = project.description
         }
         val sourceOutputConf = project.configurations.register("sourceOutput")
-        val sourceJar = project.tasks.register("sourceJar", Jar::class.java) {
+        val sourceJar: Jar = project.tasks.create("sourceJar", Jar::class.java) {
             classifier = "sources"
             group = "build"
             from(sourceOutputConf)
         }
+
+        project.extensions.configure(PublishingExtension::class) {
+            publications {
+                val mavenJava = findByName("mavenJava") as? MavenPublication
+                mavenJava?.let {
+                    it.artifact(sourceJar)
+                    it.artifact(javadocJar)
+                }
+            }
+        }
         if (devExtension is CommonDevExtension) {
             devExtension.api?.afterEvaluate {
-                sourceJar.configure {
+                tasks["sourceJar"].configure<Jar> {
                     from(devExtension.api.configurations.named("sourceOutput"))
                 }
             }
         }
         if (devExtension is SpongeImpl) {
             devExtension.common.afterEvaluate {
-                sourceJar.configure {
+                tasks["sourceJar"].configure<Jar> {
                     from(devExtension.common.configurations.named("sourceOutput"))
                 }
             }
@@ -206,6 +217,7 @@ open class SpongeDevPlugin : Plugin<Project> {
 
         project.artifacts {
             add("archives", sourceJar)
+            add("archives", project.tasks["javadocJar"])
         }
 
 
