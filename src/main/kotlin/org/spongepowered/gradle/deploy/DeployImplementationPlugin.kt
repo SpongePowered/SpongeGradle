@@ -86,13 +86,15 @@ class DeployImplementationPlugin : Plugin<Project> {
             }
 
             val repoUrlKey = if ((target.version as String).endsWith("SNAPSHOT"))
-                target.properties[config.snapshotRepo!!] as String
+                target.properties[config.snapshotRepo!!] as String?
             else
-                target.properties[config.releaseRepo!!] as String
-            target.findProperty(repoUrlKey)?.let {
-                repositories {
-                    maven {
-                        setUrl(it)
+                target.properties[config.releaseRepo!!] as String?
+            repoUrlKey?.let {
+                target.findProperty(it)?.let {
+                    repositories {
+                        maven {
+                            setUrl(it)
+                        }
                     }
                 }
             }
