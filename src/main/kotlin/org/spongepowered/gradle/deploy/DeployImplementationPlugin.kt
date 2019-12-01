@@ -85,7 +85,10 @@ class DeployImplementationPlugin : Plugin<Project> {
 
             }
 
-            val repoUrlKey = if ((target.version as String).endsWith("SNAPSHOT")) config.snapshotRepo!! else config.releaseRepo!!
+            val repoUrlKey = if ((target.version as String).endsWith("SNAPSHOT"))
+                target.properties[config.snapshotRepo!!] as String
+            else
+                target.properties[config.releaseRepo!!] as String
             target.findProperty(repoUrlKey)?.let {
                 repositories {
                     maven {
@@ -107,8 +110,8 @@ open class DeployImplementationExtension {
     var scm: String? = null
     var dev: String? = null
     var organization: String? = "SpongePowered"
-    var snapshotRepo: String? = "spongeRepoSnapshot"
-    var releaseRepo: String? = "spongeRepoRelease"
+    var snapshotRepo: String = "spongeRepoSnapshot"
+    var releaseRepo: String = "spongeRepoRelease"
     var username: String? = "spongeUsername"
     var pass: String? = "spongePassword"
     var license: String? = "MIT License"

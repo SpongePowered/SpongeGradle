@@ -50,7 +50,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         val dev = project.extensions.let {
             val existing = it.findByType(CommonDevExtension::class)
             if (existing == null) {
-                val api = project.project("SpongeAPI")
+                val api = project.findProject("SpongeAPI")
                 val mcVersion = project.property("minecraftVersion")!! as String
                 it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project, api, mcVersion)
             } else {

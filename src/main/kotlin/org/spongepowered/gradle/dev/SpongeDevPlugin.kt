@@ -228,7 +228,6 @@ open class SpongeDevPlugin : Plugin<Project> {
                 this.add("devOutput", it.output)
             }
         }
-        sourceOutputConf
         project.dependencies.apply {
             project.sourceSets("main").allSource.srcDirs.forEach {
                 add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
