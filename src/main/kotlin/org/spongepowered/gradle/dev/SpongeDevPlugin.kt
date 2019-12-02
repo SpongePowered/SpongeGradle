@@ -28,16 +28,14 @@ import net.minecrell.gradle.licenser.LicenseExtension
 import net.minecrell.gradle.licenser.Licenser
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.quality.CheckstyleExtension
 import org.gradle.api.plugins.quality.CheckstylePlugin
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSet
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
@@ -70,11 +68,194 @@ open class SpongeDevPlugin : Plugin<Project> {
             add("testCompile", "org.hamcrest:hamcrest-library:1.3")
             add("testCompile", "org.mockito:mockito-core:2.8.47")
         }
+        project.plugins.apply(JavaBasePlugin::class)
 
         // Configure Java compile
         //  - Add javadocJar
         //  - Add Specification info for jar manifests
         //  - Add LICENSE.txt to the processResources for jar inclusion
+        configureJavaCompile(project)
+        configureJavadocTask(project)
+        val javadocJar: Jar = configureJavadocJarTask(project)
+
+        configureJarTask(project, devExtension)
+
+        val processResources = project.tasks.getting(ProcessResources::class) {
+            from("LICENSE.txt")
+        }
+
+        configureGitCommitBranchManifests(project)
+
+        configureLicenser(project, devExtension)
+        configureCheckstyle(project, devExtension)
+
+        // Add sorting
+        project.plugins.apply(SpongeSortingPlugin::class.java)
+
+//        configureDeploy(project, devExtension)
+        val sourceJar: Jar = configureSourceJar(project, devExtension)
+
+        configureSourceAndDevOutput(project, sourceJar, javadocJar, devExtension)
+
+    }
+
+    private fun configureJavadocJarTask(project: Project): Jar {
+        val javadocJar: Jar = project.tasks.create("javadocJar", Jar::class) {
+            group = "build"
+            classifier = "javadoc"
+            from(project.tasks["javadoc"])
+        }
+        return javadocJar
+    }
+
+    private fun configureSourceAndDevOutput(project: Project, sourceJar: Jar, javadocJar: Jar, devExtension: SpongeDevExtension) {
+        project.extensions.findByType(PublishingExtension::class)?.apply {
+            publications {
+                val mavenJava = findByName("mavenJava") as? MavenPublication
+                mavenJava?.let {
+                    it.artifact(sourceJar)
+                    it.artifact(javadocJar)
+                }
+            }
+        }
+
+
+        addSourceJarAndJavadocJarToArtifacts(project, sourceJar, javadocJar)
+
+
+        project.configurations.register("devOutput")
+        project.dependencies.apply {
+            project.sourceSet("main")?.output?.let {
+                add("devOutput", project.fileTree(it))
+            }
+            project.sourceSet("ap")?.let {
+                this.add("devOutput", it.output)
+            }
+        }
+        configureSourceOutputForProject(project)
+    }
+
+    private fun addSourceJarAndJavadocJarToArtifacts(project: Project, sourceJar: Jar, javadocJar: Jar) {
+        project.artifacts {
+            add("archives", sourceJar)
+            add("archives", javadocJar)
+        }
+    }
+
+    private fun configureSourceOutputForProject(project: Project) {
+        project.afterEvaluate {
+            project.dependencies.apply {
+                project.sourceSet("main")?.allSource?.srcDirs?.forEach {
+                    add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+                }
+                project.sourceSet("ap")?.let {
+                    it.java.sourceDirectories.forEach {
+                        add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+                    }
+                }
+            }
+
+        }
+    }
+
+    private fun configureSourceJar(project: Project, devExtension: SpongeDevExtension): Jar {
+        val sourceOutputConf = project.configurations.register("sourceOutput")
+        val sourceJar: Jar = project.tasks.create("sourceJar", Jar::class.java) {
+            classifier = "sources"
+            group = "build"
+            from(sourceOutputConf)
+            if (devExtension is CommonDevExtension) {
+                devExtension.api?.afterEvaluate {
+                    this@create.from(devExtension.api.configurations.named("sourceOutput"))
+                }
+            }
+            if (devExtension is SpongeImpl) {
+                devExtension.common.afterEvaluate {
+                    this@create.from(devExtension.common.configurations.named("sourceOutput"))
+                }
+            }
+        }
+        return sourceJar
+    }
+
+    private fun configureDeploy(project: Project, devExtension: SpongeDevExtension) {
+        // Set up the deploy aspect - after we've created the configurations for sources and dev jars.
+        project.plugins.apply(DeployImplementationPlugin::class.java)
+        project.extensions.configure(DeployImplementationExtension::class.java) {
+            url = "https://github.com/${devExtension.organization}/${project.name}"
+            git = "{$url}.git"
+            scm = "scm:git:{$git}"
+            dev = "scm:git:git@github.com:${devExtension.organization}.${project.name}.git"
+            description = project.description
+        }
+    }
+
+    private fun configureCheckstyle(project: Project, devExtension: SpongeDevExtension) {
+        // Configure Checkstyle but make the task only run explicitly
+        project.plugins.apply(CheckstylePlugin::class.java)
+        project.extensions.configure(CheckstyleExtension::class.java) {
+            toolVersion = "8.24"
+            devExtension.api?.let {
+                configFile = it.file("checkstyle.xml")
+
+            }
+            configProperties.apply {
+                put("basedir", project.projectDir)
+                put("suppressions", project.file("checkstyle-suppressions.xml"))
+                put("severity", "warning")
+            }
+        }
+    }
+
+    private fun configureLicenser(project: Project, devExtension: SpongeDevExtension) {
+        // Apply Licenser
+        project.plugins.apply(Licenser::class.java)
+
+        project.extensions.configure(LicenseExtension::class.java) {
+            (this as ExtensionAware).extra.apply {
+                this["name"] = devExtension.licenseProject
+                this["organization"] = devExtension.organization
+                this["url"] = devExtension.url
+            }
+            devExtension.api?.let {
+                header = it.file("HEADER.txt")
+            }
+            include("**/*.java")
+            newLine = false
+        }
+    }
+
+    private fun configureGitCommitBranchManifests(project: Project) {
+        // Add commit and branch information to jar manifest
+        val commit: String? = project.properties["commit"] as String?
+        val branch: String? = project.properties["branch"] as String?
+        if (commit != null) {
+            project.afterEvaluate {
+                val jar = tasks.getting(Jar::class) {
+                    manifest {
+                        attributes["Git-Commit"] = commit
+                        attributes["Git-Branch"] = branch
+                    }
+                }
+            }
+        }
+    }
+
+    private fun configureJarTask(project: Project, devExtension: SpongeDevExtension) {
+        val jar = project.tasks.getting(Jar::class) {
+            manifest {
+                devExtension.api?.let {
+                    attributes["Specification-Title"] = it.name
+                    attributes["Specification-Version"] = it.version
+                }
+                attributes["Specification-Vendor"] = devExtension.organization
+                attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})"
+            }
+
+        }
+    }
+
+    private fun configureJavaCompile(project: Project) {
         val javaCompile = project.tasks.getting(JavaCompile::class) {
             options.apply {
                 compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-parameters"))
@@ -82,6 +263,9 @@ open class SpongeDevPlugin : Plugin<Project> {
                 encoding = "UTF-8"
             }
         }
+    }
+
+    private fun configureJavadocTask(project: Project) {
         val javadoc = project.tasks.getting(Javadoc::class) {
             options {
                 encoding = "UTF-8"
@@ -103,145 +287,9 @@ open class SpongeDevPlugin : Plugin<Project> {
                 }
             }
         }
-        val javadocJar: Jar = project.tasks.create("javadocJar", Jar::class) {
-            group = "build"
-            classifier = "javadoc"
-            from(project.tasks["javadoc"])
-        }
-
-        val jar = project.tasks.getting(Jar::class) {
-            manifest {
-                devExtension.api?.let {
-                    attributes["Specification-Title"] = it.name
-                    attributes["Specification-Version"] = it.version
-                }
-                attributes["Specification-Vendor"] = devExtension.organization
-                attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})"
-            }
-
-        }
-
-        val processResources = project.tasks.getting(ProcessResources::class) {
-            from("LICENSE.txt")
-        }
-
-        // Add commit and branch information to jar manifest
-        val commit: String? = project.properties["commit"] as String?
-        val branch: String? = project.properties["branch"] as String?
-        if (commit != null) {
-            project.afterEvaluate {
-                val jar = tasks.getting(Jar::class) {
-                    manifest {
-                        attributes["Git-Commit"] = commit
-                        attributes["Git-Branch"] = branch
-                    }
-                }
-            }
-        }
-        // Archives task configuration
-        // todo
-
-        // Apply Licenser
-        project.plugins.apply(Licenser::class.java)
-
-        project.extensions.configure(LicenseExtension::class.java) {
-            (this as ExtensionAware).extra.apply {
-                this["name"] = devExtension.licenseProject
-                this["organization"] = devExtension.organization
-                this["url"] = devExtension.url
-            }
-            devExtension.api?.let {
-                header = it.file("HEADER.txt")
-            }
-            include("**/*.java")
-            newLine = false
-        }
-
-        // Configure Checkstyle but make the task only run explicitly
-        project.plugins.apply(CheckstylePlugin::class.java)
-        project.extensions.configure(CheckstyleExtension::class.java) {
-            toolVersion = "8.24"
-            devExtension.api?.let {
-                configFile = it.file("checkstyle.xml")
-
-            }
-            configProperties.apply {
-                put("basedir", project.projectDir)
-                put("suppressions", project.file("checkstyle-suppressions.xml"))
-                put("severity", "warning")
-            }
-        }
-
-        // Add sorting
-        project.plugins.apply(SpongeSortingPlugin::class.java)
-
-        // Set up the deploy aspect - after we've created the configurations for sources and dev jars.
-        project.plugins.apply(DeployImplementationPlugin::class.java)
-        project.extensions.configure(DeployImplementationExtension::class.java) {
-            url = "https://github.com/${devExtension.organization}/${project.name}"
-            git = "{$url}.git"
-            scm = "scm:git:{$git}"
-            dev = "scm:git:git@github.com:${devExtension.organization}.${project.name}.git"
-            description = project.description
-        }
-        val sourceOutputConf = project.configurations.register("sourceOutput")
-        val sourceJar: Jar = project.tasks.create("sourceJar", Jar::class.java) {
-            classifier = "sources"
-            group = "build"
-            from(sourceOutputConf)
-        }
-
-        project.extensions.configure(PublishingExtension::class) {
-            publications {
-                val mavenJava = findByName("mavenJava") as? MavenPublication
-                mavenJava?.let {
-                    it.artifact(sourceJar)
-                    it.artifact(javadocJar)
-                }
-            }
-        }
-        if (devExtension is CommonDevExtension) {
-            devExtension.api?.afterEvaluate {
-                tasks["sourceJar"].configure<Jar> {
-                    from(devExtension.api.configurations.named("sourceOutput"))
-                }
-            }
-        }
-        if (devExtension is SpongeImpl) {
-            devExtension.common.afterEvaluate {
-                tasks["sourceJar"].configure<Jar> {
-                    from(devExtension.common.configurations.named("sourceOutput"))
-                }
-            }
-        }
-
-        project.artifacts {
-            add("archives", sourceJar)
-            add("archives", project.tasks["javadocJar"])
-        }
-
-
-        project.configurations.register("devOutput")
-        project.dependencies.apply {
-            add("devOutput", project.fileTree(project.sourceSets("main").output))
-            project.sourceSet("ap")?.let {
-                this.add("devOutput", it.output)
-            }
-        }
-        project.dependencies.apply {
-            project.sourceSets("main").allSource.srcDirs.forEach {
-                add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
-            }
-            project.sourceSet("ap")?.let {
-                it.java.sourceDirectories.forEach {
-                    add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
-                }
-            }
-        }
-
     }
 }
 
 
 fun Project.sourceSets(name: String): SourceSet = convention.getPlugin(JavaPluginConvention::class.java).sourceSets.getByName(name)
-fun Project.sourceSet(name: String): SourceSet? = convention.getPlugin(JavaPluginConvention::class.java).sourceSets.findByName(name)
+fun Project.sourceSet(name: String): SourceSet? = convention.findPlugin(JavaPluginConvention::class.java)?.sourceSets?.findByName(name)
