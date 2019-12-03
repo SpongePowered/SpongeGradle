@@ -31,6 +31,7 @@ import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.getPlugin
 import java.util.*
 
@@ -45,7 +46,7 @@ class DeployImplementationPlugin : Plugin<Project> {
             val container = this
             val repoDesc = config.description
             publications {
-                val publish = create<MavenPublication>("mavenJava") {
+                val publish = create<MavenPublication>("spongeGradle") {
                     (this as? MavenArtifactRepository)?.let {
                         credentials {
                             config.username?.let {
@@ -56,6 +57,7 @@ class DeployImplementationPlugin : Plugin<Project> {
                             }
                         }
                     }
+                    from(target.components["java"])
                     groupId = target.group as String
                     artifactId = base.archivesBaseName.toLowerCase(Locale.ENGLISH)
                     pom {
@@ -89,10 +91,12 @@ class DeployImplementationPlugin : Plugin<Project> {
                 target.properties[config.snapshotRepo!!] as String?
             else
                 target.properties[config.releaseRepo!!] as String?
+            System.err.println("Repo url: " + repoUrlKey)
             repoUrlKey?.let {
                 target.findProperty(it)?.let {
                     repositories {
                         maven {
+                            name = "SpongeGradleRepo"
                             setUrl(it)
                         }
                     }

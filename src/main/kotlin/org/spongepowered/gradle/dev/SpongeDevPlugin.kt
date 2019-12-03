@@ -136,6 +136,14 @@ open class SpongeDevPlugin : Plugin<Project> {
     }
 
     private fun addSourceJarAndJavadocJarToArtifacts(project: Project, sourceJar: Jar, javadocJar: Jar) {
+        project.afterEvaluate {
+            project.extensions.findByType(PublishingExtension::class)?.publications {
+                (findByName("spongeGradle") as? MavenPublication)?.apply {
+                    artifact(sourceJar)
+                    artifact(javadocJar)
+                }
+            }
+        }
         project.artifacts {
             add("archives", sourceJar)
             add("archives", javadocJar)
