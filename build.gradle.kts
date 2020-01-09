@@ -168,7 +168,7 @@ tasks {
     val jar by getting(Jar::class) {
         manifest {
             attributes(mapOf(
-                    "Created-By" to "${System.getProperty("java.vesrion")} (${System.getProperty("java.vm.vendor")}",
+                    "Created-By" to "${System.getProperty("java.version")} (${System.getProperty("java.vm.vendor")}",
                     "Implementation-Title" to project.name,
                     "Implementation-Version" to project.version,
                     "Implementation-Vendor" to SpongeGradle.organization
