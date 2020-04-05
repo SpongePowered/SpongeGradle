@@ -1,7 +1,7 @@
 object SpongeGradle {
 
     const val group = Groups.sponge
-    const val version = "0.11.0-SNAPSHOT"
+    const val version = "0.11.1-SNAPSHOT"
     const val organization = "SpongePowered"
     const val url = "https://www.spongepowered.org"
     const val name = "SpongeGradle"
@@ -105,7 +105,7 @@ object Versions {
     const val pluginMeta = "0.4.1"
     const val asm = "5.2"
     const val jsr305 = "3.0.2"
-    const val gradlePublish = "0.9.10"
+    const val gradlePublish = "0.11.0"
     const val licenser = "0.4"
 }
 

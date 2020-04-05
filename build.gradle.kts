@@ -98,56 +98,48 @@ pluginBundle {
     description = project.description
     tags = listOf(Tags.minecraft, Tags.sponge)
 
-    plugins {
-        create("BaseDevPlugin") {
-            id = GradlePlugins.BaseDevPlugin.id
+    (plugins) {
+        "BaseDevPlugin" {
             displayName = GradlePlugins.BaseDevPlugin.name
             description = GradlePlugins.BaseDevPlugin.desc
         }
-        create("MetadataPlugin") {
-            id = GradlePlugins.Meta.id
+        "MetadataPlugin" {
             displayName = GradlePlugins.Meta.name
             description = GradlePlugins.Meta.desc
         }
-        create("BundleMetaPlugin") {
-            id = GradlePlugins.BundleMeta.id
+        "BundleMetaPlugin" {
             displayName = GradlePlugins.BundleMeta.name
             description = GradlePlugins.BundleMeta.desc
         }
-        create("PluginDevPlugin") {
-            id = GradlePlugins.PluginDevPlugin.id
+        "PluginDevPlugin" {
             displayName = GradlePlugins.PluginDevPlugin.name
             description = GradlePlugins.PluginDevPlugin.desc
         }
-        create("SpongeDevPlugin") {
-            id = GradlePlugins.SpongeDev.id
+        "SpongeDevPlugin" {
             displayName = GradlePlugins.SpongeDev.name
             description = GradlePlugins.SpongeDev.desc
         }
-        create("DeploySpongePlugin") {
-            id = GradlePlugins.SpongeDeploy.id
+        "DeploySpongePlugin" {
             displayName = GradlePlugins.SpongeDeploy.name
             description = GradlePlugins.SpongeDeploy.desc
         }
-        create("SpongeSortingPlugin") {
-            id = GradlePlugins.SpongeSort.id
+        "SpongeSortingPlugin" {
             displayName = GradlePlugins.SpongeSort.name
             description = GradlePlugins.SpongeSort.desc
         }
-        create("ImplementationDevPlugin") {
-            id = GradlePlugins.ImplementationPlugin.id
+        "ImplementationDevPlugin" {
             displayName = GradlePlugins.ImplementationPlugin.name
             description = GradlePlugins.ImplementationPlugin.desc
         }
-        create("CommonImplementationDevPlugin") {
-            id = GradlePlugins.CommonImplementationPlugin.id
+        "CommonImplementationDevPlugin" {
             displayName = GradlePlugins.CommonImplementationPlugin.name
             description = GradlePlugins.CommonImplementationPlugin.desc
         }
     }
-
     mavenCoordinates {
+        groupId = "org.spongepowered.gradle"
         artifactId = SpongeGradle.name
+        version = SpongeGradle.version
     }
 }
 
@@ -168,7 +160,7 @@ tasks {
     val jar by getting(Jar::class) {
         manifest {
             attributes(mapOf(
-                    "Created-By" to "${System.getProperty("java.vesrion")} (${System.getProperty("java.vm.vendor")}",
+                    "Created-By" to "${System.getProperty("java.version")} (${System.getProperty("java.vm.vendor")}",
                     "Implementation-Title" to project.name,
                     "Implementation-Version" to project.version,
                     "Implementation-Vendor" to SpongeGradle.organization
@@ -217,5 +209,6 @@ publishing {
         }
 
     }
+
 
 }

@@ -24,22 +24,29 @@
  */
 package org.spongepowered.gradle.dev
 
-import org.gradle.api.Project
-import org.gradle.api.Task
+import org.gradle.api.*
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.kotlin.dsl.existing
-import org.gradle.kotlin.dsl.findByType
-import org.gradle.kotlin.dsl.getting
-import org.gradle.kotlin.dsl.provideDelegate
+import org.gradle.kotlin.dsl.*
 import org.spongepowered.gradle.meta.BundleMetaPlugin
 import org.spongepowered.gradle.meta.GenerateMetadata
 import org.spongepowered.gradle.sort.SpongeSortingPlugin
 import org.spongepowered.gradle.util.Constants
 
 open class CommonImplementationDevPlugin : SpongeDevPlugin() {
+
+    class AddedSourceFactory(val project: Project) : NamedDomainObjectFactory<AddedSourceSet> {
+        override fun create(name: String): AddedSourceSet {
+            return AddedSourceSet(name, project.objects)
+        }
+    }
+
     override fun apply(project: Project) {
         // This is designed to basically create the extension if
         // we're a common implementation project. The common implementation
@@ -51,8 +58,10 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             val existing = it.findByType(CommonDevExtension::class)
             if (existing == null) {
                 val api = project.findProject("SpongeAPI")
-                val mcVersion = project.property("minecraftVersion")!! as String
-                it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project, api, mcVersion)
+
+
+                val addedSourceSets = project.container(AddedSourceSet::class, AddedSourceFactory(project))
+                it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, addedSourceSets, project, api)
             } else {
                 existing
             }
@@ -71,18 +80,22 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         project.dependencies.apply {
             add("api", dev.api)
         }
-        val java6 = project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets.register("java6") {
-            this.output.dirs.forEach {
-                project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
-            }
-            allSource.srcDirs.forEach {
-                project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
-            }
 
-            if (dev is SpongeImpl) {
-                dev.extraDeps.add(this.output)
+        val projectSourceSets = project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
+        val subProj = (dev as? SpongeImpl)?.common
+        dev.addedSourceSets.all(generateSourceSetAndconfigure(projectSourceSets, project, dev, subProj))
+
+
+        subProj?.afterEvaluate {
+            val subDev = extensions.findByType(CommonDevExtension::class)
+            if (subDev != null) {
+                applySourceSetDependencies(subDev, project)
             }
         }
+        project.afterEvaluate {
+            applySourceSetDependencies(dev, project)
+        }
+
         project.tasks.apply {
             getting(JavaCompile::class) {
                 options.compilerArgs.add("-Xlint:-processing")
@@ -94,15 +107,8 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             getting(GenerateMetadata::class) {
                 dependsOn(register)
             }
-            findByName("compileJava6Java")?.apply {
-                (this as? JavaCompile)?.apply {
-                    sourceCompatibility = "1.6"
-                    targetCompatibility = "1.6"
-                }
-            }
             val jar: Task? = findByName("jar")?.apply {
                 (this as Jar).apply {
-                    from(java6.map { it.output })
                     manifest {
                         attributes.putAll(mapOf(
                                 "Implementation-Title" to dev.common.name,
@@ -133,7 +139,6 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     from(api.configurations.named("devOutput"))
                     from(api.tasks.named("genEventImpl"))
                 }
-
             }
             if (dev is SpongeImpl) {
                 dev.common.afterEvaluate {
@@ -148,26 +153,164 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                 add("archives", devJar)
             }
 
-            // TODO - AccessTransformers are no longer a thing I think....
-//            findByName("sortAccessTransformers")?.apply {
-//                (this as SortAccessTransformersTask).apply {
-//                    add("main", "common_at.cfg")
-//                }
-//            }
         }
 
     }
+
+    private fun applySourceSetDependencies(dev: CommonDevExtension, project: Project) {
+        dev.apply {
+            val thisDev = this
+        }
+    }
+
+    private fun generateSourceSetAndconfigure(projectSourceSets: SourceSetContainer, project: Project, dev: CommonDevExtension, subProj: Project?): (AddedSourceSet).() -> Unit {
+        return {
+            val addedSourceDom = this
+            val main by projectSourceSets.getting
+            val newSet = projectSourceSets.register(this.name) {
+                val newSourceSet = this
+
+                System.out.println("[${project.name}] Adding SourceSet(${newSourceSet.name}: ${addedSourceDom.sourceType.get()})")
+                this.output.dirs.forEach {
+                    project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
+                }
+                allSource.srcDirs.forEach {
+                    project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+                }
+
+                if (dev is SpongeImpl) {
+                    dev.extraDeps.add(this.output)
+                }
+                project.tasks.findByName("jar")?.apply {
+                    (this as Jar).apply {
+                        from(newSourceSet)
+                    }
+                }
+
+
+                project.afterEvaluate {
+                    System.out.println("[${project.name}] Realizing SourceSet(${newSourceSet.name}: ${addedSourceDom.sourceType.get()})")
+                    addedSourceDom.sourceType.get().onSourceSetCreated(newSourceSet, main, dev, project.dependencies, project)
+                    addedSourceDom.dependsOn.forEach {
+                        projectSourceSets.named(it).configure {
+                            newSourceSet.compileClasspath += this.compileClasspath
+                            project.dependencies.add(newSourceSet.implementationConfigurationName, this.output)
+
+                        }
+                    }
+                }
+            }
+            project.afterEvaluate {
+                newSet.configure {
+                    if (addedSourceDom.isJava6) {
+                        project.tasks {
+                            findByName("compile${addedSourceDom.name}Java")?.apply {
+                                (this as? JavaCompile)?.apply {
+                                    sourceCompatibility = "1.6"
+                                    targetCompatibility = "1.6"
+                                }
+                            }
+                        }
+                    }
+
+                }
+
+            }
+            if (subProj != null) subProj.afterEvaluate {
+                val subSourceSets = subProj.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
+                if (subSourceSets.names.contains(addedSourceDom.name)) {
+                    val childSourceSet = subSourceSets.getByName(addedSourceDom.name)
+                    val parentSet = projectSourceSets.findByName(addedSourceDom.name)
+                    System.out.println("[${project.name}] Getting existing child SourceSet ${addedSourceDom.name} in ${subProj.path}")
+                    childSourceSet.apply {
+                        val child = this
+                        newSet.configure {
+                            project.dependencies.add(this.implementationConfigurationName, child.output)
+                        }
+                        output.dirs.forEach {
+                            project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
+                        }
+                        allSource.srcDirs.forEach {
+                            project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+                        }
+                        parentSet!!.compileClasspath += compileClasspath
+                    }
+                } else {
+                    val subSet = subSourceSets.register(addedSourceDom.name) {
+                        System.out.println("[${project.name}] Creating new child SourceSet ${addedSourceDom.name} in ${subProj.path}")
+
+                        this.output.dirs.forEach {
+                            subProj.dependencies.add("devOutput", subProj.files(it.relativeTo(subProj.projectDir).path))
+                        }
+                        allSource.srcDirs.forEach {
+                            subProj.dependencies.add("sourceOutput", subProj.files(it.relativeTo(subProj.projectDir).path))
+                        }
+
+                        if (dev is SpongeImpl) {
+                            dev.extraDeps.add(this.output)
+                        }
+                        subProj.tasks.findByName("jar")?.apply {
+                            (this as Jar).apply {
+                                from(this@register)
+                            }
+                        }
+                    }
+                    val parentSet = projectSourceSets.findByName(addedSourceDom.name)
+                    subSet.configure {
+                        output.dirs.forEach {
+                            project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
+                        }
+                        allSource.srcDirs.forEach {
+                            project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
+                        }
+                        parentSet!!.compileClasspath += compileClasspath
+                    }
+                }
+            }
+
+
+        }
+    }
 }
 
-open class CommonDevExtension(val common: Project, api: Project, val minecraftVersion: String) : SpongeDevExtension(api) {
+open class AddedSourceSet(
+        val name: String,
+        val factory: ObjectFactory
+) {
+    var isJava6: Boolean = false
+    val dependsOn: MutableList<String> = mutableListOf()
+    val sourceType: Property<SourceType> = defaultPropertyType()
+
+    fun defaultPropertyType(): Property<SourceType> {
+        val source = factory.property(SourceType::class);
+        if (!source.isPresent) {
+            source.set(SourceType.Default)
+        }
+        return source
+    }
+
+}
+
+
+open class CommonDevExtension(
+        val addedSourceSets: NamedDomainObjectContainer<AddedSourceSet>,
+        val common: Project,
+        api: Project
+) : SpongeDevExtension(api) {
 
     private var apiTrimmed: String = "-1"
     private var apiReleased: String = "-1"
     private var apiMinor: String = "-1"
     private var apiSplit: List<String> = emptyList()
     private var implVersion: String = ""
+    val mixinSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
+    val launchSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
+    val accessorSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
+    val invalidSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
 
-    public fun isReleaseCandidate(): Boolean = (common.properties.get("recommendedVersion") as? String)?.endsWith("-SNAPSHOT") ?: false
+
+    public fun isReleaseCandidate(): Boolean = (common.properties.get("recommendedVersion") as? String)?.endsWith("-SNAPSHOT")
+            ?: false
 
     fun getSplitApiVersion(): List<String> {
         if (apiSplit.isEmpty()) {

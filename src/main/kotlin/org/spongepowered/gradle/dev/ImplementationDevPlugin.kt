@@ -25,14 +25,17 @@
 package org.spongepowered.gradle.dev
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.SourceSetOutput
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.kotlin.dsl.container
 import org.gradle.kotlin.dsl.getting
 import org.gradle.kotlin.dsl.maven
 import org.gradle.kotlin.dsl.repositories
 import org.spongepowered.gradle.util.Constants
+import javax.inject.Inject
 
 
 open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
@@ -40,7 +43,9 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
         val common = project.project(":SpongeCommon")
         val api = common.project("SpongeAPI")
         val mcVersion = common.property("minecraftVersion")!! as String
-        val impl = project.extensions.create(Constants.SPONGE_DEV_EXTENSION, SpongeImpl::class.java, project, common, api, mcVersion)
+        val addedSourceSets = project.container(AddedSourceSet::class);
+
+        val impl = project.extensions.create(Constants.SPONGE_DEV_EXTENSION, SpongeImpl::class.java, project, addedSourceSets, common, api)
         // This is basically to ensure that common can be configured with the appropriate
         // conventions before we continue adding more.
         super.apply(project)
@@ -96,7 +101,7 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
     }
 }
 
-open class SpongeImpl(val parent: Project, common: Project, api: Project, mcVersion: String) : CommonDevExtension(common, api, mcVersion) {
+open class SpongeImpl(val parent: Project, addedSourceSets: NamedDomainObjectContainer<AddedSourceSet>, common: Project, api: Project) : CommonDevExtension(addedSourceSets, common, api) {
 
     val extraDeps: MutableList<SourceSetOutput> = mutableListOf()
 
