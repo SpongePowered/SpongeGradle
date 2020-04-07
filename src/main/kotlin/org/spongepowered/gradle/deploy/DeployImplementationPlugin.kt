@@ -22,6 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+@file:Suppress("UnstableApiUsage")
+
 package org.spongepowered.gradle.deploy
 
 import org.gradle.api.Plugin
@@ -46,7 +48,7 @@ class DeployImplementationPlugin : Plugin<Project> {
             val container = this
             val repoDesc = config.description
             publications {
-                val publish = create<MavenPublication>("spongeGradle") {
+                create<MavenPublication>("spongeGradle") {
                     (this as? MavenArtifactRepository)?.let {
                         credentials {
                             config.username?.let {

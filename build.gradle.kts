@@ -138,7 +138,7 @@ pluginBundle {
     }
     mavenCoordinates {
         groupId = "org.spongepowered.gradle"
-        artifactId = SpongeGradle.name
+        artifactId = SpongeGradle.name.toLowerCase(Locale.ENGLISH)
         version = SpongeGradle.version
     }
 }

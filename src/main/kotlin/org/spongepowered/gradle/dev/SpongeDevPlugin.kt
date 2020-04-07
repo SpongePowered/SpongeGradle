@@ -22,6 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+@file:Suppress("UnstableApiUsage")
+
 package org.spongepowered.gradle.dev
 
 import net.minecrell.gradle.licenser.LicenseExtension
@@ -33,9 +35,12 @@ import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.quality.CheckstyleExtension
 import org.gradle.api.plugins.quality.CheckstylePlugin
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
@@ -47,15 +52,32 @@ import org.spongepowered.gradle.deploy.DeployImplementationPlugin
 import org.spongepowered.gradle.sort.SpongeSortingPlugin
 import org.spongepowered.gradle.util.Constants
 
-open class SpongeDevExtension(val api: Project? = null) {
-    var organization = "SpongePowered"
-    var url: String = "https://www.spongepowered.org"
-    var licenseProject: String = "SpongeAPI"
+open class SpongeDevExtension(val project: Project) {
+    val organization: Property<String> = project.objects.property()
+    val url: Property<String> = project.objects.property()
+    val licenseProject: Property<String> = project.objects.property()
+    val api: Property<Project> = project.objects.property(Project::class.java)
+
+    public fun organization(org: String) {
+        organization.set(org)
+    }
+    public fun url(url: String) {
+        this.url.set(url)
+    }
+    public fun license(projectName: String) {
+        this.licenseProject.set(projectName)
+    }
+    public open fun api(apiProject: Project) {
+        this.api.set(apiProject)
+    }
+    public open fun api(apiProjectProvider: Provider<Project>) {
+        this.api.set(apiProjectProvider)
+    }
 }
 
 open class SpongeDevPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val devExtension =  project.extensions.let {
+        val devExtension = project.extensions.let {
             it.findByType(SpongeDevExtension::class) ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project)
         }
 
@@ -64,9 +86,9 @@ open class SpongeDevPlugin : Plugin<Project> {
         project.plugins.apply(BaseDevPlugin::class.java)
         // Apply Test dependencies
         project.dependencies.apply {
-            add("testCompile", Constants.Dependencies.jUnit)
-            add("testCompile", "org.hamcrest:hamcrest-library:1.3")
-            add("testCompile", "org.mockito:mockito-core:2.8.47")
+            add("testImplementation", Constants.Dependencies.jUnit)
+            add("testImplementation", "org.hamcrest:hamcrest-library:1.3")
+            add("testImplementation", "org.mockito:mockito-core:2.8.47")
         }
         project.plugins.apply(JavaBasePlugin::class)
 
@@ -75,12 +97,12 @@ open class SpongeDevPlugin : Plugin<Project> {
         //  - Add Specification info for jar manifests
         //  - Add LICENSE.txt to the processResources for jar inclusion
         configureJavaCompile(project)
-        configureJavadocTask(project)
-        val javadocJar: Jar = configureJavadocJarTask(project)
+        val javadocTask = configureJavadocTask(project)
+        val javadocJar: TaskProvider<Jar> = configureJavadocJarTask(project, javadocTask)
 
         configureJarTask(project, devExtension)
 
-        val processResources = project.tasks.getting(ProcessResources::class) {
+        project.tasks.withType(ProcessResources::class).named("processResources").configure {
             from("LICENSE.txt")
         }
 
@@ -93,22 +115,22 @@ open class SpongeDevPlugin : Plugin<Project> {
         project.plugins.apply(SpongeSortingPlugin::class.java)
 
 //        configureDeploy(project, devExtension)
-        val sourceJar: Jar = configureSourceJar(project, devExtension)
+        val sourceJar: TaskProvider<Jar> = configureSourceJar(project, devExtension)
 
         configureSourceAndDevOutput(project, sourceJar, javadocJar, devExtension)
 
     }
 
-    private fun configureJavadocJarTask(project: Project): Jar {
-        val javadocJar: Jar = project.tasks.create("javadocJar", Jar::class) {
+    private fun configureJavadocJarTask(project: Project, javadocTask: TaskProvider<Javadoc>): TaskProvider<Jar> {
+        val javadocJar: TaskProvider<Jar> = project.tasks.register("javadocJar", Jar::class) {
             group = "build"
             classifier = "javadoc"
-            from(project.tasks["javadoc"])
+            from(javadocTask)
         }
         return javadocJar
     }
 
-    private fun configureSourceAndDevOutput(project: Project, sourceJar: Jar, javadocJar: Jar, devExtension: SpongeDevExtension) {
+    private fun configureSourceAndDevOutput(project: Project, sourceJar: TaskProvider<Jar>, javadocJar: TaskProvider<Jar>, devExtension: SpongeDevExtension) {
         project.extensions.findByType(PublishingExtension::class)?.apply {
             publications {
                 val mavenJava = findByName("mavenJava") as? MavenPublication
@@ -125,6 +147,7 @@ open class SpongeDevPlugin : Plugin<Project> {
 
         project.configurations.register("devOutput")
         project.dependencies.apply {
+
             project.sourceSet("main")?.output?.let {
                 add("devOutput", project.fileTree(it))
             }
@@ -135,12 +158,17 @@ open class SpongeDevPlugin : Plugin<Project> {
         configureSourceOutputForProject(project)
     }
 
-    private fun addSourceJarAndJavadocJarToArtifacts(project: Project, sourceJar: Jar, javadocJar: Jar) {
+    private fun addSourceJarAndJavadocJarToArtifacts(project: Project, sourceJar: TaskProvider<Jar>, javadocJar: TaskProvider<Jar>) {
         project.afterEvaluate {
             project.extensions.findByType(PublishingExtension::class)?.publications {
+
                 (findByName("spongeGradle") as? MavenPublication)?.apply {
-                    artifact(sourceJar)
-                    artifact(javadocJar)
+                    sourceJar.configure {
+                        artifact(this)
+                    }
+                    javadocJar.configure {
+                        artifact(this)
+                    }
                 }
             }
         }
@@ -166,20 +194,21 @@ open class SpongeDevPlugin : Plugin<Project> {
         }
     }
 
-    private fun configureSourceJar(project: Project, devExtension: SpongeDevExtension): Jar {
+    private fun configureSourceJar(project: Project, devExtension: SpongeDevExtension): TaskProvider<Jar> {
         val sourceOutputConf = project.configurations.register("sourceOutput")
-        val sourceJar: Jar = project.tasks.create("sourceJar", Jar::class.java) {
+        val sourceJar: TaskProvider<Jar> = project.tasks.register("sourceJar", Jar::class.java) {
             classifier = "sources"
             group = "build"
             from(sourceOutputConf)
             if (devExtension is CommonDevExtension) {
-                devExtension.api?.afterEvaluate {
-                    this@create.from(devExtension.api.configurations.named("sourceOutput"))
+                devExtension.api.map {
+                    this@register.from(it.configurations.named("sourceOutput"))
+
                 }
             }
             if (devExtension is SpongeImpl) {
-                devExtension.common.afterEvaluate {
-                    this@create.from(devExtension.common.configurations.named("sourceOutput"))
+                devExtension.common.map {
+                    this@register.from(it.configurations.named("sourceOutput"))
                 }
             }
         }
@@ -203,7 +232,7 @@ open class SpongeDevPlugin : Plugin<Project> {
         project.plugins.apply(CheckstylePlugin::class.java)
         project.extensions.configure(CheckstyleExtension::class.java) {
             toolVersion = "8.24"
-            devExtension.api?.let {
+            devExtension.api.map {
                 configFile = it.file("checkstyle.xml")
 
             }
@@ -225,7 +254,7 @@ open class SpongeDevPlugin : Plugin<Project> {
                 this["organization"] = devExtension.organization
                 this["url"] = devExtension.url
             }
-            devExtension.api?.let {
+            devExtension.api.map {
                 header = it.file("HEADER.txt")
             }
             include("**/*.java")
@@ -238,21 +267,19 @@ open class SpongeDevPlugin : Plugin<Project> {
         val commit: String? = project.properties["commit"] as String?
         val branch: String? = project.properties["branch"] as String?
         if (commit != null) {
-            project.afterEvaluate {
-                val jar = tasks.getting(Jar::class) {
-                    manifest {
-                        attributes["Git-Commit"] = commit
-                        attributes["Git-Branch"] = branch
-                    }
+            project.tasks.withType(Jar::class).named("jar").configure {
+                manifest {
+                    attributes["Git-Commit"] = commit
+                    attributes["Git-Branch"] = branch
                 }
             }
         }
     }
 
     private fun configureJarTask(project: Project, devExtension: SpongeDevExtension) {
-        val jar = project.tasks.getting(Jar::class) {
+        project.tasks.withType(Jar::class).named("jar").configure {
             manifest {
-                devExtension.api?.let {
+                devExtension.api.map {
                     attributes["Specification-Title"] = it.name
                     attributes["Specification-Version"] = it.version
                 }
@@ -264,17 +291,20 @@ open class SpongeDevPlugin : Plugin<Project> {
     }
 
     private fun configureJavaCompile(project: Project) {
-        val javaCompile = project.tasks.getting(JavaCompile::class) {
-            options.apply {
-                compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-parameters"))
-                isDeprecation = false
-                encoding = "UTF-8"
+        project.tasks.withType(JavaCompile::class).whenTaskAdded {
+            if (this.name.equals("javaCompile")) {
+                options.apply {
+                    compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-parameters"))
+                    isDeprecation = false
+                    encoding = "UTF-8"
+                }
             }
         }
     }
 
-    private fun configureJavadocTask(project: Project) {
-        val javadoc = project.tasks.getting(Javadoc::class) {
+    private fun configureJavadocTask(project: Project): TaskProvider<Javadoc> {
+        val javadoc = project.tasks.withType(Javadoc::class).named("javadoc")
+        javadoc.configure {
             options {
                 encoding = "UTF-8"
                 charset("UTF-8")
@@ -295,9 +325,9 @@ open class SpongeDevPlugin : Plugin<Project> {
                 }
             }
         }
+        return javadoc
     }
 }
 
 
-fun Project.sourceSets(name: String): SourceSet = convention.getPlugin(JavaPluginConvention::class.java).sourceSets.getByName(name)
 fun Project.sourceSet(name: String): SourceSet? = convention.findPlugin(JavaPluginConvention::class.java)?.sourceSets?.findByName(name)

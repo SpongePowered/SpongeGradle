@@ -22,6 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+@file:Suppress("UnstableApiUsage")
+
 package org.spongepowered.gradle.dev
 
 import org.gradle.api.*
@@ -29,6 +31,7 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
@@ -55,21 +58,11 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         // This will ignore creating the extension if we're a parent
         // implementation project that has already created the extension
         val dev = project.extensions.let {
-            val existing = it.findByType(CommonDevExtension::class)
-            if (existing == null) {
-                val api = project.findProject("SpongeAPI")
-
-
-                val addedSourceSets = project.container(AddedSourceSet::class, AddedSourceFactory(project))
-                it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, addedSourceSets, project, api)
-            } else {
-                existing
-            }
+            it.findByType(CommonDevExtension::class)
+                    ?: it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project)
         }
 
-        dev.licenseProject = "Sponge"
-        val api = dev.api!!
-        dev.common.version = dev.getImplementationVersion()
+        dev.licenseProject.set("Sponge")
         super.apply(project)
         project.plugins.apply {
             apply("java-library")
@@ -77,24 +70,16 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             apply(SpongeSortingPlugin::class.java)
         }
 
-        project.dependencies.apply {
-            add("api", dev.api)
+        project.afterEvaluate {
+            project.dependencies.apply {
+                add("api", dev.api.map {
+                    project(it.path)
+                }.get())
+            }
         }
 
         val projectSourceSets = project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
-        val subProj = (dev as? SpongeImpl)?.common
-        dev.addedSourceSets.all(generateSourceSetAndconfigure(projectSourceSets, project, dev, subProj))
-
-
-        subProj?.afterEvaluate {
-            val subDev = extensions.findByType(CommonDevExtension::class)
-            if (subDev != null) {
-                applySourceSetDependencies(subDev, project)
-            }
-        }
-        project.afterEvaluate {
-            applySourceSetDependencies(dev, project)
-        }
+        dev.addedSourceSets.all(generateSourceSetAndconfigure(projectSourceSets, project, dev))
 
         project.tasks.apply {
             getting(JavaCompile::class) {
@@ -107,18 +92,15 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             getting(GenerateMetadata::class) {
                 dependsOn(register)
             }
-            val jar: Task? = findByName("jar")?.apply {
-                (this as Jar).apply {
-                    manifest {
-                        attributes.putAll(mapOf(
-                                "Implementation-Title" to dev.common.name,
-                                "Implementation-Version" to dev.getImplementationVersion(),
-                                "Implementation-Vendor" to dev.organization,
-                                "Specification-Version" to dev.getApiReleasedVersion(),
-                                "MCP-Mappings-Version" to dev.common.property("mcpMappings")
-                        )
-                        )
-                    }
+            val jarTask = withType(Jar::class).named("jar")
+            jarTask.configure {
+                manifest {
+                    attributes.putAll(
+                            mapOf(
+                                    "Implementation-Vendor" to dev.organization,
+                                    "Specification-Version" to dev.getApiReleasedVersion()
+                                    )
+                    )
                 }
             }
             val devJar = register("devJar", Jar::class.java) {
@@ -126,28 +108,13 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                 classifier = "dev"
                 group = "build"
                 setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE)
-                (jar as? Jar)?.let {
-                    this.manifest.from(it.manifest)
+                this.manifest {
+                    from(jarTask.map { it.manifest })
                 }
                 from(project.configurations.named("devOutput"))
+                from(dev.api.map { it.configurations.named("devOutput") })
+                from(dev.api.map { it.tasks.named("genEventImpl") })
             }
-
-            // task configuration avoidance ftw. This allows us to avoid depending on
-            // subproject evaluation.
-            api.afterEvaluate {
-                devJar.configure {
-                    from(api.configurations.named("devOutput"))
-                    from(api.tasks.named("genEventImpl"))
-                }
-            }
-            if (dev is SpongeImpl) {
-                dev.common.afterEvaluate {
-                    devJar.configure {
-                        from(dev.common.configurations.named("devOutput"))
-                    }
-                }
-            }
-
 
             project.artifacts.apply {
                 add("archives", devJar)
@@ -157,13 +124,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
 
     }
 
-    private fun applySourceSetDependencies(dev: CommonDevExtension, project: Project) {
-        dev.apply {
-            val thisDev = this
-        }
-    }
-
-    private fun generateSourceSetAndconfigure(projectSourceSets: SourceSetContainer, project: Project, dev: CommonDevExtension, subProj: Project?): (AddedSourceSet).() -> Unit {
+    private fun generateSourceSetAndconfigure(projectSourceSets: SourceSetContainer, project: Project, dev: CommonDevExtension): (AddedSourceSet).() -> Unit {
         return {
             val addedSourceDom = this
             val main by projectSourceSets.getting
@@ -178,9 +139,6 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
                 }
 
-                if (dev is SpongeImpl) {
-                    dev.extraDeps.add(this.output)
-                }
                 project.tasks.findByName("jar")?.apply {
                     (this as Jar).apply {
                         from(newSourceSet)
@@ -216,57 +174,6 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                 }
 
             }
-            if (subProj != null) subProj.afterEvaluate {
-                val subSourceSets = subProj.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
-                if (subSourceSets.names.contains(addedSourceDom.name)) {
-                    val childSourceSet = subSourceSets.getByName(addedSourceDom.name)
-                    val parentSet = projectSourceSets.findByName(addedSourceDom.name)
-                    System.out.println("[${project.name}] Getting existing child SourceSet ${addedSourceDom.name} in ${subProj.path}")
-                    childSourceSet.apply {
-                        val child = this
-                        newSet.configure {
-                            project.dependencies.add(this.implementationConfigurationName, child.output)
-                        }
-                        output.dirs.forEach {
-                            project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
-                        }
-                        allSource.srcDirs.forEach {
-                            project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
-                        }
-                        parentSet!!.compileClasspath += compileClasspath
-                    }
-                } else {
-                    val subSet = subSourceSets.register(addedSourceDom.name) {
-                        System.out.println("[${project.name}] Creating new child SourceSet ${addedSourceDom.name} in ${subProj.path}")
-
-                        this.output.dirs.forEach {
-                            subProj.dependencies.add("devOutput", subProj.files(it.relativeTo(subProj.projectDir).path))
-                        }
-                        allSource.srcDirs.forEach {
-                            subProj.dependencies.add("sourceOutput", subProj.files(it.relativeTo(subProj.projectDir).path))
-                        }
-
-                        if (dev is SpongeImpl) {
-                            dev.extraDeps.add(this.output)
-                        }
-                        subProj.tasks.findByName("jar")?.apply {
-                            (this as Jar).apply {
-                                from(this@register)
-                            }
-                        }
-                    }
-                    val parentSet = projectSourceSets.findByName(addedSourceDom.name)
-                    subSet.configure {
-                        output.dirs.forEach {
-                            project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
-                        }
-                        allSource.srcDirs.forEach {
-                            project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
-                        }
-                        parentSet!!.compileClasspath += compileClasspath
-                    }
-                }
-            }
 
 
         }
@@ -282,7 +189,7 @@ open class AddedSourceSet(
     val sourceType: Property<SourceType> = defaultPropertyType()
 
     fun defaultPropertyType(): Property<SourceType> {
-        val source = factory.property(SourceType::class);
+        val source = factory.property(SourceType::class)
         if (!source.isPresent) {
             source.set(SourceType.Default)
         }
@@ -292,68 +199,135 @@ open class AddedSourceSet(
 }
 
 
-open class CommonDevExtension(
-        val addedSourceSets: NamedDomainObjectContainer<AddedSourceSet>,
-        val common: Project,
-        api: Project
-) : SpongeDevExtension(api) {
+open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
 
-    private var apiTrimmed: String = "-1"
-    private var apiReleased: String = "-1"
-    private var apiMinor: String = "-1"
-    private var apiSplit: List<String> = emptyList()
-    private var implVersion: String = ""
-    val mixinSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
-    val launchSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
-    val accessorSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
-    val invalidSourceSets: NamedDomainObjectContainer<SourceSet> = common.container()
+    private val apiTrimmed: Property<String> = project.objects.property()
+    private val apiReleased: Property<String> = project.objects.property()
+    private val apiMinor: Property<String> = project.objects.property()
+    private val apiSplit: Property<List<String>> = project.objects.property()
+    private val implVersion: Property<String> = project.objects.property()
+    val addedSourceSets: NamedDomainObjectContainer<AddedSourceSet> = project.container(AddedSourceSet::class, CommonImplementationDevPlugin.AddedSourceFactory(project))
+    val common: Property<Project> = project.objects.property(Project::class.java)
+    val mixinSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
+    val launchSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
+    val accessorSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
+    val invalidSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
 
-
-    public fun isReleaseCandidate(): Boolean = (common.properties.get("recommendedVersion") as? String)?.endsWith("-SNAPSHOT")
-            ?: false
-
-    fun getSplitApiVersion(): List<String> {
-        if (apiSplit.isEmpty()) {
-            apiTrimmed = api?.version.toString().replace("-SNAPSHOT", "")
-            apiSplit = apiTrimmed.split(".")
-        }
-        return apiSplit
+    open fun common(commonProject: Project) {
+        common(commonProjectProvider = project.provider { commonProject })
     }
 
-    fun fetchApiMinorVersion(): String {
-        if (apiMinor != "-1") {
+    open fun common(commonProjectProvider: Provider<Project>) {
+        this.common.set(commonProjectProvider)
+        project.tasks.withType(Jar::class).named("jar").configure {
+            manifest {
+                attributes(
+                        mapOf(
+                                "Implementation-Title" to commonProjectProvider.map { it.name }.get(),
+                                "Implementation-Version" to getImplementationVersion(),
+                                "MCP-Mappings-Version" to commonProjectProvider.map { it.property("mcpMappings")!! }.get()
+                        )
+                )
+            }
+        }
+        commonProjectProvider.map { it.version = getImplementationVersion() }
+    }
+
+    override fun api(apiProject: Project) {
+        super.api(apiProject)
+        apiProject.plugins.apply {
+            if (this.findPlugin(SpongeDevPlugin::class.java) == null) {
+                apply(SpongeDevPlugin::class.java)
+            }
+        }
+    }
+
+    override fun api(apiProjectProvider: Provider<Project>) {
+        super.api(apiProjectProvider.map {
+            val apiProject = it
+            if (!apiProject.plugins.hasPlugin(SpongeDevPlugin::class.java)) {
+                apiProject.plugins.apply(SpongeDevPlugin::class.java)
+            }
+            apiProject
+        })
+    }
+
+    fun isReleaseCandidate(): Provider<Boolean> {
+        return common.map {
+            (it.properties.get("recommendedVersion") as? String)?.endsWith("-SNAPSHOT") ?: false
+        }
+    }
+
+    fun getSplitApiVersion(): Provider<List<String>> {
+        if (apiSplit.isPresent) {
+            return apiSplit
+        }
+        return api.map {
+            val split = it.version.toString().replace("-SNAPSHOT", "").split(".")
+            apiSplit.set(split)
+            split
+        }
+    }
+
+    fun fetchApiMinorVersion(): Provider<String> {
+        if (apiMinor.isPresent) {
             return apiMinor
         }
         val split = getSplitApiVersion()
-        val minor = if (split.size > 1) split[1] else (if (split.size > 0) split.last() else "-1")
-        if (minor != "-1") {
-            apiMinor = Math.max(Integer.parseInt(minor) - 1, 0).toString()
-        } else {
-            apiMinor = minor
+        return split.map { splitVersion ->
+            val minor = if (splitVersion.size > 1) splitVersion[1] else (if (splitVersion.size > 0) splitVersion.last() else "-1")
+            if (minor != "-1") {
+                apiMinor.set(Math.max(Integer.parseInt(minor) - 1, 0).toString())
+            } else {
+                apiMinor.set(minor)
+            }
+            apiMinor.get()
         }
-        return apiMinor
     }
 
-    fun getApiReleasedVersion(): String {
-        if (apiReleased != "-1") {
+    fun getApiReleasedVersion(): Provider<String> {
+        if (apiReleased.isPresent) {
             return apiReleased
         }
-        val split = getSplitApiVersion()
+        return api.map {
+            val split = getSplitApiVersion()
+            val splitVersion = split.get()
+            if (splitVersion.size > 2) {
+                val major = fetchApiMinorVersion().map {
+                    "${splitVersion[0]}.${it}"
+                }.getOrElse(apiTrimmed.get())
+                apiReleased.set(major)
+                major
+            } else {
+                apiReleased.set(apiTrimmed)
+                apiTrimmed.get()
+            }
+        }
 
-        val major = if (split.size > 2) split[0] + "." + fetchApiMinorVersion() else apiTrimmed
-        apiReleased = major
-        return apiReleased
     }
 
-    fun getApiSuffix(): String {
-        return if ((api?.version as? String)?.endsWith("-SNAPSHOT") == true) getSplitApiVersion()[0] + "." + fetchApiMinorVersion() else getApiReleasedVersion()
+    fun getApiSuffix(): Provider<String> {
+        return api.map { proj ->
+            if ((proj.version as? String)?.endsWith("-SNAPSHOT") == true) {
+                getSplitApiVersion().map { versionedStringList ->
+                    fetchApiMinorVersion().map {
+                        versionedStringList[0] + "." + it
+                    }.getOrElse("0.0")
+                }.getOrElse("0.0.0-SNAPSHOT")
+            } else {
+                getApiReleasedVersion().get()
+            }
+        }
     }
 
     fun getImplementationVersion(): String {
-        if (implVersion.isEmpty()) {
-            implVersion = common.property("minecraftVersion")!! as String + "-" + getApiSuffix() + "." + common.property("recommendedVersion")!! as String
+        if (implVersion.isPresent) {
+            return implVersion.get()
         }
-        return implVersion
+        implVersion.set(common.map {
+            it.property("minecraftVersion")!! as String + "-" + getApiSuffix().get() + it.property("recommendedVersion")!! as String
+        })
+        return implVersion.get()
     }
 
 }
