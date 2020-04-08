@@ -22,6 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+@file:Suppress("UnstableApiUsage")
+
 package org.spongepowered.gradle.sort
 
 import org.gradle.api.Plugin
@@ -36,20 +38,16 @@ open class SpongeSortingPlugin : Plugin<Project> {
             create("sortFields", SortFieldsExtension::class.java, groups)
             add("sortGroups", groups)
         }
-        project.tasks {
-            @Suppress("UnstableApiUsage")
-            it.register("sortClassFields", SortClassFieldsTask::class.java) {
+        project.tasks.apply {
+            register("sortClassFields", SortClassFieldsTask::class.java) {
                 group = "sponge"
             }
 
-            it.register("sortAccessTransformer", SortAccessTransformersTask::class.java) {
+            register("sortAccessTransformer", SortAccessTransformersTask::class.java) {
                 group = "sponge"
             }
         }
     }
 }
 
-private operator fun TaskContainer.invoke(consumer: (e: TaskContainer) -> Unit) {
-    consumer.invoke(this)
-}
 

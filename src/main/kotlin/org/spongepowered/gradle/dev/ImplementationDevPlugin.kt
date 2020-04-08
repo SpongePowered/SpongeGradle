@@ -28,8 +28,10 @@ package org.spongepowered.gradle.dev
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.SourceSetOutput
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
@@ -55,10 +57,11 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
 //        project.dependencies.apply {
 //            add("implementation", common)
 //        }
-        if (impl.addForgeFlower.get()) {
-            project.repositories {
-                maven("https://files.minecraftforge.net/maven")
-            }
+        project.afterEvaluate {
+            if (impl.addForgeFlower.get()) {
+                project.repositories {
+                    maven("https://files.minecraftforge.net/maven")
+                }
 
 
 //            common.afterEvaluate {
@@ -70,12 +73,8 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
 //                    }
 //                }
 //            }
-        }
+            }
 
-        project.configurations.getByName("compile") {
-            exclude(mapOf("module" to "asm"))
-            exclude(mapOf("module" to "asm-commons"))
-            exclude(mapOf("module" to "asm-tree"))
         }
 
         // TODO - create nested dependency of metas.
@@ -98,90 +97,88 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
 
 }
 
-open class SpongeImpl(val parent: Project) : CommonDevExtension(project = parent) {
+open class SpongeImpl(project: Project) : CommonDevExtension(project = project) {
 
-    val extraDeps: MutableList<SourceSetOutput> = mutableListOf()
     val addForgeFlower: Property<Boolean> = defaultForgeFlowerProperty()
 
-    public override fun common(commonProject: Project) {
-        this.common.set(commonProject)
-        commonProject.plugins.apply {
-            if (this.findPlugin(CommonImplementationDevPlugin::class.java) == null) {
-                apply(CommonImplementationDevPlugin::class.java)
-            }
-        }
-
-    }
-
-    public override fun common(commonProjectProvider: Provider<Project>) {
+    override public fun common(commonProjectProvider: Provider<Project>) {
+        val implExtension = this
         this.common.set(commonProjectProvider.map {
             val commonProject = it
-            if (!commonProject.plugins.hasPlugin(CommonImplementationDevPlugin::class.java)) {
-                commonProject.plugins.apply(CommonImplementationDevPlugin::class.java)
-            }
-            val implExtension = this
-            commonProject.extensions.findByType(CommonDevExtension::class.java)?.apply {
-                this.addedSourceSets.all {
-
-                }
-                this.mixinSourceSets.all {
-                    val commonMixin = this
-                    implExtension.mixinSourceSets.all {
-                        this.compileClasspath += commonMixin.compileClasspath
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonMixin.output)
+            commonProject.plugins.withType(CommonImplementationDevPlugin::class.java).whenPluginAdded {
+                commonProject.extensions.configure(CommonDevExtension::class.java) {
+                    System.out.println("[${project.name}] Configuring SubProject(${commonProject.name}) dependencies to ${project.name}")
+                    this.mixinSourceSets.all {
+                        val commonMixin = this
+                        implExtension.mixinSourceSets.all {
+                            this.compileClasspath += commonMixin.compileClasspath
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonMixin.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonMixin.output)
+                        }
+                        implExtension.invalidSourceSets.all {
+                            System.out.println("[${project.name}] Adding ${this.name}(compileclasspath: ${commonProject.name}:${commonMixin.name})")
+                            this.compileClasspath += commonMixin.output
+                        }
                     }
-                    implExtension.invalidSourceSets.all {
-                        this.compileClasspath += commonMixin.output
+                    this.accessorSourceSets.all {
+                        val commonAccessor = this
+                        implExtension.mixinSourceSets.all {
+                            this.compileClasspath += commonAccessor.output
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonAccessor.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonAccessor.output)
+                        }
+                        implExtension.launchSourceSets.all {
+                            this.compileClasspath += commonAccessor.compileClasspath
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonAccessor.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonAccessor.output)
+                        }
+                        implExtension.invalidSourceSets.all {
+                            this.compileClasspath += commonAccessor.output
+                        }
                     }
-                }
-                this.accessorSourceSets.all {
-                    val commonAccessor = this
-                    implExtension.mixinSourceSets.all {
-                        this.compileClasspath += commonAccessor.output
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonAccessor.output)
+                    this.launchSourceSets.all {
+                        val commonLaunch = this
+                        implExtension.mixinSourceSets.all {
+                            this.compileClasspath += commonLaunch.compileClasspath
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonLaunch.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
+                        }
+                        implExtension.launchSourceSets.all {
+                            this.compileClasspath += commonLaunch.compileClasspath
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonLaunch.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
+                        }
+                        implExtension.accessorSourceSets.all {
+                            this.compileClasspath += commonLaunch.output
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonLaunch.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
+                        }
+                        implExtension.invalidSourceSets.all {
+                            System.out.println("[${project.name}] Adding ${this.name}(compileClasspath: ${commonProject.name}:${commonLaunch.name})")
+                            this.compileClasspath += commonLaunch.output
+                        }
                     }
-                    implExtension.launchSourceSets.all {
-                        this.compileClasspath += commonAccessor.compileClasspath
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonAccessor.output)
-                    }
-                    implExtension.invalidSourceSets.all {
-                        this.compileClasspath += commonAccessor.output
-                    }
-                }
-                this.launchSourceSets.all {
-                    val commonLaunch = this
-                    implExtension.mixinSourceSets.all {
-                        this.compileClasspath += commonLaunch.compileClasspath
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
-                    }
-                    implExtension.launchSourceSets.all {
-                        this.compileClasspath += commonLaunch.compileClasspath
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
-                    }
-                    implExtension.accessorSourceSets.all {
-                        this.compileClasspath += commonLaunch.output
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
-                    }
-                    implExtension.invalidSourceSets.all {
-                        this.compileClasspath += commonLaunch.output
-                    }
-                }
-                this.invalidSourceSets.all {
-                    val commonInvalid = this
-                    implExtension.mixinSourceSets.all {
-                        this.compileClasspath += commonInvalid.compileClasspath
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
-                    }
-                    implExtension.launchSourceSets.all {
-                        this.compileClasspath += commonInvalid.compileClasspath
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
-                    }
-                    implExtension.accessorSourceSets.all {
-                        this.compileClasspath += commonInvalid.output
-                        project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
-                    }
-                    implExtension.invalidSourceSets.all {
-                        this.compileClasspath += commonInvalid.output
+                    this.invalidSourceSets.all {
+                        val commonInvalid = this
+                        implExtension.mixinSourceSets.all {
+                            this.compileClasspath += commonInvalid.compileClasspath
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonInvalid.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
+                        }
+                        implExtension.launchSourceSets.all {
+                            this.compileClasspath += commonInvalid.compileClasspath
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonInvalid.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
+                        }
+                        implExtension.accessorSourceSets.all {
+                            this.compileClasspath += commonInvalid.output
+                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonInvalid.name})")
+                            project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
+                        }
+                        implExtension.invalidSourceSets.all {
+                            System.out.println("[${project.name}] Adding ${this.name}(compileClasspath: ${commonProject.name}:${commonInvalid.name})")
+                            this.compileClasspath += commonInvalid.output
+                        }
                     }
                 }
             }
@@ -191,7 +188,7 @@ open class SpongeImpl(val parent: Project) : CommonDevExtension(project = parent
 
 
     fun defaultForgeFlowerProperty(): Property<Boolean> {
-        val useForgeFlower = parent.objects.property(Boolean::class.java);
+        val useForgeFlower = project.objects.property(Boolean::class.java);
         if (!useForgeFlower.isPresent) {
             useForgeFlower.set(false);
         }

@@ -22,24 +22,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+@file:Suppress("UnstableApiUsage")
+
 package org.spongepowered.gradle.meta
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.Task
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.provider.Property
-import org.gradle.api.specs.Specs
 import org.gradle.api.tasks.*
 import org.gradle.kotlin.dsl.withConvention
 import org.spongepowered.plugin.meta.McModInfo
 import org.spongepowered.plugin.meta.PluginMetadata
-import java.io.File
 import java.nio.file.Path
 
 open class GenerateMetadata : DefaultTask() {
 
-    @get:OutputFile
-    var ouputFile: File? = null
+    @OutputFile
+    val outputFile: RegularFileProperty = newOutputFile()
 
     @Input
     var mergeMetadata = true
@@ -65,20 +64,15 @@ open class GenerateMetadata : DefaultTask() {
                     val find: PluginMetadata? = metadata.find {
                         it.id == meta.id
                     }
-                    if (find != null) {
-                        find.accept(meta)
-                    } else
-                        metadata.add(meta)
+                    find?.accept(meta) ?: metadata.add(meta)
                 }
 
             }
         }
-
-        val orElse = ouputFile ?: temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME).toFile()
-
-        if (orElse != null) {
-            McModInfo.DEFAULT.write(orElse.toPath(), metadata)
+        if (!this.outputFile.isPresent) {
+            this.outputFile.set(temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME).toFile())
         }
+        McModInfo.DEFAULT.write(outputFile.asFile.map { it.toPath() }.get(), metadata)
     }
 
     private fun findExtraMetadataFiles(sourceSet: SourceSet): List<Path> {

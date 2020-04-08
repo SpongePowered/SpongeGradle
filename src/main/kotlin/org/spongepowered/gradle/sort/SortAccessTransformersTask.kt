@@ -41,21 +41,15 @@ import javax.inject.Inject
 
 open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
 
-    @Input
-    fun getFiles() : List<File> {
-        return targetFiles
-    }
-
-    @Internal
-    val targetFiles : MutableList<File> = mutableListOf()
-
+    @Input // Gradle 6 probably removes this in favor of ObjectFactory.fileCollection(), but that's only in Gradle 5.3+
+    val accessorTransformers = project.layout.configurableFiles()
 
     /**
      * Main task action, sort added files
      */
     @TaskAction
     fun sortFiles() {
-        for (file in targetFiles) {
+        for (file in accessorTransformers) {
             this.sortFile(file)
         }
     }
@@ -83,7 +77,7 @@ open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
                         val sourceFile = srcDir.resolve(resourceFileName)
                         if (sourceFile.exists()) {
                             foundResource = true
-                            this.targetFiles.add(sourceFile)
+                            this.accessorTransformers.plus(sourceFile)
                         }
                     }
                 if (!foundResource) {

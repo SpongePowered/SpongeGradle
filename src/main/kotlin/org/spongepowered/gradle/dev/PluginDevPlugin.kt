@@ -51,7 +51,7 @@ open class PluginDevPlugin : Plugin<Project> {
         target.tasks.apply {
             val genMeta = creating(GenerateMetadata::class) {
                 mergeMetadata = false
-                ouputFile
+                outputFile
             }
             getting(JavaCompile::class) {
                 inputs.files(genMeta)
@@ -68,8 +68,8 @@ open class PluginDevPlugin : Plugin<Project> {
                         compilerArgs[pos + 1] += "," + AP.processor
                     }
                     val generateMetadata = genMeta.container["generateMetadata"] as GenerateMetadata
-                    val out = generateMetadata.ouputFile
-                    val extra = mutableListOf(out?.path)
+                    val out = generateMetadata.outputFile
+                    val extra = mutableListOf(out.asFile.get().path)
                     extra.addAll(generateMetadata.metadataFiles.map { it.toAbsolutePath().toString() })
                     compilerArgs.add("-AextraMetadataFiles=" + extra.joinToString(separator = ";"))
                 }

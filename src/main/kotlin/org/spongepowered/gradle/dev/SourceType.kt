@@ -34,76 +34,108 @@ import java.io.File
 
 enum class SourceType {
     Default {
-        override fun onSourceSetCreated(newSet: SourceSet, main: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
+        override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
             // do nothing
         }
     },
     Launch {
-        override fun onSourceSetCreated(newSet: SourceSet, main: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
+        override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
             dev.launchSourceSets.add(newSet)
-            dependencies.add(main.apiConfigurationName, newSet.output)
+            val launchImpl = project.configurations.named(newSet.implementationConfigurationName)
+            val launchCompile = project.configurations.named(newSet.compileConfigurationName)
             dev.accessorSourceSets.all {
-                dependencies.add(this.implementationConfigurationName, newSet.output)
-                this.compileClasspath += newSet.compileClasspath
+                System.out.println("[${project.name}] Adding SourceSet(${newSet.name}: Launch) to compile classpath: ${dev.project.name}:${this.name}")
+                this.compileClasspath += newSet.output
+                val accessorImplName = this.implementationConfigurationName
+                val accessorCompileName = this.compileConfigurationName
+                launchImpl.configure {
+                    dependencies.add(accessorImplName, this)
+                }
+                launchCompile.configure {
+                    dependencies.add(accessorCompileName, this)
+                }
             }
-            dev.invalidSourceSets.all {
-                dependencies.add(this.implementationConfigurationName, newSet.output)
-                this.compileClasspath += newSet.compileClasspath
-            }
+
             dev.mixinSourceSets.all {
-                this.compileClasspath += newSet.compileClasspath
+                System.out.println("[${project.name}] Adding SourceSet(${newSet.name}: Launch) to compile classpath: ${dev.project.name}:${this.name}")
+                this.compileClasspath += newSet.output
+                val mixinImplName = this.implementationConfigurationName
+                val mixinCompileName = this.compileConfigurationName
+                launchImpl.configure {
+                    dependencies.add(mixinImplName, this)
+                }
+                launchCompile.configure {
+                    dependencies.add(mixinCompileName, this)
+                }
             }
         }
     },
     Accessor {
-        override fun onSourceSetCreated(newSet: SourceSet, main: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
-            main.compileClasspath += newSet.compileClasspath
-            dev.launchSourceSets.all {
-                dependencies.add(newSet.implementationConfigurationName, this.output)
-                newSet.compileClasspath += this.compileClasspath
-            }
+        override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
             dev.accessorSourceSets.add(newSet)
-            dependencies.add(main.apiConfigurationName, newSet.output)
-            dev.invalidSourceSets.all {
-                dependencies.add(this.implementationConfigurationName, newSet.output)
-                this.compileClasspath += newSet.compileClasspath
-            }
+            val accessorImplName = newSet.implementationConfigurationName
+            val accessorImpl = project.configurations.named(accessorImplName)
+            val accessorCompileName = newSet.compileConfigurationName
+            val accessorCompile = project.configurations.named(accessorCompileName)
+
             dev.mixinSourceSets.all {
-                dependencies.add(this.implementationConfigurationName, newSet.output)
-                this.compileClasspath += newSet.compileClasspath
+                System.out.println("[${project.name}] Adding SourceSet(${newSet.name}: Accessor) to compile classpath: ${dev.project.name}:${this.name}")
+                this.compileClasspath += newSet.output
+                val mixinImplName = this.implementationConfigurationName
+                accessorImpl.configure {
+                    dependencies.add(mixinImplName, this)
+                }
+                val mixinCompileName = this.compileConfigurationName
+                accessorCompile.configure {
+                    dependencies.add(mixinCompileName, this)
+                }
             }
         }
     },
     Mixin {
-        override fun onSourceSetCreated(newSet: SourceSet, main: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
+        override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
             dev.mixinSourceSets.add(newSet)
-            System.out.println("[${project.name}] Adding SourceSet(${newSet.name}: Mixin) to compile classpath: ${main.output}")
-            newSet.compileClasspath += main.output
-            System.out.println("[${project.name}] SourceSet(${newSet.name}: Mixin) compile classpath is now: ${newSet.compileClasspath}")
-
+            project.configurations.maybeCreate(newSet.implementationConfigurationName)
+            project.configurations.maybeCreate(newSet.compileConfigurationName)
         }
     },
     Invalid {
-        override fun onSourceSetCreated(newSet: SourceSet, main: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
-            newSet.compileClasspath += main.compileClasspath
+        override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
             newSet.java.srcDir(project.projectDir.path + "invalid" + File.pathSeparator + "src" + File.pathSeparator + "main" + File.pathSeparator + "java")
-
             dev.invalidSourceSets.add(newSet)
-            dependencies.add(newSet.implementationConfigurationName, main.output)
             dev.launchSourceSets.all {
-                dependencies.add(newSet.implementationConfigurationName, this.output)
-                newSet.compileClasspath += this.compileClasspath
-                newSet.compileClasspath += this.allSource
+                System.out.println("[${project.name}] Adding ${this.name}(implementation: ${dev.project.name}:${newSet.name})")
+                val launchImpl = project.configurations.named(this.implementationConfigurationName)
+                val launchCompile = project.configurations.named(this.compileConfigurationName)
+                launchImpl.configure {
+                    dependencies.add(newSet.implementationConfigurationName, this)
+                }
+                launchCompile.configure {
+                    dependencies.add(newSet.compileConfigurationName, this)
+                }
+                newSet.compileClasspath += this.output
             }
             dev.mixinSourceSets.all {
-                dependencies.add(newSet.implementationConfigurationName, this.output)
-                newSet.compileClasspath += this.compileClasspath
-                newSet.compileClasspath += this.allSource
+                val mixinImpl = project.configurations.named(this.implementationConfigurationName)
+                val mixinCompile = project.configurations.named(this.compileConfigurationName)
+                mixinImpl.configure {
+                    dependencies.add(newSet.implementationConfigurationName, this)
+                }
+                mixinCompile.configure {
+                    dependencies.add(newSet.compileConfigurationName, this)
+                }
+                newSet.compileClasspath += this.output
             }
             dev.accessorSourceSets.all {
-                dependencies.add(newSet.implementationConfigurationName, this.output)
-                newSet.compileClasspath += this.compileClasspath
-                newSet.compileClasspath += this.allSource
+                val accessorImpl = project.configurations.named(this.implementationConfigurationName)
+                val accessorCompile = project.configurations.named(this.compileConfigurationName)
+                accessorImpl.configure {
+                    dependencies.add(newSet.implementationConfigurationName, this)
+                }
+                accessorCompile.configure {
+                    dependencies.add(newSet.compileConfigurationName, this)
+                }
+                newSet.compileClasspath += this.output
             }
             project.tasks.named("compileJava").configure {
                 (this as JavaCompile).apply {
@@ -115,5 +147,5 @@ enum class SourceType {
         }
     };
 
-    abstract fun onSourceSetCreated(newSet: SourceSet, main: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project)
+    abstract fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project)
 }
