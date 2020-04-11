@@ -38,7 +38,7 @@ import java.nio.file.Path
 open class GenerateMetadata : DefaultTask() {
 
     @OutputFile
-    val outputFile: RegularFileProperty = newOutputFile()
+    val outputFile: RegularFileProperty = this.newOutputFile()
 
     @Input
     var mergeMetadata = true

@@ -26,12 +26,12 @@
 
 package org.spongepowered.gradle.dev
 
-import org.gradle.api.*
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.NamedDomainObjectFactory
+import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
-import org.gradle.api.logging.LogLevel
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -40,6 +40,10 @@ import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.*
+import org.gradle.plugins.ide.eclipse.EclipsePlugin
+import org.gradle.plugins.ide.eclipse.model.EclipseModel
+import org.gradle.plugins.ide.idea.IdeaPlugin
+import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.spongepowered.gradle.meta.BundleMetaPlugin
 import org.spongepowered.gradle.meta.GenerateMetadata
 import org.spongepowered.gradle.sort.SpongeSortingPlugin
@@ -65,63 +69,55 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     ?: it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project)
         }
 
-        project.plugins.withType(JavaPlugin::class.java).whenPluginAdded {
+        project.plugins.withType(JavaLibraryPlugin::class.java).whenPluginAdded {
             project.extensions.configure(SourceSetContainer::class.java) {
                 val main by named("main")
-                project.configurations.maybeCreate(main.implementationConfigurationName)
-                project.configurations.maybeCreate(main.compileConfigurationName)
-                project.configurations.maybeCreate(main.apiConfigurationName)
+                val mainImpl by project.configurations.named(main.implementationConfigurationName)
+                val mainCompile by project.configurations.named(main.compileConfigurationName)
+                val mainApi by project.configurations.named(main.apiConfigurationName)
                 dev.launchSourceSets.all {
                     val launchSet = this
-                    val mainApiConfig = project.configurations.maybeCreate(main.apiConfigurationName)
-                    project.configurations.maybeCreate(this.implementationConfigurationName)
-                    project.configurations.maybeCreate(this.compileConfigurationName)
+                    createSourceSetConfigurations(project, this)
                     project.dependencies {
-                        add(launchSet.implementationConfigurationName, mainApiConfig)
                         add(main.implementationConfigurationName, launchSet.output)
                     }
                     main.compileClasspath += launchSet.output
                 }
                 dev.accessorSourceSets.all {
                     val accessorSet = this
-                    project.configurations.maybeCreate(this.implementationConfigurationName)
-                    project.configurations.maybeCreate(this.compileConfigurationName)
+                    createSourceSetConfigurations(project, this)
                     project.dependencies {
                         add(main.implementationConfigurationName, accessorSet.output)
                     }
+
                     main.compileClasspath += accessorSet.output
                 }
                 dev.mixinSourceSets.all {
                     val mixinSet = this
-                    val mainImplConfig = project.configurations.maybeCreate(main.implementationConfigurationName)
-                    project.configurations.maybeCreate(this.implementationConfigurationName)
-                    project.configurations.maybeCreate(this.compileConfigurationName)
-                    project.dependencies {
-                        System.out.println("[${project.name}] Adding SourceSet[${mixinSet.name}: Mixin](${mixinSet.implementationConfigurationName}) to compile classpath: ${dev.project.name}:${main.name}")
-                        add(mixinSet.implementationConfigurationName, mainImplConfig)
-                    }
+                    createSourceSetConfigurations(project, this)
+                    val mixinImplConfig by project.configurations.named(this.implementationConfigurationName)
+                    mixinImplConfig.extendsFrom(mainImpl)
                     mixinSet.compileClasspath += main.output
                 }
                 dev.invalidSourceSets.all {
-                    val mainImplConfig = project.configurations.maybeCreate(main.implementationConfigurationName)
                     val invalidSet = this
-                    project.configurations.maybeCreate(this.implementationConfigurationName)
-                    project.configurations.maybeCreate(this.compileConfigurationName)
+                    createSourceSetConfigurations(project, this)
+
                     invalidSet.compileClasspath += main.output
-                    project.dependencies {
-                        add(invalidSet.implementationConfigurationName, mainImplConfig)
-                    }
+                    val invalidImplConfig by project.configurations.named(this.implementationConfigurationName)
+                    invalidImplConfig.extendsFrom(mainImpl)
+                }
+                dev.defaultSourceSets.all {
+                    createSourceSetConfigurations(project, this)
                 }
             }
         }
 
-
-
-
-        dev.licenseProject.set("Sponge")
+        if (!dev.licenseProject.isPresent) {
+            dev.licenseProject.set("Sponge")
+        }
         super.apply(project)
         project.plugins.apply {
-            apply("java-library")
             apply(BundleMetaPlugin::class.java)
             apply(SpongeSortingPlugin::class.java)
         }
@@ -137,16 +133,17 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         val projectSourceSets = project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
         dev.addedSourceSets.all(generateSourceSetAndconfigure(projectSourceSets, project, dev))
 
+        project.tasks.withType(JavaCompile::class).all {
+            options.compilerArgs.add("-Xlint:-processing")
+        }
+
         project.tasks.apply {
-            getting(JavaCompile::class) {
-                options.compilerArgs.add("-Xlint:-processing")
-            }
-            val register = register("resolveApiRevision", ResolveApiVersionTask::class.java) {
+            val resolveApiRevision = registering(ResolveApiVersionTask::class) {
                 group = "sponge"
             }
 
-            getting(GenerateMetadata::class) {
-                dependsOn(register)
+            withType(GenerateMetadata::class).whenTaskAdded {
+                dependsOn(resolveApiRevision)
             }
             val jarTask = withType(Jar::class).named("jar")
             jarTask.configure {
@@ -159,8 +156,9 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     )
                 }
             }
-            val devJar = register("devJar", Jar::class.java) {
-                dependsOn("resolveApiRevision")
+            register("devJar", Jar::class) {
+                dependsOn(resolveApiRevision)
+                dependsOn(jarTask)
                 classifier = "dev"
                 group = "build"
                 setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE)
@@ -170,10 +168,8 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                 from(project.configurations.named("devOutput"))
                 from(dev.api.map { it.configurations.named("devOutput") })
                 from(dev.api.map { it.tasks.named("genEventImpl") })
-            }
 
-            project.artifacts.apply {
-                add("archives", devJar)
+                project.artifacts.add("archives", this)
             }
 
         }
@@ -186,7 +182,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             val newSet = projectSourceSets.register(this.name) {
                 val newSourceSet = this
 
-                System.out.println("[${project.name}] Adding SourceSet(${newSourceSet.name}: ${addedSourceDom.sourceType.get()})")
+                System.out.println("[${project.name}] Adding SourceSet ${project.path}:${newSourceSet.name}")
                 this.output.dirs.forEach {
                     project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
                 }
@@ -194,22 +190,23 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
                 }
 
-                project.tasks.findByName("jar")?.apply {
-                    (this as Jar).apply {
-                        from(newSourceSet)
-                    }
-                }
 
 
                 project.afterEvaluate {
-                    System.out.println("[${project.name}] Realizing SourceSet(${newSourceSet.name}: ${addedSourceDom.sourceType.get()})")
-                    addedSourceDom.sourceType.get().onSourceSetCreated(newSourceSet, dev, project.dependencies, project)
+                    val configuredSourceType = addedSourceDom.sourceType.get()
+                    System.out.println("[${project.name}] Realizing SourceSet ${project.path}:${newSourceSet.name} (${configuredSourceType})")
+                    configuredSourceType.onSourceSetCreated(newSourceSet, dev, project.dependencies, project)
+                    if (configuredSourceType != SourceType.Invalid) {
+                        project.tasks.withType(Jar::class.java).named("jar").configure {
+                            from(newSourceSet)
+                        }
+                    }
                     addedSourceDom.dependsOn.forEach {
                         projectSourceSets.named(it).configure {
-                            newSourceSet.compileClasspath += this.compileClasspath
-                            val dependentImpl = project.configurations.named(this.implementationConfigurationName);
+                            val dependentImpl = project.configurations.named(this.implementationConfigurationName)
                             project.dependencies.add(newSourceSet.implementationConfigurationName, this.output)
                             dependentImpl.configure {
+
                                 project.dependencies.add(newSourceSet.implementationConfigurationName, this)
                             }
 
@@ -235,6 +232,37 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             }
 
 
+        }
+    }
+
+    /**
+     * This is ripped from the [JavaLibraryPlugin.addApiToMainSourceSet] to facilitate the
+     * association of api dependencies that can be resolved
+     */
+    private fun createSourceSetConfigurations(project: Project, sourceSet: SourceSet) {
+        project.logger.lifecycle("[${project.name}] Registering Configuration ${project.path}(${sourceSet.name}).${sourceSet.apiConfigurationName}")
+        val apiConfiguration = project.configurations.maybeCreate(sourceSet.apiConfigurationName)
+        apiConfiguration.description = "API dependencies for $sourceSet."
+
+        val apiElementsConfiguration = project.configurations.maybeCreate(sourceSet.apiElementsConfigurationName)
+        apiElementsConfiguration.extendsFrom(apiConfiguration)
+        val implementationConfiguration = project.configurations.getByName(sourceSet.implementationConfigurationName)
+        implementationConfiguration.extendsFrom(apiConfiguration)
+
+        val compileConfiguration = project.configurations.getByName(sourceSet.compileConfigurationName)
+        apiConfiguration.extendsFrom(compileConfiguration)
+        project.plugins.withType(IdeaPlugin::class.java).all {
+            project.extensions.configure(IdeaModel::class.java) {
+                val compile = module.scopes["COMPILE"]
+
+                compile?.plus(sourceSet.compileConfigurationName to compileConfiguration)
+            }
+            model.module.scopes.get("COMPILE")?.plus("COMPILE" to compileConfiguration)
+        }
+        project.plugins.withType(EclipsePlugin::class.java).all {
+            project.extensions.getByType(EclipseModel::class.java).apply {
+                classpath.plusConfigurations.add(compileConfiguration)
+            }
         }
     }
 }
@@ -271,6 +299,7 @@ open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
     val launchSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
     val accessorSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
     val invalidSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
+    val defaultSourceSets: NamedDomainObjectContainer<SourceSet> = project.container()
 
     open fun common(commonProject: Project) {
         common(commonProjectProvider = project.provider { commonProject })

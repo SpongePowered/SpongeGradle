@@ -27,11 +27,13 @@
 package org.spongepowered.gradle.dev
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetOutput
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.kotlin.dsl.*
@@ -47,7 +49,7 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
 
         project.tasks.apply {
             withType(Jar::class).named("jar").configure {
-                System.out.println("[${project.name}] Configuring devOutput Jar")
+                project.getLogger().lifecycle("[${project.name}] Configuring devOutput Jar")
 
                 from(impl.common.map { it.configurations.named("devOutput") })
             }
@@ -106,86 +108,114 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
         this.common.set(commonProjectProvider.map {
             val commonProject = it
             commonProject.plugins.withType(CommonImplementationDevPlugin::class.java).whenPluginAdded {
-                commonProject.extensions.configure(CommonDevExtension::class.java) {
-                    System.out.println("[${project.name}] Configuring SubProject(${commonProject.name}) dependencies to ${project.name}")
-                    this.mixinSourceSets.all {
-                        val commonMixin = this
-                        implExtension.mixinSourceSets.all {
-                            this.compileClasspath += commonMixin.compileClasspath
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonMixin.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonMixin.output)
+                commonProject.afterEvaluate {
+                    commonProject.extensions.configure(CommonDevExtension::class.java) {
+                        val implProject = implExtension.project
+                        implProject.getLogger().lifecycle("[${implProject.name}] Configuring SubProject(${commonProject.path}) dependencies to ${implProject.name}")
+                        this.mixinSourceSets.all {
+                            val commonMixin = this
+                            val commonMixinImpl = commonProject.configurations.named(this.implementationConfigurationName)
+                            val commonMixinCompile = commonProject.configurations.named(this.compileConfigurationName)
+                            implExtension.mixinSourceSets.all {
+                                applyNamedDependencyOnOutput(commonMixin, implProject, this, implementationConfigurationName, commonProject)
+                                applyNamedDependencyOnConfiguration(commonMixinImpl, commonProject, implProject, this, implementationConfigurationName)
+                                applyNamedDependencyOnConfiguration(commonMixinCompile, commonProject, implProject, this, compileConfigurationName)
+                            }
+                            implExtension.invalidSourceSets.all {
+                                this.compileClasspath += commonMixin.output
+                                applyNamedDependencyOnOutput(commonMixin, implProject, this, implementationConfigurationName, commonProject)
+                            }
                         }
-                        implExtension.invalidSourceSets.all {
-                            System.out.println("[${project.name}] Adding ${this.name}(compileclasspath: ${commonProject.name}:${commonMixin.name})")
-                            this.compileClasspath += commonMixin.output
+                        this.accessorSourceSets.all {
+                            val commonAccessor = this
+                            val commonAccessorCompile = commonProject.configurations.named(this.compileConfigurationName)
+                            val commonAccessorImpl = commonProject.configurations.named(this.implementationConfigurationName)
+                            implExtension.mixinSourceSets.all {
+                                applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
+                            }
+                            implExtension.accessorSourceSets.all {
+                                applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
+                                applyNamedDependencyOnConfiguration(commonAccessorCompile, commonProject, implProject, this, compileConfigurationName)
+                                applyNamedDependencyOnConfiguration(commonAccessorImpl, commonProject, implProject, this, implementationConfigurationName)
+                            }
+                            implExtension.invalidSourceSets.all {
+                                applyNamedDependencyOnConfiguration(commonAccessorImpl, commonProject, implProject, this, implementationConfigurationName)
+                                applyNamedDependencyOnConfiguration(commonAccessorCompile, commonProject, implProject, this, compileConfigurationName)
+                                applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
+                            }
+                            val sourceSets = implProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
+                            val implMain = sourceSets["main"]
+                            applyNamedDependencyOnOutput(commonAccessor, implProject, implMain, implMain.implementationConfigurationName, commonProject)
+                        }
+                        this.launchSourceSets.all {
+                            val commonLaunch = this
+                            val commonLaunchImpl = commonProject.configurations.named(commonLaunch.implementationConfigurationName)
+                            val commonLaunchCompile = commonProject.configurations.named(commonLaunch.compileConfigurationName)
+                            implExtension.mixinSourceSets.all {
+                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
+                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
+                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                            }
+                            implExtension.launchSourceSets.all {
+                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
+                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
+                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                            }
+                            implExtension.accessorSourceSets.all {
+                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
+                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
+                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                            }
+                            implExtension.invalidSourceSets.all {
+                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
+                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
+                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                            }
+                        }
+                        this.invalidSourceSets.all {
+                            val commonInvalid = this
+                            implExtension.invalidSourceSets.all {
+                                applyNamedDependencyOnOutput(commonInvalid, implProject, this, implementationConfigurationName, commonProject)
+                            }
+                        }
+                        this.defaultSourceSets.all {
+                            val commonDefault = this
+                            implExtension.defaultSourceSets.all {
+                                val defaultCompile = commonProject.configurations.named(commonDefault.compileConfigurationName)
+                                val defaultImpl = commonProject.configurations.named(commonDefault.implementationConfigurationName)
+                                if (this.name.equals(commonDefault.name)) {
+                                    applyNamedDependencyOnOutput(commonDefault, implProject, this, implementationConfigurationName, commonProject)
+                                    applyNamedDependencyOnConfiguration(defaultCompile, commonProject, implProject,this, compileConfigurationName)
+                                    applyNamedDependencyOnConfiguration(defaultImpl, commonProject, implProject,this, implementationConfigurationName)
+                                }
+                            }
                         }
                     }
-                    this.accessorSourceSets.all {
-                        val commonAccessor = this
-                        implExtension.mixinSourceSets.all {
-                            this.compileClasspath += commonAccessor.output
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonAccessor.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonAccessor.output)
-                        }
-                        implExtension.launchSourceSets.all {
-                            this.compileClasspath += commonAccessor.compileClasspath
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonAccessor.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonAccessor.output)
-                        }
-                        implExtension.invalidSourceSets.all {
-                            this.compileClasspath += commonAccessor.output
-                        }
-                    }
-                    this.launchSourceSets.all {
-                        val commonLaunch = this
-                        implExtension.mixinSourceSets.all {
-                            this.compileClasspath += commonLaunch.compileClasspath
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonLaunch.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
-                        }
-                        implExtension.launchSourceSets.all {
-                            this.compileClasspath += commonLaunch.compileClasspath
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonLaunch.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
-                        }
-                        implExtension.accessorSourceSets.all {
-                            this.compileClasspath += commonLaunch.output
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonLaunch.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonLaunch.output)
-                        }
-                        implExtension.invalidSourceSets.all {
-                            System.out.println("[${project.name}] Adding ${this.name}(compileClasspath: ${commonProject.name}:${commonLaunch.name})")
-                            this.compileClasspath += commonLaunch.output
-                        }
-                    }
-                    this.invalidSourceSets.all {
-                        val commonInvalid = this
-                        implExtension.mixinSourceSets.all {
-                            this.compileClasspath += commonInvalid.compileClasspath
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonInvalid.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
-                        }
-                        implExtension.launchSourceSets.all {
-                            this.compileClasspath += commonInvalid.compileClasspath
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonInvalid.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
-                        }
-                        implExtension.accessorSourceSets.all {
-                            this.compileClasspath += commonInvalid.output
-                            System.out.println("[${project.name}] Adding ${this.name}(compile: ${commonProject.name}:${commonInvalid.name})")
-                            project.dependencies.add(this.compileOnlyConfigurationName, commonInvalid.output)
-                        }
-                        implExtension.invalidSourceSets.all {
-                            System.out.println("[${project.name}] Adding ${this.name}(compileClasspath: ${commonProject.name}:${commonInvalid.name})")
-                            this.compileClasspath += commonInvalid.output
-                        }
-                    }
+
                 }
             }
             commonProject
         })
     }
 
+    private fun applyNamedDependencyOnOutput(commonSet: SourceSet, parentProject: Project, targetSet: SourceSet, configurationName: String, childProject: Project) {
+        parentProject.getLogger().lifecycle("[${parentProject.name}] Adding Child ${childProject.path}(${commonSet.name}).output to Parent ${parentProject.path}(${targetSet.name}).$configurationName ")
+        targetSet.compileClasspath += commonSet.output
+        if (!targetSet.name.equals("main")) {
+            targetSet.compileClasspath += commonSet.compileClasspath
+        }
+        parentProject.dependencies.add(configurationName, commonSet.output)
+    }
+
+    private fun applyNamedDependencyOnConfiguration(configProvider: NamedDomainObjectProvider<Configuration>, childProject: Project, implProject: Project, targetSet: SourceSet, dependencyConfigName: String) {
+        configProvider.configure {
+            implProject.getLogger().lifecycle("[${implProject.name}] Extending Parent ${implProject.path}(${targetSet.name}).$dependencyConfigName from Child ${childProject.path}.${this.name}")
+            val configToExtend = this
+            implProject.configurations.named(dependencyConfigName).configure {
+                this.extendsFrom(configToExtend)
+            }
+        }
+    }
 
     fun defaultForgeFlowerProperty(): Property<Boolean> {
         val useForgeFlower = project.objects.property(Boolean::class.java);

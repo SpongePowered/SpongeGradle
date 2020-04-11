@@ -1,7 +1,7 @@
 object SpongeGradle {
 
     const val group = Groups.sponge
-    const val version = "0.11.1-SNAPSHOT"
+    const val version = "0.11.1"
     const val organization = "SpongePowered"
     const val url = "https://www.spongepowered.org"
     const val name = "SpongeGradle"
@@ -15,7 +15,7 @@ object Deps {
     const val asm = "${Groups.asm}:${Libs.asm}:${Versions.asm}"
     const val jsr = "${Groups.findbugs}:${Libs.jsr}:${Versions.jsr305}"
     const val licenser = "net.minecrell.licenser:net.minecrell.licenser.gradle.plugin:0.4.1"
-    const val mixingradle = "org.spongepowered:mixingradle:0.6-SNAPSHOT"
+    const val mixingradle = "org.spongepowered:mixingradle:0.7-SNAPSHOT"
     const val shadow = "com.github.jengelman.gradle.plugins:shadow:4.0.4"
 
     object Script {

@@ -32,6 +32,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.quality.CheckstyleExtension
 import org.gradle.api.plugins.quality.CheckstylePlugin
@@ -90,7 +91,7 @@ open class SpongeDevPlugin : Plugin<Project> {
             add("testImplementation", "org.hamcrest:hamcrest-library:1.3")
             add("testImplementation", "org.mockito:mockito-core:2.8.47")
         }
-        project.plugins.apply(JavaBasePlugin::class)
+        project.plugins.apply(JavaLibraryPlugin::class)
 
         // Configure Java compile
         //  - Add javadocJar
@@ -291,13 +292,11 @@ open class SpongeDevPlugin : Plugin<Project> {
     }
 
     private fun configureJavaCompile(project: Project) {
-        project.tasks.withType(JavaCompile::class).whenTaskAdded {
-            if (this.name.equals("javaCompile")) {
-                options.apply {
-                    compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-parameters"))
-                    isDeprecation = false
-                    encoding = "UTF-8"
-                }
+        project.tasks.withType(JavaCompile::class).named("compileJava").configure {
+            options.apply {
+                compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-parameters"))
+                isDeprecation = false
+                encoding = "UTF-8"
             }
         }
     }

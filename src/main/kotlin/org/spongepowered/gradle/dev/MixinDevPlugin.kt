@@ -33,12 +33,6 @@ open class MixinDevPlugin : Plugin<Project> {
         project.plugins.apply(BaseDevPlugin::class.java)
 
 
-        project.repositories.apply {
-            maven {
-                name = "forge"
-                setUrl("https://files.minecraftforge.net/repo")
-            }
-        }
         project.dependencies.apply {
             // Added for runtime decompiling with Mixins for debugging
             add("runtime", "net.minecraftforge:forgeflower:1.5.380.23")

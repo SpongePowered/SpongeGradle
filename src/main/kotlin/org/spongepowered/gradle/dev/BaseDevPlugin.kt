@@ -40,7 +40,6 @@ open class BaseDevPlugin : Plugin<Project> {
             apply("java-library")
             apply("eclipse")
             apply("idea")
-            apply("java")
         }
         target.buildscript.repositories.apply {
             gradlePluginPortal()

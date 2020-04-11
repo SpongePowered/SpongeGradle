@@ -136,11 +136,6 @@ pluginBundle {
             description = GradlePlugins.CommonImplementationPlugin.desc
         }
     }
-    mavenCoordinates {
-        groupId = "org.spongepowered.gradle"
-        artifactId = SpongeGradle.name.toLowerCase(Locale.ENGLISH)
-        version = SpongeGradle.version
-    }
 }
 
 
@@ -181,14 +176,6 @@ artifacts {
 
 
 publishing {
-    publications {
-        val pluginMaven = (get("pluginMaven") as MavenPublication)
-        pluginMaven.apply {
-            artifactId = SpongeGradle.name.toLowerCase(Locale.ENGLISH)
-            artifact(sourceJar)
-
-        }
-    }
 
     // Set by the build server
     project.properties["spongeRepo"]?.let { repo ->
