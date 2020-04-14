@@ -93,7 +93,6 @@ class DeployImplementationPlugin : Plugin<Project> {
                 target.properties[config.snapshotRepo!!] as String?
             else
                 target.properties[config.releaseRepo!!] as String?
-            System.err.println("Repo url: " + repoUrlKey)
             repoUrlKey?.let {
                 target.findProperty(it)?.let {
                     repositories {

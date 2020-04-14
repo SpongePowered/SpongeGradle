@@ -55,26 +55,11 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
             }
         }
 
-
-//        project.dependencies.apply {
-//            add("implementation", common)
-//        }
         project.afterEvaluate {
             if (impl.addForgeFlower.get()) {
                 project.repositories {
                     maven("https://files.minecraftforge.net/maven")
                 }
-
-
-//            common.afterEvaluate {
-//                impl.parent.dependencies.apply {
-//                    add("implementation", common)
-//                    add("runtime", "net.minecraftforge:forgeflower:1.5.380.23")
-//                    impl.extraDeps.forEach {
-//                        add("implementation", it)
-//                    }
-//                }
-//            }
             }
 
         }
@@ -109,17 +94,28 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
             val commonProject = it
             commonProject.plugins.withType(CommonImplementationDevPlugin::class.java).whenPluginAdded {
                 commonProject.afterEvaluate {
+                    val commonSourceSets = commonProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
                     commonProject.extensions.configure(CommonDevExtension::class.java) {
                         val implProject = implExtension.project
+                        val implSourceSets = implProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
                         implProject.getLogger().lifecycle("[${implProject.name}] Configuring SubProject(${commonProject.path}) dependencies to ${implProject.name}")
+                        this.addedSourceSets.all {
+                            val commonSet = this
+                            val commonSource = commonSourceSets.named(this.name).get()
+                            implExtension.addedSourceSets.findByName(commonSet.name)?.apply {
+                                val implSource = implSourceSets.named(this.name).get()
+                                applyNamedDependencyOnOutput(commonSource, implProject, implSource, implSource.implementationConfigurationName, commonProject)
+                                commonSet.configurations.forEach {
+                                    val config = commonProject.configurations.named(it)
+                                    applyNamedDependencyOnConfiguration(config, commonProject, implProject, implSource, implSource.implementationConfigurationName)
+                                    applyNamedDependencyOnConfiguration(config, commonProject, implProject, implSource, implSource.annotationProcessorConfigurationName)
+                                }
+                            }
+                        }
                         this.mixinSourceSets.all {
                             val commonMixin = this
-                            val commonMixinImpl = commonProject.configurations.named(this.implementationConfigurationName)
-                            val commonMixinCompile = commonProject.configurations.named(this.compileConfigurationName)
                             implExtension.mixinSourceSets.all {
                                 applyNamedDependencyOnOutput(commonMixin, implProject, this, implementationConfigurationName, commonProject)
-                                applyNamedDependencyOnConfiguration(commonMixinImpl, commonProject, implProject, this, implementationConfigurationName)
-                                applyNamedDependencyOnConfiguration(commonMixinCompile, commonProject, implProject, this, compileConfigurationName)
                             }
                             implExtension.invalidSourceSets.all {
                                 this.compileClasspath += commonMixin.output
@@ -128,19 +124,13 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
                         }
                         this.accessorSourceSets.all {
                             val commonAccessor = this
-                            val commonAccessorCompile = commonProject.configurations.named(this.compileConfigurationName)
-                            val commonAccessorImpl = commonProject.configurations.named(this.implementationConfigurationName)
                             implExtension.mixinSourceSets.all {
                                 applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
                             }
                             implExtension.accessorSourceSets.all {
                                 applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
-                                applyNamedDependencyOnConfiguration(commonAccessorCompile, commonProject, implProject, this, compileConfigurationName)
-                                applyNamedDependencyOnConfiguration(commonAccessorImpl, commonProject, implProject, this, implementationConfigurationName)
                             }
                             implExtension.invalidSourceSets.all {
-                                applyNamedDependencyOnConfiguration(commonAccessorImpl, commonProject, implProject, this, implementationConfigurationName)
-                                applyNamedDependencyOnConfiguration(commonAccessorCompile, commonProject, implProject, this, compileConfigurationName)
                                 applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
                             }
                             val sourceSets = implProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
@@ -149,26 +139,16 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
                         }
                         this.launchSourceSets.all {
                             val commonLaunch = this
-                            val commonLaunchImpl = commonProject.configurations.named(commonLaunch.implementationConfigurationName)
-                            val commonLaunchCompile = commonProject.configurations.named(commonLaunch.compileConfigurationName)
                             implExtension.mixinSourceSets.all {
-                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
-                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
                                 applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
                             }
                             implExtension.launchSourceSets.all {
-                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
-                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
                                 applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
                             }
                             implExtension.accessorSourceSets.all {
-                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
-                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
                                 applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
                             }
                             implExtension.invalidSourceSets.all {
-                                applyNamedDependencyOnConfiguration(commonLaunchImpl, commonProject, implProject, this, implementationConfigurationName)
-                                applyNamedDependencyOnConfiguration(commonLaunchCompile, commonProject, implProject, this, compileConfigurationName)
                                 applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
                             }
                         }
@@ -181,12 +161,8 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
                         this.defaultSourceSets.all {
                             val commonDefault = this
                             implExtension.defaultSourceSets.all {
-                                val defaultCompile = commonProject.configurations.named(commonDefault.compileConfigurationName)
-                                val defaultImpl = commonProject.configurations.named(commonDefault.implementationConfigurationName)
                                 if (this.name.equals(commonDefault.name)) {
                                     applyNamedDependencyOnOutput(commonDefault, implProject, this, implementationConfigurationName, commonProject)
-                                    applyNamedDependencyOnConfiguration(defaultCompile, commonProject, implProject,this, compileConfigurationName)
-                                    applyNamedDependencyOnConfiguration(defaultImpl, commonProject, implProject,this, implementationConfigurationName)
                                 }
                             }
                         }
@@ -201,9 +177,9 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
     private fun applyNamedDependencyOnOutput(commonSet: SourceSet, parentProject: Project, targetSet: SourceSet, configurationName: String, childProject: Project) {
         parentProject.getLogger().lifecycle("[${parentProject.name}] Adding Child ${childProject.path}(${commonSet.name}).output to Parent ${parentProject.path}(${targetSet.name}).$configurationName ")
         targetSet.compileClasspath += commonSet.output
-        if (!targetSet.name.equals("main")) {
-            targetSet.compileClasspath += commonSet.compileClasspath
-        }
+//        if (!targetSet.name.equals("main")) {
+//            targetSet.compileClasspath += commonSet.compileClasspath
+//        }
         parentProject.dependencies.add(configurationName, commonSet.output)
     }
 
@@ -211,6 +187,9 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
         configProvider.configure {
             implProject.getLogger().lifecycle("[${implProject.name}] Extending Parent ${implProject.path}(${targetSet.name}).$dependencyConfigName from Child ${childProject.path}.${this.name}")
             val configToExtend = this
+            if (configToExtend.isCanBeResolved) {
+                targetSet.compileClasspath += configToExtend
+            }
             implProject.configurations.named(dependencyConfigName).configure {
                 this.extendsFrom(configToExtend)
             }

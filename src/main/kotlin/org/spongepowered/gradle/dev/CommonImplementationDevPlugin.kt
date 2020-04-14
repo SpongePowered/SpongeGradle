@@ -26,9 +26,11 @@
 
 package org.spongepowered.gradle.dev
 
+import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaLibraryPlugin
@@ -72,9 +74,6 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         project.plugins.withType(JavaLibraryPlugin::class.java).whenPluginAdded {
             project.extensions.configure(SourceSetContainer::class.java) {
                 val main by named("main")
-                val mainImpl by project.configurations.named(main.implementationConfigurationName)
-                val mainCompile by project.configurations.named(main.compileConfigurationName)
-                val mainApi by project.configurations.named(main.apiConfigurationName)
                 dev.launchSourceSets.all {
                     val launchSet = this
                     createSourceSetConfigurations(project, this)
@@ -85,7 +84,6 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                 }
                 dev.accessorSourceSets.all {
                     val accessorSet = this
-                    createSourceSetConfigurations(project, this)
                     project.dependencies {
                         add(main.implementationConfigurationName, accessorSet.output)
                     }
@@ -95,8 +93,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                 dev.mixinSourceSets.all {
                     val mixinSet = this
                     createSourceSetConfigurations(project, this)
-                    val mixinImplConfig by project.configurations.named(this.implementationConfigurationName)
-                    mixinImplConfig.extendsFrom(mainImpl)
+
                     mixinSet.compileClasspath += main.output
                 }
                 dev.invalidSourceSets.all {
@@ -104,8 +101,6 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     createSourceSetConfigurations(project, this)
 
                     invalidSet.compileClasspath += main.output
-                    val invalidImplConfig by project.configurations.named(this.implementationConfigurationName)
-                    invalidImplConfig.extendsFrom(mainImpl)
                 }
                 dev.defaultSourceSets.all {
                     createSourceSetConfigurations(project, this)
@@ -203,14 +198,12 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     }
                     addedSourceDom.dependsOn.forEach {
                         projectSourceSets.named(it).configure {
-                            val dependentImpl = project.configurations.named(this.implementationConfigurationName)
                             project.dependencies.add(newSourceSet.implementationConfigurationName, this.output)
-                            dependentImpl.configure {
-
-                                project.dependencies.add(newSourceSet.implementationConfigurationName, this)
-                            }
-
                         }
+                    }
+                    addedSourceDom.configurations.forEach {
+                        project.dependencies.add(newSourceSet.implementationConfigurationName, project.configurations.named(it).get())
+                        project.dependencies.add(newSourceSet.annotationProcessorConfigurationName, project.configurations.named(it).get())
                     }
                 }
             }
@@ -272,6 +265,7 @@ open class AddedSourceSet(
         val factory: ObjectFactory
 ) {
     var isJava6: Boolean = false
+    val configurations: MutableList<String> = mutableListOf()
     val dependsOn: MutableList<String> = mutableListOf()
     val sourceType: Property<SourceType> = defaultPropertyType()
 
