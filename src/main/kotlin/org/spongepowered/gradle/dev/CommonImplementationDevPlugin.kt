@@ -318,9 +318,15 @@ open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
 
     override fun api(apiProject: Project) {
         super.api(apiProject)
+        val commonExt = this
         apiProject.plugins.apply {
             if (this.findPlugin(SpongeDevPlugin::class.java) == null) {
                 apply(SpongeDevPlugin::class.java)
+            }
+            apiProject.extensions.configure(SpongeDevExtension::class.java) {
+                commonExt.licenseProject.set(this.licenseProject)
+                commonExt.organization.set(this.organization)
+                commonExt.url.set(this.url)
             }
         }
     }

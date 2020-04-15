@@ -54,23 +54,45 @@ import org.spongepowered.gradle.sort.SpongeSortingPlugin
 import org.spongepowered.gradle.util.Constants
 
 open class SpongeDevExtension(val project: Project) {
-    val organization: Property<String> = project.objects.property()
-    val url: Property<String> = project.objects.property()
-    val licenseProject: Property<String> = project.objects.property()
+    val organization: Property<String> = defaultOrganization()
+    val url: Property<String> = defaultUrl()
+    val licenseProject: Property<String> = defaultLicense()
     val api: Property<Project> = project.objects.property(Project::class.java)
+
+    private fun defaultOrganization(): Property<String> {
+        val org:  Property<String> = project.objects.property()
+        org.set("SpongePowered")
+        return org
+    }
+
+    private fun defaultUrl(): Property<String> {
+        val url: Property<String> = project.objects.property()
+        url.set("https://www.spongepowered.org")
+        return url
+    }
+
+    private fun defaultLicense(): Property<String> {
+        val license: Property<String> =project.objects.property()
+        license.set("Sponge")
+        return license
+    }
 
     public fun organization(org: String) {
         organization.set(org)
     }
+
     public fun url(url: String) {
         this.url.set(url)
     }
+
     public fun license(projectName: String) {
         this.licenseProject.set(projectName)
     }
+
     public open fun api(apiProject: Project) {
         this.api.set(apiProject)
     }
+
     public open fun api(apiProjectProvider: Provider<Project>) {
         this.api.set(apiProjectProvider)
     }
@@ -79,7 +101,8 @@ open class SpongeDevExtension(val project: Project) {
 open class SpongeDevPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val devExtension = project.extensions.let {
-            it.findByType(SpongeDevExtension::class) ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project)
+            it.findByType(SpongeDevExtension::class)
+                    ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project)
         }
 
 
@@ -235,7 +258,6 @@ open class SpongeDevPlugin : Plugin<Project> {
             toolVersion = "8.24"
             devExtension.api.map {
                 configFile = it.file("checkstyle.xml")
-
             }
             configProperties.apply {
                 put("basedir", project.projectDir)
@@ -250,16 +272,23 @@ open class SpongeDevPlugin : Plugin<Project> {
         project.plugins.apply(Licenser::class.java)
 
         project.extensions.configure(LicenseExtension::class.java) {
-            (this as ExtensionAware).extra.apply {
-                this["name"] = devExtension.licenseProject
-                this["organization"] = devExtension.organization
-                this["url"] = devExtension.url
-            }
-            devExtension.api.map {
-                header = it.file("HEADER.txt")
-            }
-            include("**/*.java")
             newLine = false
+        }
+
+        project.afterEvaluate {
+            project.extensions.configure(LicenseExtension::class.java) {
+                (this as ExtensionAware).extra.apply {
+                    this["name"] = devExtension.licenseProject.get()
+                    this["organization"] = devExtension.organization.get()
+                    this["url"] = devExtension.url.get()
+                }
+                val apiProject = devExtension.api.get()
+                header = apiProject.file("HEADER.txt")
+
+                include("**/*.java")
+                newLine = false
+            }
+
         }
     }
 

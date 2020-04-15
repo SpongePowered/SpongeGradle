@@ -166,6 +166,9 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
                                 }
                             }
                         }
+                        implExtension.licenseProject.set(this.licenseProject)
+                        implExtension.organization.set(this.organization)
+                        implExtension.url.set(this.url)
                     }
 
                 }
