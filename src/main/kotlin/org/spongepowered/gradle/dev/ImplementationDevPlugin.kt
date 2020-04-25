@@ -49,7 +49,7 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
 
         project.tasks.apply {
             withType(Jar::class).named("jar").configure {
-                project.getLogger().lifecycle("[${project.name}] Configuring devOutput Jar")
+                debug(project.logger, "[${project.name}] Configuring devOutput Jar")
 
                 from(impl.common.map { it.configurations.named("devOutput") })
             }
@@ -90,95 +90,103 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
 
     override public fun common(commonProjectProvider: Provider<Project>) {
         val implExtension = this
-        this.common.set(commonProjectProvider.map {
-            val commonProject = it
-            commonProject.plugins.withType(CommonImplementationDevPlugin::class.java).whenPluginAdded {
-                commonProject.afterEvaluate {
-                    val commonSourceSets = commonProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
-                    commonProject.extensions.configure(CommonDevExtension::class.java) {
-                        val implProject = implExtension.project
-                        val implSourceSets = implProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
-                        implProject.getLogger().lifecycle("[${implProject.name}] Configuring SubProject(${commonProject.path}) dependencies to ${implProject.name}")
-                        this.addedSourceSets.all {
-                            val commonSet = this
-                            val commonSource = commonSourceSets.named(this.name).get()
-                            implExtension.addedSourceSets.findByName(commonSet.name)?.apply {
-                                val implSource = implSourceSets.named(this.name).get()
-                                applyNamedDependencyOnOutput(commonSource, implProject, implSource, implSource.implementationConfigurationName, commonProject)
-                                commonSet.configurations.forEach {
-                                    val config = commonProject.configurations.named(it)
-                                    applyNamedDependencyOnConfiguration(config, commonProject, implProject, implSource, implSource.implementationConfigurationName)
-                                    applyNamedDependencyOnConfiguration(config, commonProject, implProject, implSource, implSource.annotationProcessorConfigurationName)
-                                }
-                            }
-                        }
-                        this.mixinSourceSets.all {
-                            val commonMixin = this
-                            implExtension.mixinSourceSets.all {
-                                applyNamedDependencyOnOutput(commonMixin, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                            implExtension.invalidSourceSets.all {
-                                this.compileClasspath += commonMixin.output
-                                applyNamedDependencyOnOutput(commonMixin, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                        }
-                        this.accessorSourceSets.all {
-                            val commonAccessor = this
-                            implExtension.mixinSourceSets.all {
-                                applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                            implExtension.accessorSourceSets.all {
-                                applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                            implExtension.invalidSourceSets.all {
-                                applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                            val sourceSets = implProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
-                            val implMain = sourceSets["main"]
-                            applyNamedDependencyOnOutput(commonAccessor, implProject, implMain, implMain.implementationConfigurationName, commonProject)
-                        }
-                        this.launchSourceSets.all {
-                            val commonLaunch = this
-                            implExtension.mixinSourceSets.all {
-                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                            implExtension.launchSourceSets.all {
-                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                            implExtension.accessorSourceSets.all {
-                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                            implExtension.invalidSourceSets.all {
-                                applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                        }
-                        this.invalidSourceSets.all {
-                            val commonInvalid = this
-                            implExtension.invalidSourceSets.all {
-                                applyNamedDependencyOnOutput(commonInvalid, implProject, this, implementationConfigurationName, commonProject)
-                            }
-                        }
-                        this.defaultSourceSets.all {
-                            val commonDefault = this
-                            implExtension.defaultSourceSets.all {
-                                if (this.name.equals(commonDefault.name)) {
-                                    applyNamedDependencyOnOutput(commonDefault, implProject, this, implementationConfigurationName, commonProject)
-                                }
-                            }
-                        }
-                        implExtension.licenseProject.set(this.licenseProject)
-                        implExtension.organization.set(this.organization)
-                        implExtension.url.set(this.url)
-                    }
+        this.common.set(commonProjectProvider)
 
-                }
+        this.project.afterEvaluate {
+            val commonProject = implExtension.common.get()
+            if (this.childProjects.contains(commonProject.name)) {
+                commonProject.afterEvaluate(applyCommonDependenciesForMatchingSets(implExtension))
+            } else {
+                applyCommonDependenciesForMatchingSets(implExtension)(commonProject)
             }
-            commonProject
-        })
+        }
+    }
+
+    private fun applyCommonDependenciesForMatchingSets(implExtension: SpongeImpl): (Project).() -> Unit {
+        return {
+            this.configure<CommonDevExtension> {
+                val commonProject = this.project
+                val commonSourceSets = commonProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
+                val implProject = implExtension.project
+                val implSourceSets = implProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
+                debug(implProject.logger, "[${implProject.name}] Configuring SubProject(${commonProject.path}) dependencies to ${implProject.path}")
+                this.addedSourceSets.all {
+                    val commonSet = this
+                    val commonSource = commonSourceSets.named(this.name).get()
+                    implExtension.addedSourceSets.findByName(commonSet.name)?.apply {
+                        val implSource = implSourceSets.named(this.name).get()
+                        applyNamedDependencyOnOutput(commonSource, implProject, implSource, implSource.implementationConfigurationName, commonProject)
+                        commonSet.configurations.forEach {
+                            val config = commonProject.configurations.named(it)
+                            applyNamedDependencyOnConfiguration(config, commonProject, implProject, implSource, implSource.implementationConfigurationName)
+                        }
+                    }
+                }
+                this.mixinSourceSets.all {
+                    val commonMixin = this
+                    implExtension.mixinSourceSets.all {
+                        applyNamedDependencyOnOutput(commonMixin, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                    implExtension.invalidSourceSets.all {
+                        this.compileClasspath += commonMixin.output
+                        applyNamedDependencyOnOutput(commonMixin, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                }
+                this.accessorSourceSets.all {
+                    val commonAccessor = this
+                    implExtension.mixinSourceSets.all {
+                        applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                    implExtension.accessorSourceSets.all {
+                        applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                    implExtension.invalidSourceSets.all {
+                        applyNamedDependencyOnOutput(commonAccessor, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                    val sourceSets = implProject.convention.getPlugin(JavaPluginConvention::class.java).sourceSets
+                    val implMain = sourceSets["main"]
+                    applyNamedDependencyOnOutput(commonAccessor, implProject, implMain, implMain.implementationConfigurationName, commonProject)
+                }
+                this.launchSourceSets.all {
+                    val commonLaunch = this
+                    implExtension.mixinSourceSets.all {
+                        applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                    implExtension.launchSourceSets.all {
+                        applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                    implExtension.accessorSourceSets.all {
+                        applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                    implExtension.invalidSourceSets.all {
+                        applyNamedDependencyOnOutput(commonLaunch, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                }
+                this.invalidSourceSets.all {
+                    val commonInvalid = this
+                    implExtension.invalidSourceSets.all {
+                        applyNamedDependencyOnOutput(commonInvalid, implProject, this, implementationConfigurationName, commonProject)
+                    }
+                }
+                this.defaultSourceSets.all {
+                    val commonDefault = this
+                    implExtension.defaultSourceSets.all {
+                        if (this.name.equals(commonDefault.name)) {
+                            applyNamedDependencyOnOutput(commonDefault, implProject, this, implementationConfigurationName, commonProject)
+                        }
+                    }
+                }
+                implExtension.licenseProject.set(this.licenseProject)
+                implExtension.organization.set(this.organization)
+                implExtension.url.set(this.url)
+
+
+            }
+        }
     }
 
     private fun applyNamedDependencyOnOutput(commonSet: SourceSet, parentProject: Project, targetSet: SourceSet, configurationName: String, childProject: Project) {
-        parentProject.getLogger().lifecycle("[${parentProject.name}] Adding Child ${childProject.path}(${commonSet.name}).output to Parent ${parentProject.path}(${targetSet.name}).$configurationName ")
+        debug(parentProject.logger, "[${parentProject.name}] Adding Child ${childProject.path}(${commonSet.name}).output to Parent ${parentProject.path}(${targetSet.name}).$configurationName ")
         targetSet.compileClasspath += commonSet.output
 //        if (!targetSet.name.equals("main")) {
 //            targetSet.compileClasspath += commonSet.compileClasspath
@@ -188,7 +196,7 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
 
     private fun applyNamedDependencyOnConfiguration(configProvider: NamedDomainObjectProvider<Configuration>, childProject: Project, implProject: Project, targetSet: SourceSet, dependencyConfigName: String) {
         configProvider.configure {
-            implProject.getLogger().lifecycle("[${implProject.name}] Extending Parent ${implProject.path}(${targetSet.name}).$dependencyConfigName from Child ${childProject.path}.${this.name}")
+            debug(implProject.logger, "[${implProject.name}] Extending Parent ${implProject.path}(${targetSet.name}).$dependencyConfigName from Child ${childProject.path}.${this.name}")
             val configToExtend = this
             if (configToExtend.isCanBeResolved) {
                 targetSet.compileClasspath += configToExtend

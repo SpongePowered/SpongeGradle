@@ -26,24 +26,32 @@
 
 package org.spongepowered.gradle.dev
 
+
 import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.dsl.DependencyHandler
+import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.compile.JavaCompile
 import java.io.File
 
+fun debug(logger: Logger, messsage: String) {
+    if (System.getProperty("sponge.gradleDebug", "false") == "true") {
+        logger.lifecycle(messsage)
+    }
+}
+
 enum class SourceType {
     Default {
         override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
-            project.getLogger().lifecycle("[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to default sets")
+            debug(project.logger, "[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to default sets")
             dev.defaultSourceSets.add(newSet)
         }
     },
     Launch {
         override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
-            project.getLogger().lifecycle("[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to launch sets")
+            debug(project.logger, "[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to launch sets")
             dev.launchSourceSets.add(newSet)
             dev.accessorSourceSets.all {
                 val accessorImplName = this.implementationConfigurationName
@@ -62,7 +70,7 @@ enum class SourceType {
     },
     Accessor {
         override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
-            project.getLogger().lifecycle("[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to accessor sets")
+            debug(project.logger, "[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to accessor sets")
             dev.accessorSourceSets.add(newSet)
 
             dev.mixinSourceSets.all {
@@ -75,13 +83,13 @@ enum class SourceType {
     },
     Mixin {
         override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
-            project.getLogger().lifecycle("[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to mixin sets")
+            debug(project.logger, "[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to mixin sets")
             dev.mixinSourceSets.add(newSet)
         }
     },
     Invalid {
         override fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project) {
-            project.getLogger().lifecycle("[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to invalid sets")
+            debug(project.logger, "[${project.name}] Adding SourceSet ${dev.project.path}:${newSet.name} to invalid sets")
             dev.invalidSourceSets.add(newSet)
             val newCompileName = newSet.compileConfigurationName
             val newImplName = newSet.implementationConfigurationName
@@ -95,13 +103,13 @@ enum class SourceType {
                 applyNamedDependencyOnOutput(this, newSet, project, newImplName)
             }
             newSet.java {
-                project.logger.lifecycle("[${project.name}] Changing Invalid SourceSet(${newSet.name}) source directory...")
+                debug(project.logger, "[${project.name}] Changing Invalid SourceSet(${newSet.name}) source directory...")
                 srcDir("invalid" + File.separator + "main" + File.separator + "java")
             }
             project.tasks.named("compileJava").configure {
                 (this as JavaCompile).apply {
                     val map = newSet.java.srcDirs.map { it.path }
-                    project.getLogger().lifecycle("Excluding ${map} ")
+                    debug(project.logger, "Excluding ${map} ")
                     exclude(map)
                 }
             }
@@ -115,7 +123,7 @@ enum class SourceType {
         val configExtending = project.configurations.named(newConfigName)
         configuration.configure {
             val configToExtend = this
-            project.getLogger().lifecycle("[${project.name}] Adding ${project.path}.${this.name} to ${dev.project.path}(${newSet.name}).$newConfigName")
+            debug(project.logger, "[${project.name}] Adding ${project.path}.${this.name} to ${dev.project.path}(${newSet.name}).$newConfigName")
             if (this.isCanBeResolved) {
                 newSet.compileClasspath += this
             }
@@ -125,7 +133,7 @@ enum class SourceType {
     }
 
     fun applyNamedDependencyOnOutput(sourceAdding: SourceSet, targetSource: SourceSet, implProject: Project, dependencyConfigName: String) {
-        implProject.getLogger().lifecycle("[${implProject.name}] Adding ${implProject.path}(${sourceAdding.name}) to ${implProject.path}(${targetSource.name}).$dependencyConfigName")
+        debug(implProject.logger, "[${implProject.name}] Adding ${implProject.path}(${sourceAdding.name}) to ${implProject.path}(${targetSource.name}).$dependencyConfigName")
         implProject.dependencies.add(dependencyConfigName, sourceAdding.output)
     }
 }

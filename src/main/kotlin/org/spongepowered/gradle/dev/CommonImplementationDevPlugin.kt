@@ -177,7 +177,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             val newSet = projectSourceSets.register(this.name) {
                 val newSourceSet = this
 
-                System.out.println("[${project.name}] Adding SourceSet ${project.path}:${newSourceSet.name}")
+                debug(project.logger, "[${project.name}] Adding SourceSet ${project.path}:${newSourceSet.name}")
                 this.output.dirs.forEach {
                     project.dependencies.add("devOutput", project.files(it.relativeTo(project.projectDir).path))
                 }
@@ -189,7 +189,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
 
                 project.afterEvaluate {
                     val configuredSourceType = addedSourceDom.sourceType.get()
-                    System.out.println("[${project.name}] Realizing SourceSet ${project.path}:${newSourceSet.name} (${configuredSourceType})")
+                    debug(project.logger, "[${project.name}] Realizing SourceSet ${project.path}:${newSourceSet.name} (${configuredSourceType})")
                     configuredSourceType.onSourceSetCreated(newSourceSet, dev, project.dependencies, project)
                     if (configuredSourceType != SourceType.Invalid) {
                         project.tasks.withType(Jar::class.java).named("jar").configure {
@@ -202,8 +202,8 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                         }
                     }
                     addedSourceDom.configurations.forEach {
-                        project.dependencies.add(newSourceSet.implementationConfigurationName, project.configurations.named(it).get())
-                        project.dependencies.add(newSourceSet.annotationProcessorConfigurationName, project.configurations.named(it).get())
+                        val configuration = project.configurations.named(it).get()
+                        project.dependencies.add(newSourceSet.implementationConfigurationName, configuration)
                     }
                 }
             }
@@ -233,7 +233,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
      * association of api dependencies that can be resolved
      */
     private fun createSourceSetConfigurations(project: Project, sourceSet: SourceSet) {
-        project.logger.lifecycle("[${project.name}] Registering Configuration ${project.path}(${sourceSet.name}).${sourceSet.apiConfigurationName}")
+        debug(project.logger, "[${project.name}] Registering Configuration ${project.path}(${sourceSet.name}).${sourceSet.apiConfigurationName}")
         val apiConfiguration = project.configurations.maybeCreate(sourceSet.apiConfigurationName)
         apiConfiguration.description = "API dependencies for $sourceSet."
 

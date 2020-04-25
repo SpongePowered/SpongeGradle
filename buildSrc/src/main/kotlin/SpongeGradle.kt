@@ -1,7 +1,7 @@
 object SpongeGradle {
 
     const val group = Groups.sponge
-    const val version = "0.11.3-SNAPSHOT"
+    const val version = "0.11.3"
     const val organization = "SpongePowered"
     const val url = "https://www.spongepowered.org"
     const val name = "SpongeGradle"
