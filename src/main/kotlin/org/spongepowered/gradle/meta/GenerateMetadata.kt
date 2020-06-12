@@ -28,17 +28,19 @@ package org.spongepowered.gradle.meta
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.*
 import org.gradle.kotlin.dsl.withConvention
 import org.spongepowered.plugin.meta.McModInfo
 import org.spongepowered.plugin.meta.PluginMetadata
 import java.nio.file.Path
+import javax.inject.Inject
 
-open class GenerateMetadata : DefaultTask() {
+open class GenerateMetadata(@Inject val objectFactory: ObjectFactory) : DefaultTask() {
 
     @OutputFile
-    val outputFile: RegularFileProperty = this.newOutputFile()
+    val outputFile: RegularFileProperty = objectFactory.fileProperty()
 
     @Input
     var mergeMetadata = true
@@ -59,8 +61,8 @@ open class GenerateMetadata : DefaultTask() {
         // Read extra metadata files
         val metadata = mutableListOf<PluginMetadata>()
         if (mergeMetadata) {
-            metadataFiles.forEach {
-                McModInfo.DEFAULT.read(it).forEach { meta ->
+            metadataFiles.forEach { path ->
+                McModInfo.DEFAULT.read(path).forEach { meta ->
                     val find: PluginMetadata? = metadata.find {
                         it.id == meta.id
                     }
@@ -72,7 +74,7 @@ open class GenerateMetadata : DefaultTask() {
         if (!this.outputFile.isPresent) {
             this.outputFile.set(temporaryDir.toPath().resolve(McModInfo.STANDARD_FILENAME).toFile())
         }
-        McModInfo.DEFAULT.write(outputFile.asFile.map { it.toPath() }.get(), metadata)
+        McModInfo.DEFAULT.write(this.outputFile.asFile.map { it.toPath() }.get(), metadata)
     }
 
     private fun findExtraMetadataFiles(sourceSet: SourceSet): List<Path> {

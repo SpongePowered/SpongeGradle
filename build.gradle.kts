@@ -8,14 +8,11 @@ plugins {
     maven
     `maven-publish`
     `java-library`
-    id(Deps.Script.gradlePublish) version Versions.gradlePublish
-    id(Deps.Script.licenser) version Versions.licenser
+    id("com.gradle.plugin-publish") version "0.11.0"
+    id("net.minecrell.licenser") version "0.4"
 }
 
 defaultTasks("clean", "licenseFormat", "build")
-
-group = SpongeGradle.group
-version = SpongeGradle.version
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -33,16 +30,16 @@ repositories {
 }
 
 dependencies {
-    compile(Deps.httpmime)
-    compile(Deps.pluginMeta)
-    compile(Deps.asm)
-    implementation(Deps.licenser)
+    compile("org.apache.httpcomponents:httpmime:4.5.3")
+    compile("org.spongepowered:plugin-meta:0.4.1")
+    compile("org.ow2.asm:asm:5.2")
+    implementation("net.minecrell.licenser:net.minecrell.licenser.gradle.plugin:0.4.1")
 //    implementation(Deps.mixingradle)
     // Yay, we can depend on the shadow classes to configure them statically!
-    implementation(Deps.shadow) {
+    implementation("com.github.jengelman.gradle.plugins:shadow:4.0.4") {
         exclude(group = "org.codehaus.groovy")
     }
-    implementation(Deps.jsr)
+    implementation("com.google.code.findbugs:jsr305:3.0.2")
 }
 
 tasks.withType(JavaCompile::class.java) {
@@ -54,86 +51,86 @@ tasks.withType(JavaCompile::class.java) {
 gradlePlugin {
     plugins {
         create("BaseDevPlugin") {
-            id = GradlePlugins.BaseDevPlugin.id
-            implementationClass = GradlePlugins.BaseDevPlugin.clazz
+            id = "org.spongepowered.gradle.base"
+            implementationClass = "org.spongepowered.gradle.dev.BaseDevPlugin"
         }
         create("MetadataPlugin") {
-            id = GradlePlugins.Meta.id
-            implementationClass = GradlePlugins.Meta.clazz
+            id = "org.spongepowered.gradle.meta"
+            implementationClass = "org.spongepowered.gradle.meta.MetadataPlugin"
         }
         create("BundleMetaPlugin") {
-            id = GradlePlugins.BundleMeta.id
-            implementationClass = GradlePlugins.BundleMeta.clazz
+            id = "org.spongepowered.gradle.meta.bundle"
+            implementationClass = "org.spongepowered.gradle.meta.BundleMetaPlugin"
         }
         create("PluginDevPlugin") {
-            id = GradlePlugins.PluginDevPlugin.id
-            implementationClass = GradlePlugins.PluginDevPlugin.clazz
+            id = "org.spongepowered.gradle.plugin"
+            implementationClass = "org.spongepowered.gradle.dev.PluginDevPlugin"
         }
         create("SpongeDevPlugin") {
-            id = GradlePlugins.SpongeDev.id
-            implementationClass = GradlePlugins.SpongeDev.clazz
+            id = "org.spongepowered.gradle.sponge.dev"
+            implementationClass = "org.spongepowered.gradle.dev.SpongeDevPlugin"
         }
         create("DeploySpongePlugin") {
-            id = GradlePlugins.SpongeDeploy.id
-            implementationClass = GradlePlugins.SpongeDeploy.clazz
+            id = "org.spongepowered.gradle.sponge.deploy"
+            implementationClass = "org.spongepowered.gradle.deploy.DeployImplementationPlugin"
         }
         create("SpongeSortingPlugin") {
-            id = GradlePlugins.SpongeSort.id
-            implementationClass = GradlePlugins.SpongeSort.clazz
+            id = "org.spongepowered.gradle.sort"
+            implementationClass = "org.spongepowered.gradle.sort.SpongeSortingPlugin"
         }
         create("CommonImplementationDevPlugin") {
-            id = GradlePlugins.CommonImplementationPlugin.id
-            implementationClass = GradlePlugins.CommonImplementationPlugin.clazz
+            id = "org.spongepowered.gradle.sponge.common"
+            implementationClass = "org.spongepowered.gradle.dev.CommonImplementationDevPlugin"
         }
         create("ImplementationDevPlugin") {
-            id = GradlePlugins.ImplementationPlugin.id
-            implementationClass = GradlePlugins.ImplementationPlugin.clazz
+            id = "org.spongepowered.gradle.sponge.impl"
+            implementationClass = "org.spongepowered.gradle.dev.ImplementationDevPlugin"
         }
 
     }
 }
 pluginBundle {
-    website = "https://github.com/${SpongeGradle.organization}/${SpongeGradle.name}"
+    website = "https://github.com/SpongePowered/SpongeGradle"
     vcsUrl = website
     description = project.description
-    tags = listOf(Tags.minecraft, Tags.sponge)
+    tags = listOf("minecraft", "sponge", "minecraftforge", "spongegradle")
 
     (plugins) {
         "BaseDevPlugin" {
-            displayName = GradlePlugins.BaseDevPlugin.name
-            description = GradlePlugins.BaseDevPlugin.desc
+            displayName = "Base Development Plugin"
+            description = "A base plugin providing basic gradle plugins and sponge repository access"
         }
         "MetadataPlugin" {
-            displayName = GradlePlugins.Meta.name
-            description = GradlePlugins.Meta.desc
+            displayName = "Sponge Plugin metadata generator"
+            description = "Gradle plugin for automatically generating a mcmod.info file with the project properties"
         }
         "BundleMetaPlugin" {
-            displayName = GradlePlugins.BundleMeta.name
-            description = GradlePlugins.BundleMeta.desc
+            displayName = "Bundled Plugin metadata generator"
+            description = "Gradle plugin that provides the project with nesting capabilities for PluginMeta representation"
         }
         "PluginDevPlugin" {
-            displayName = GradlePlugins.PluginDevPlugin.name
-            description = GradlePlugins.PluginDevPlugin.desc
+            displayName = "Sponge Plugin Developer Gradle integrations"
+            description = "Gradle plugin providing integration for plugins made for the Sponge platform"
         }
         "SpongeDevPlugin" {
-            displayName = GradlePlugins.SpongeDev.name
-            description = GradlePlugins.SpongeDev.desc
+            displayName = "Sponge Development Plugin"
+            description = "Gradle plugin to set up developing Sponge and it's implementations"
         }
         "DeploySpongePlugin" {
-            displayName = GradlePlugins.SpongeDeploy.name
-            description = GradlePlugins.SpongeDeploy.desc
+            displayName = "Sponge Deployment Plugin"
+            description = "Gradle plugin to set up the deployment of Sponge"
         }
         "SpongeSortingPlugin" {
-            displayName = GradlePlugins.SpongeSort.name
-            description = GradlePlugins.SpongeSort.desc
+            displayName = "Sponge Sorting"
+            description = "Enables tasks for sorting specific types of things for Sponge related development"
         }
         "ImplementationDevPlugin" {
-            displayName = GradlePlugins.ImplementationPlugin.name
-            description = GradlePlugins.ImplementationPlugin.desc
+            displayName = "Sponge Implementation Support Plugin"
+            description = "Gradle plugin for simplified build setup for implementing Sponge"
         }
         "CommonImplementationDevPlugin" {
-            displayName = GradlePlugins.CommonImplementationPlugin.name
-            description = GradlePlugins.CommonImplementationPlugin.desc
+            displayName = "Sponge Common implementation support plugin"
+            description = "Gradle plugin for setting up SpongeCommon's implementation setup"
         }
     }
 }
@@ -144,21 +141,22 @@ license {
     newLine = false
     ext {
         this["name"] = project.name
-        this["organization"] = SpongeGradle.organization
-        this["url"] = SpongeGradle.url
+        this["organization"] = "SpongePowered"
+        this["url"] = "https://www.spongepowered.org"
     }
 
     include("**/*.java", "**/*.groovy", "**/*.kt")
 }
 
 tasks {
+    val organization: String by project
     val jar by getting(Jar::class) {
         manifest {
             attributes(mapOf(
                     "Created-By" to "${System.getProperty("java.version")} (${System.getProperty("java.vm.vendor")}",
                     "Implementation-Title" to project.name,
                     "Implementation-Version" to project.version,
-                    "Implementation-Vendor" to SpongeGradle.organization
+                    "Implementation-Vendor" to organization
 
             ))
         }
