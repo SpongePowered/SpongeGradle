@@ -97,7 +97,9 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
             if (this.childProjects.contains(commonProject.name)) {
                 commonProject.afterEvaluate(applyCommonDependenciesForMatchingSets(implExtension))
             } else {
-                applyCommonDependenciesForMatchingSets(implExtension)(commonProject)
+                project.afterEvaluate {
+                    applyCommonDependenciesForMatchingSets(implExtension)(commonProject)
+                }
             }
         }
     }

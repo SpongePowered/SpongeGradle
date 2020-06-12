@@ -35,9 +35,11 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.compile.JavaCompile
 import java.io.File
+import java.lang.Boolean
 
 fun debug(logger: Logger, messsage: String) {
-    if (System.getProperty("sponge.gradleDebug", "false") == "true") {
+    println(message = messsage)
+    if (System.getProperty("sponge.gradleDebug", "false")!!.toBoolean()) {
         logger.lifecycle(messsage)
     }
 }

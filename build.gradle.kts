@@ -177,6 +177,17 @@ artifacts {
 
 publishing {
 
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/spongepowered/SpongeGradle")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+
     // Set by the build server
     project.properties["spongeRepo"]?.let { repo ->
         repositories {
@@ -194,8 +205,6 @@ publishing {
                 }
             }
         }
-
     }
-
 
 }
