@@ -25,7 +25,6 @@
 package org.spongepowered.gradle.meta
 
 import org.spongepowered.plugin.meta.PluginMetadata
-
 import java.util.regex.Pattern
 
 abstract class PluginElement(id: String, var name: String? = id) {
@@ -43,7 +42,6 @@ abstract class PluginElement(id: String, var name: String? = id) {
         }
 
     private var registered: Boolean = false
-
 
     fun register() {
         assert(Pattern.matches(PluginMetadata.ID_PATTERN.pattern(), name)) { "Plugin ID must match pattern " + PluginMetadata.ID_PATTERN.pattern() }

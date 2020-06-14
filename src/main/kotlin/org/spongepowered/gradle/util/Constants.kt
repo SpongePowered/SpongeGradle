@@ -35,5 +35,4 @@ object Constants {
     object Dependencies {
         const val jUnit = "junit:junit:4.12"
     }
-
 }

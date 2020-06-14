@@ -32,7 +32,6 @@ open class MixinDevPlugin : Plugin<Project> {
         // First things first, apply the Java setup
         project.plugins.apply(BaseDevPlugin::class.java)
 
-
         project.dependencies.apply {
             // Added for runtime decompiling with Mixins for debugging
             add("runtime", "net.minecraftforge:forgeflower:1.5.380.23")

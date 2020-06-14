@@ -34,11 +34,14 @@ import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.SourceSet
-import org.gradle.api.tasks.SourceSetOutput
 import org.gradle.api.tasks.bundling.Jar
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.get
+import org.gradle.kotlin.dsl.getting
+import org.gradle.kotlin.dsl.maven
+import org.gradle.kotlin.dsl.repositories
+import org.gradle.kotlin.dsl.withType
 import org.spongepowered.gradle.util.Constants
-
 
 open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
     override fun apply(project: Project) {
@@ -61,19 +64,16 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
                     maven("https://files.minecraftforge.net/maven")
                 }
             }
-
         }
 
         // TODO - create nested dependency of metas.
         project.plugins.apply("com.github.johnrengelman.shadow")
-
 
         project.tasks.apply {
             getting(Jar::class) {
                 classifier = "base"
             }
             // TODO - figure out ForgeGradle 3 reobf stuff
-
         }
         project.tasks.apply {
             getting(ShadowJar::class) {
@@ -81,14 +81,13 @@ open class ImplementationDevPlugin : CommonImplementationDevPlugin() {
             }
         }
     }
-
 }
 
 open class SpongeImpl(project: Project) : CommonDevExtension(project = project) {
 
     val addForgeFlower: Property<Boolean> = defaultForgeFlowerProperty()
 
-    override public fun common(commonProjectProvider: Provider<Project>) {
+    public override fun common(commonProjectProvider: Provider<Project>) {
         val implExtension = this
         this.common.set(commonProjectProvider)
 
@@ -181,8 +180,6 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
                 implExtension.licenseProject.set(this.licenseProject)
                 implExtension.organization.set(this.organization)
                 implExtension.url.set(this.url)
-
-
             }
         }
     }
@@ -210,10 +207,10 @@ open class SpongeImpl(project: Project) : CommonDevExtension(project = project) 
     }
 
     fun defaultForgeFlowerProperty(): Property<Boolean> {
-        val useForgeFlower = project.objects.property(Boolean::class.java);
+        val useForgeFlower = project.objects.property(Boolean::class.java)
         if (!useForgeFlower.isPresent) {
-            useForgeFlower.set(false);
+            useForgeFlower.set(false)
         }
-        return useForgeFlower;
+        return useForgeFlower
     }
 }

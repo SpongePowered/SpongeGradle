@@ -35,7 +35,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.get
 import org.gradle.kotlin.dsl.getPlugin
-import java.util.*
+import java.util.Locale
 
 class DeployImplementationPlugin : Plugin<Project> {
 
@@ -84,9 +84,7 @@ class DeployImplementationPlugin : Plugin<Project> {
                             }
                         }
                     }
-
                 }
-
             }
 
             val repoUrlKey = if ((target.version as String).endsWith("SNAPSHOT"))
@@ -104,10 +102,7 @@ class DeployImplementationPlugin : Plugin<Project> {
                 }
             }
         }
-
-
     }
-
 }
 
 open class DeployImplementationExtension {
@@ -124,5 +119,4 @@ open class DeployImplementationExtension {
     var license: String? = "MIT License"
     var licenseUrl: String? = "http://opensource.org/licenses/MIT"
     var licenseDistribution: String? = "repo"
-
 }

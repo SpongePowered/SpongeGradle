@@ -33,37 +33,37 @@ import org.spongepowered.gradle.util.TextConstants
  * fails.
  */
 open class Field(
-        /**
-         * Comment lines, accumulated here until the field declaration is
-         * located
-         */
-        var comment: Array<String> = arrayOf(),
+    /**
+     * Comment lines, accumulated here until the field declaration is
+     * located
+     */
+    var comment: Array<String> = arrayOf(),
 
-        /**
-         * Field modifiers, eg. public static final
-         */
-        var modifiers: String = "",
-        /**
-         * Field type, basically whatever is between the modifiers and the field
-         * name
-         */
-        var type: String = "",
-        /**
-         * Field name
-         */
-        var name: String = "",
-        /**
-         * Field initialiser, basically whatever is between the field name and
-         * the end of the line
-         */
-        var initializer: String = "",
-        /**
-         * Field ordinal
-         */
-        val index: Int = Indexes.index++
+    /**
+     * Field modifiers, eg. public static final
+     */
+    var modifiers: String = "",
+    /**
+     * Field type, basically whatever is between the modifiers and the field
+     * name
+     */
+    var type: String = "",
+    /**
+     * Field name
+     */
+    var name: String = "",
+    /**
+     * Field initialiser, basically whatever is between the field name and
+     * the end of the line
+     */
+    var initializer: String = "",
+    /**
+     * Field ordinal
+     */
+    val index: Int = Indexes.index++
 ) : Comparable<Field> {
 
-    fun isHasContent() : Boolean {
+    fun isHasContent(): Boolean {
         return comment.isNotEmpty()
     }
 
@@ -71,10 +71,9 @@ open class Field(
         !modifiers.isEmpty() && !type.isEmpty() && !name.isEmpty() && !initializer.isEmpty()
     }
     override fun compareTo(other: Field): Int {
-        val diff : Int = this.name.compareTo(other.name)
+        val diff: Int = this.name.compareTo(other.name)
         return if (diff == 0) index - other.index else diff
     }
-
 
     /**
      * Returns accumulated field comments as a String. In actual fact we
@@ -83,8 +82,7 @@ open class Field(
      *
      * @return
      */
-    fun flush() : String
-    {
+    fun flush(): String {
         var commentBlock = ""
         for (commentLine in comment) {
             commentBlock += commentLine + TextConstants.newLine
@@ -92,11 +90,9 @@ open class Field(
         return commentBlock
     }
 
-    override fun toString() : String
-    {
-        return this.flush() + modifiers + type + name+ initializer
+    override fun toString(): String {
+        return this.flush() + modifiers + type + name + initializer
     }
-
 
     object Indexes {
         /**

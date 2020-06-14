@@ -30,7 +30,7 @@ import org.gradle.kotlin.dsl.extra
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
-open class ResolveApiVersionTask: DefaultTask() {
+open class ResolveApiVersionTask : DefaultTask() {
 
     init {
         group = "sponge"
@@ -43,7 +43,6 @@ open class ResolveApiVersionTask: DefaultTask() {
             val apiVersionResult = project.exec {
                 commandLine("git", "rev-parse", "--short", "HEAD")
                 standardOutput = byteOut
-
             }
             val output = String(byteOut.toByteArray())
 

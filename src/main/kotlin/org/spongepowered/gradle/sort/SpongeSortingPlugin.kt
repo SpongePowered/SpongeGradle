@@ -28,7 +28,6 @@ package org.spongepowered.gradle.sort
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskContainer
 
 open class SpongeSortingPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -49,5 +48,3 @@ open class SpongeSortingPlugin : Plugin<Project> {
         }
     }
 }
-
-

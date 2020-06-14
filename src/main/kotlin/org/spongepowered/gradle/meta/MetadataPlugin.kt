@@ -28,12 +28,16 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.CopySpec
 import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.getByName
+import org.gradle.kotlin.dsl.getValue
+import org.gradle.kotlin.dsl.getting
+import org.gradle.kotlin.dsl.provideDelegate
+import org.gradle.kotlin.dsl.registering
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.spongepowered.gradle.util.Constants
 import org.spongepowered.plugin.meta.McModInfo
 import org.spongepowered.plugin.meta.PluginMetadata
-import java.util.*
+import java.util.Locale
 
 /**
  *
@@ -67,7 +71,6 @@ open class MetadataPlugin : Plugin<Project> {
             from(genMeta)
         }
     }
-
 }
 object AP {
     const val processor = "org.spongepwoered.plugin.processor.PluginProcessor"
@@ -101,8 +104,10 @@ open class BundleMetaPlugin : Plugin<Project> {
                 doFirst {
                     val compilerArgs = options.compilerArgs
                     if (compilerArgs.contains(AP.processing)) {
-                        logger.error("Cannot run plugin annotation processor; annotation processing is disabled. Plugin metadata will NOT be merged" +
-                                " with the @Plugin annotation")
+                        logger.error(
+                            "Cannot run plugin annotation processor; annotation processing is disabled. Plugin metadata will NOT be merged" +
+                                " with the @Plugin annotation"
+                        )
                         return@doFirst
                     }
                     val pos = compilerArgs.indexOf("-processor")

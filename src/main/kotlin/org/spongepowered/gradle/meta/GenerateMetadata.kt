@@ -30,7 +30,11 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.withConvention
 import org.spongepowered.plugin.meta.McModInfo
 import org.spongepowered.plugin.meta.PluginMetadata
@@ -47,7 +51,6 @@ open class GenerateMetadata(@Inject val objectFactory: ObjectFactory) : DefaultT
 
     @get:InputFiles
     val metadataFiles: MutableList<Path> = mutableListOf()
-
 
     @TaskAction
     fun generateMetadata() {
@@ -68,7 +71,6 @@ open class GenerateMetadata(@Inject val objectFactory: ObjectFactory) : DefaultT
                     }
                     find?.accept(meta) ?: metadata.add(meta)
                 }
-
             }
         }
         if (!this.outputFile.isPresent) {
@@ -79,6 +81,5 @@ open class GenerateMetadata(@Inject val objectFactory: ObjectFactory) : DefaultT
 
     private fun findExtraMetadataFiles(sourceSet: SourceSet): List<Path> {
         return sourceSet.resources.matching { include(McModInfo.STANDARD_FILENAME) }.map { it.toPath().toAbsolutePath() }
-
     }
 }

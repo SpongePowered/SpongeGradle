@@ -26,7 +26,6 @@
 
 package org.spongepowered.gradle.dev
 
-
 import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -35,7 +34,6 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.compile.JavaCompile
 import java.io.File
-import java.lang.Boolean
 
 fun debug(logger: Logger, messsage: String) {
     println(message = messsage)
@@ -111,12 +109,11 @@ enum class SourceType {
             project.tasks.named("compileJava").configure {
                 (this as JavaCompile).apply {
                     val map = newSet.java.srcDirs.map { it.path }
-                    debug(project.logger, "Excluding ${map} ")
+                    debug(project.logger, "Excluding $map ")
                     exclude(map)
                 }
             }
         }
-
     };
 
     abstract fun onSourceSetCreated(newSet: SourceSet, dev: CommonDevExtension, dependencies: DependencyHandler, project: Project)
@@ -130,7 +127,6 @@ enum class SourceType {
                 newSet.compileClasspath += this
             }
 //            configExtending.get().extendsFrom(configToExtend)
-
         }
     }
 

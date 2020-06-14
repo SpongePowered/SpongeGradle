@@ -29,14 +29,13 @@ import org.gradle.api.InvalidUserDataException
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
 import org.spongepowered.gradle.util.TextConstants
 import java.io.File
 import java.io.FileWriter
 import java.nio.charset.Charset
-import java.util.*
+import java.util.TreeSet
 import javax.inject.Inject
 
 open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
@@ -61,28 +60,28 @@ open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
      * @param sourceSetName Sourceset to use
      * @param resourceName Resource to add
      */
-    fun add(sourceSetName : String, resourceName : String) {
+    fun add(sourceSetName: String, resourceName: String) {
         val java = project.convention.getPlugin(JavaPluginConvention::class.java)
-        val sourceSet : SourceSet? = java.sourceSets.findByName(sourceSetName)
+        val sourceSet: SourceSet? = java.sourceSets.findByName(sourceSetName)
         when (sourceSet) {
             is SourceSet -> {
                 if (resourceName.isEmpty()) {
-                        throw InvalidUserDataException("$resourceName is not a valid resource name")
-                    }
+                    throw InvalidUserDataException("$resourceName is not a valid resource name")
+                }
                 var foundResource = false
                 val resourceFileName = String.format("%s.java", resourceName.replace(".", File.separator))
                 sourceSet.allJava.srcDirs.forEach {
-                        srcDir ->
-                        this.logger.log(LogLevel.INFO, "Attempting to locate: %s", resourceFileName)
-                        val sourceFile = srcDir.resolve(resourceFileName)
-                        if (sourceFile.exists()) {
-                            foundResource = true
-                            this.accessorTransformers.plus(sourceFile)
-                        }
+                    srcDir ->
+                    this.logger.log(LogLevel.INFO, "Attempting to locate: %s", resourceFileName)
+                    val sourceFile = srcDir.resolve(resourceFileName)
+                    if (sourceFile.exists()) {
+                        foundResource = true
+                        this.accessorTransformers.plus(sourceFile)
                     }
+                }
                 if (!foundResource) {
-                        throw InvalidUserDataException("$resourceName could not be found")
-                    }
+                    throw InvalidUserDataException("$resourceName could not be found")
+                }
             }
             else -> throw InvalidUserDataException("Could not find specified sourceSet '$sourceSetName for task")
         }
@@ -93,7 +92,7 @@ open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
      *
      * @param file File to sort
      */
-    private fun sortFile(file : File) {
+    private fun sortFile(file: File) {
         if (!file.exists()) {
             return
         }
@@ -126,7 +125,7 @@ open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
             }
             val semaphore = TextConstants.semaphores.find(line)
             when (semaphore) {
-                is MatchResult ->  {
+                is MatchResult -> {
                     if ("OFF" == semaphore.groups[1]!!.value) {
                         fields.forEach { field ->
                             output += TextConstants.newLine + field + TextConstants.newLine
@@ -167,9 +166,6 @@ open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
                     current.comment += line
                 }
             }
-
-
-
         }
         // Flush any remaining accumulated content
         if (current.isHasContent()) {
@@ -183,4 +179,3 @@ open class SortAccessTransformersTask @Inject constructor() : DefaultTask() {
         writer.close()
     }
 }
-

@@ -32,7 +32,6 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.spongepowered.plugin.meta.PluginDependency
 import org.spongepowered.plugin.meta.PluginMetadata
-
 import java.util.ArrayList
 import java.util.function.Consumer
 
@@ -173,7 +172,7 @@ open class MetadataBaseExtension(protected val project: Project) {
                 }
 
                 fun forceVersion(version: Any) {
-                    this.version =  "[" + resolve(version) + "]"
+                    this.version = "[" + resolve(version) + "]"
                 }
 
                 fun build(): PluginDependency {
@@ -188,7 +187,7 @@ open class MetadataBaseExtension(protected val project: Project) {
     }
 }
 
-fun resolve(o: Any?) : String? {
+fun resolve(o: Any?): String? {
     if (o == null) {
         return null
     }

@@ -26,11 +26,9 @@
 
 package org.spongepowered.gradle.dev
 
-import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaLibraryPlugin
@@ -41,7 +39,17 @@ import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.container
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.getValue
+import org.gradle.kotlin.dsl.invoke
+import org.gradle.kotlin.dsl.project
+import org.gradle.kotlin.dsl.property
+import org.gradle.kotlin.dsl.provideDelegate
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.registering
+import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.eclipse.model.EclipseModel
 import org.gradle.plugins.ide.idea.IdeaPlugin
@@ -68,7 +76,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         // implementation project that has already created the extension
         val dev = project.extensions.let {
             it.findByType(CommonDevExtension::class)
-                    ?: it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project)
+                ?: it.create(Constants.SPONGE_DEV_EXTENSION, CommonDevExtension::class.java, project)
         }
 
         project.plugins.withType(JavaLibraryPlugin::class.java).whenPluginAdded {
@@ -119,9 +127,12 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
 
         project.afterEvaluate {
             project.dependencies.apply {
-                add("api", dev.api.map {
-                    project(it.path)
-                }.get())
+                add(
+                    "api",
+                    dev.api.map {
+                        project(it.path)
+                    }.get()
+                )
             }
         }
 
@@ -144,10 +155,10 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
             jarTask.configure {
                 manifest {
                     attributes.putAll(
-                            mapOf(
-                                    "Implementation-Vendor" to dev.organization,
-                                    "Specification-Version" to dev.getApiReleasedVersion()
-                            )
+                        mapOf(
+                            "Implementation-Vendor" to dev.organization,
+                            "Specification-Version" to dev.getApiReleasedVersion()
+                        )
                     )
                 }
             }
@@ -166,9 +177,7 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
 
                 project.artifacts.add("archives", this)
             }
-
         }
-
     }
 
     private fun generateSourceSetAndconfigure(projectSourceSets: SourceSetContainer, project: Project, dev: CommonDevExtension): (AddedSourceSet).() -> Unit {
@@ -185,11 +194,9 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     project.dependencies.add("sourceOutput", project.files(it.relativeTo(project.projectDir).path))
                 }
 
-
-
                 project.afterEvaluate {
                     val configuredSourceType = addedSourceDom.sourceType.get()
-                    debug(project.logger, "[${project.name}] Realizing SourceSet ${project.path}:${newSourceSet.name} (${configuredSourceType})")
+                    debug(project.logger, "[${project.name}] Realizing SourceSet ${project.path}:${newSourceSet.name} ($configuredSourceType)")
                     configuredSourceType.onSourceSetCreated(newSourceSet, dev, project.dependencies, project)
                     if (configuredSourceType != SourceType.Invalid) {
                         project.tasks.withType(Jar::class.java).named("jar").configure {
@@ -219,12 +226,8 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                             }
                         }
                     }
-
                 }
-
             }
-
-
         }
     }
 
@@ -261,8 +264,8 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
 }
 
 open class AddedSourceSet(
-        val name: String,
-        val factory: ObjectFactory
+    val name: String,
+    val factory: ObjectFactory
 ) {
     var isJava6: Boolean = false
     val configurations: MutableList<String> = mutableListOf()
@@ -276,9 +279,7 @@ open class AddedSourceSet(
         }
         return source
     }
-
 }
-
 
 open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
 
@@ -304,11 +305,11 @@ open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
         project.tasks.withType(Jar::class).named("jar").configure {
             manifest {
                 attributes(
-                        mapOf(
-                                "Implementation-Title" to commonProjectProvider.map { it.name }.get(),
-                                "Implementation-Version" to getImplementationVersion(),
-                                "MCP-Mappings-Version" to commonProjectProvider.map { it.property("mcpMappings")!! }.get()
-                        )
+                    mapOf(
+                        "Implementation-Title" to commonProjectProvider.map { it.name }.get(),
+                        "Implementation-Version" to getImplementationVersion(),
+                        "MCP-Mappings-Version" to commonProjectProvider.map { it.property("mcpMappings")!! }.get()
+                    )
                 )
             }
         }
@@ -332,13 +333,15 @@ open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
     }
 
     override fun api(apiProjectProvider: Provider<Project>) {
-        super.api(apiProjectProvider.map {
-            val apiProject = it
-            if (!apiProject.plugins.hasPlugin(SpongeDevPlugin::class.java)) {
-                apiProject.plugins.apply(SpongeDevPlugin::class.java)
+        super.api(
+            apiProjectProvider.map {
+                val apiProject = it
+                if (!apiProject.plugins.hasPlugin(SpongeDevPlugin::class.java)) {
+                    apiProject.plugins.apply(SpongeDevPlugin::class.java)
+                }
+                apiProject
             }
-            apiProject
-        })
+        )
     }
 
     fun isReleaseCandidate(): Provider<Boolean> {
@@ -383,7 +386,7 @@ open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
             val splitVersion = split.get()
             if (splitVersion.size > 2) {
                 val major = fetchApiMinorVersion().map {
-                    "${splitVersion[0]}.${it}"
+                    "${splitVersion[0]}.$it"
                 }.getOrElse(apiTrimmed.get())
                 apiReleased.set(major)
                 major
@@ -392,7 +395,6 @@ open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
                 apiTrimmed.get()
             }
         }
-
     }
 
     fun getApiSuffix(): Provider<String> {
@@ -413,10 +415,11 @@ open class CommonDevExtension(project: Project) : SpongeDevExtension(project) {
         if (implVersion.isPresent) {
             return implVersion.get()
         }
-        implVersion.set(common.map {
-            it.property("minecraftVersion")!! as String + "-" + getApiSuffix().get() + it.property("recommendedVersion")!! as String
-        })
+        implVersion.set(
+            common.map {
+                it.property("minecraftVersion")!! as String + "-" + getApiSuffix().get() + it.property("recommendedVersion")!! as String
+            }
+        )
         return implVersion.get()
     }
-
 }

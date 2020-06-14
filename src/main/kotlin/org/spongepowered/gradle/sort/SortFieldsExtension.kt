@@ -25,7 +25,6 @@
 package org.spongepowered.gradle.sort
 
 import org.gradle.api.NamedDomainObjectContainer
-import org.spongepowered.gradle.sort.SortGroup
 
 open class SortFieldsExtension(val group: NamedDomainObjectContainer<SortGroup>) {
 
@@ -46,5 +45,4 @@ open class SortFieldsExtension(val group: NamedDomainObjectContainer<SortGroup>)
             files.addAll(groups)
         }
     }
-
 }

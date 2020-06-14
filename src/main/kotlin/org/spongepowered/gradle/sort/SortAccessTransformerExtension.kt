@@ -24,9 +24,4 @@
  */
 package org.spongepowered.gradle.sort
 
-import org.gradle.api.NamedDomainObjectContainer
-
-open class SortAccessTransformerExtension {
-
-
-}
+open class SortAccessTransformerExtension

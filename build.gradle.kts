@@ -29,6 +29,8 @@ repositories {
     maven("https://files.minecraftforge.net/maven")
 }
 
+val ktlint by configurations.creating
+
 dependencies {
     compile("org.apache.httpcomponents:httpmime:4.5.3")
     compile("org.spongepowered:plugin-meta:0.4.1")
@@ -40,12 +42,21 @@ dependencies {
         exclude(group = "org.codehaus.groovy")
     }
     implementation("com.google.code.findbugs:jsr305:3.0.2")
+    ktlint("com.pinterest:ktlint:0.37.0")
 }
 
 tasks.withType(JavaCompile::class.java) {
     // This is needed because shadow shades Log4j annotation processor
     // and it breaks java compilation because some option is not set or class is not provided.
     options.compilerArgs.add("-proc:none")
+}
+
+tasks.register("ktlintFormat", JavaExec::class) {
+    group = "formatting"
+    description = "Fix Kotlin code style deviations"
+    main = "com.pinterest.ktlint.Main"
+    classpath = ktlint
+    args = listOf("-F", "src/**/*.kt")
 }
 
 gradlePlugin {

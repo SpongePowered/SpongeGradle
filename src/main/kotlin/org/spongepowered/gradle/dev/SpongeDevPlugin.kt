@@ -31,7 +31,6 @@ import net.minecrell.gradle.licenser.Licenser
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.quality.CheckstyleExtension
@@ -46,12 +45,21 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.property
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.spongepowered.gradle.deploy.DeployImplementationExtension
 import org.spongepowered.gradle.deploy.DeployImplementationPlugin
 import org.spongepowered.gradle.sort.SpongeSortingPlugin
 import org.spongepowered.gradle.util.Constants
+import kotlin.collections.forEach
+import kotlin.collections.listOf
+import kotlin.collections.mutableListOf
+import kotlin.collections.set
 
 open class SpongeDevExtension(val project: Project) {
     val organization: Property<String> = defaultOrganization()
@@ -60,7 +68,7 @@ open class SpongeDevExtension(val project: Project) {
     val api: Property<Project> = project.objects.property(Project::class.java)
 
     private fun defaultOrganization(): Property<String> {
-        val org:  Property<String> = project.objects.property()
+        val org: Property<String> = project.objects.property()
         org.set("SpongePowered")
         return org
     }
@@ -72,7 +80,7 @@ open class SpongeDevExtension(val project: Project) {
     }
 
     private fun defaultLicense(): Property<String> {
-        val license: Property<String> =project.objects.property()
+        val license: Property<String> = project.objects.property()
         license.set("Sponge")
         return license
     }
@@ -102,9 +110,8 @@ open class SpongeDevPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val devExtension = project.extensions.let {
             it.findByType(SpongeDevExtension::class)
-                    ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project)
+                ?: it.create(Constants.SPONGE_DEV_EXTENSION, SpongeDevExtension::class.java, project)
         }
-
 
         // Apply the BaseDevPlugin for sponge repo and Java configuration
         project.plugins.apply(BaseDevPlugin::class.java)
@@ -142,7 +149,6 @@ open class SpongeDevPlugin : Plugin<Project> {
         val sourceJar: TaskProvider<Jar> = configureSourceJar(project, devExtension)
 
         configureSourceAndDevOutput(project, sourceJar, javadocJar, devExtension)
-
     }
 
     private fun configureJavadocJarTask(project: Project, javadocTask: TaskProvider<Javadoc>): TaskProvider<Jar> {
@@ -165,9 +171,7 @@ open class SpongeDevPlugin : Plugin<Project> {
             }
         }
 
-
         addSourceJarAndJavadocJarToArtifacts(project, sourceJar, javadocJar)
-
 
         project.configurations.register("devOutput")
         project.dependencies.apply {
@@ -214,7 +218,6 @@ open class SpongeDevPlugin : Plugin<Project> {
                     }
                 }
             }
-
         }
     }
 
@@ -227,7 +230,6 @@ open class SpongeDevPlugin : Plugin<Project> {
             if (devExtension is CommonDevExtension) {
                 devExtension.api.map {
                     this@register.from(it.configurations.named("sourceOutput"))
-
                 }
             }
             if (devExtension is SpongeImpl) {
@@ -288,7 +290,6 @@ open class SpongeDevPlugin : Plugin<Project> {
                 include("**/*.java")
                 newLine = false
             }
-
         }
     }
 
@@ -316,7 +317,6 @@ open class SpongeDevPlugin : Plugin<Project> {
                 attributes["Specification-Vendor"] = devExtension.organization
                 attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.vendor")})"
             }
-
         }
     }
 
@@ -338,7 +338,8 @@ open class SpongeDevPlugin : Plugin<Project> {
                 charset("UTF-8")
                 isFailOnError = false
                 (this as StandardJavadocDocletOptions).apply {
-                    links?.addAll(mutableListOf(
+                    links?.addAll(
+                        mutableListOf(
                             "http://www.slf4j.org/apidocs/",
                             "https://google.github.io/guava/releases/21.0/api/docs/",
                             "https://google.github.io/guice/api-docs/4.1/javadoc/",
@@ -348,7 +349,8 @@ open class SpongeDevPlugin : Plugin<Project> {
                             "https://flow.github.io/noise/",
                             "http://asm.ow2.org/asm50/javadoc/user/",
                             "https://docs.oracle.com/javase/8/docs/api/"
-                    ))
+                        )
+                    )
                     addStringOption("-Xdoclint:none", "-quiet")
                 }
             }
@@ -356,6 +358,5 @@ open class SpongeDevPlugin : Plugin<Project> {
         return javadoc
     }
 }
-
 
 fun Project.sourceSet(name: String): SourceSet? = convention.findPlugin(JavaPluginConvention::class.java)?.sourceSets?.findByName(name)

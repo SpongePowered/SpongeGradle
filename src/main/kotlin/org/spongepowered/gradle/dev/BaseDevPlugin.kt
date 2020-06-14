@@ -68,6 +68,5 @@ open class BaseDevPlugin : Plugin<Project> {
         target.plugins.withType(IdeaPlugin::class.java) {
             model.module.inheritOutputDirs = true
         }
-
     }
 }

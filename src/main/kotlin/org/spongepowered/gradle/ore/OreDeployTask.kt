@@ -96,11 +96,11 @@ open class OreDeployTask : DefaultTask() {
             throw InvalidUserDataException("Missing channel name.")
         }
         val entityBuilder = MultipartEntityBuilder.create()
-                .addTextBody("apiKey", apiKey)
-                .addTextBody("channel", channel)
-                .addTextBody("recommended", recommended.toString())
-                .addBinaryBody("pluginFile", plugin.file)
-                .addBinaryBody("pluginSig", sig.file)
+            .addTextBody("apiKey", apiKey)
+            .addTextBody("channel", channel)
+            .addTextBody("recommended", recommended.toString())
+            .addBinaryBody("pluginFile", plugin.file)
+            .addBinaryBody("pluginSig", sig.file)
 
         if (forumPost != null) {
             entityBuilder.addTextBody("forumPost", forumPost.toString())
