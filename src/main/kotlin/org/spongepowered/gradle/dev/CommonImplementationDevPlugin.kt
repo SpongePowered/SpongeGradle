@@ -41,6 +41,7 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.container
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.existing
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getValue
 import org.gradle.kotlin.dsl.invoke
@@ -144,15 +145,14 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
         }
 
         project.tasks.apply {
-            val resolveApiRevision = registering(ResolveApiVersionTask::class) {
+            val resolveApiRevision by registering(ResolveApiVersionTask::class) {
                 group = "sponge"
             }
 
             withType(GenerateMetadata::class).whenTaskAdded {
                 dependsOn(resolveApiRevision)
             }
-            val jarTask = withType(Jar::class).named("jar")
-            jarTask.configure {
+            val jar by existing(Jar::class) {
                 manifest {
                     attributes.putAll(
                         mapOf(
@@ -162,14 +162,14 @@ open class CommonImplementationDevPlugin : SpongeDevPlugin() {
                     )
                 }
             }
-            register("devJar", Jar::class) {
+            val devJar by registering(Jar::class) {
                 dependsOn(resolveApiRevision)
-                dependsOn(jarTask)
-                classifier = "dev"
+                dependsOn(jar)
+                getArchiveClassifier().set("dev")
                 group = "build"
                 setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE)
                 this.manifest {
-                    from(jarTask.map { it.manifest })
+                    from(jar.map { it.manifest })
                 }
                 from(project.configurations.named("devOutput"))
                 from(dev.api.map { it.configurations.named("devOutput") })

@@ -41,16 +41,16 @@ import org.spongepowered.plugin.meta.PluginMetadata
 import java.nio.file.Path
 import javax.inject.Inject
 
-open class GenerateMetadata(@Inject val objectFactory: ObjectFactory) : DefaultTask() {
+open class GenerateMetadata @Inject constructor(val objectFactory: ObjectFactory) : DefaultTask() {
 
     @OutputFile
-    val outputFile: RegularFileProperty = objectFactory.fileProperty()
+    val outputFile: RegularFileProperty
 
     @Input
     var mergeMetadata = true
 
     @get:InputFiles
-    val metadataFiles: MutableList<Path> = mutableListOf()
+    val metadataFiles: MutableList<Path>
 
     @TaskAction
     fun generateMetadata() {
@@ -81,5 +81,10 @@ open class GenerateMetadata(@Inject val objectFactory: ObjectFactory) : DefaultT
 
     private fun findExtraMetadataFiles(sourceSet: SourceSet): List<Path> {
         return sourceSet.resources.matching { include(McModInfo.STANDARD_FILENAME) }.map { it.toPath().toAbsolutePath() }
+    }
+
+    init {
+        this.outputFile = objectFactory.fileProperty()
+        this.metadataFiles = mutableListOf()
     }
 }
