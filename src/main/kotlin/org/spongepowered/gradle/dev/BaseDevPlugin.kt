@@ -49,7 +49,7 @@ open class BaseDevPlugin : Plugin<Project> {
             }
             maven {
                 name = "sponge v2"
-                setUrl("https://repo-new.spongepowered.org/maven")
+                setUrl("https://repo-new.spongepowered.org/repository/maven-public")
             }
             maven {
                 name = "forge"
@@ -70,7 +70,7 @@ open class BaseDevPlugin : Plugin<Project> {
             }
             maven {
                 name = "sponge v2"
-                setUrl("https://repo-new.spongepowered.org/maven")
+                setUrl("https://repo-new.spongepowered.org/repository/maven-public")
             }
         }
         target.plugins.withType(IdeaPlugin::class.java) {
