@@ -36,13 +36,13 @@ jobs:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Until we actually need to deploy this, we don't need to deploy spongegradle to any maven, plugin portal is sufficient.
-#          ORG_GRADLE_PROJECT_spongeRepo: ${{ secrets.SPONGE_REPO_URL }}
-#          ORG_GRADLE_PROJECT_spongeUsername: ${{ secrets.SPONGE_REPO_USERNAME }}
-#          ORG_GRADLE_PROJECT_spongePassword: ${{ secrets.SPONGE_REPO_PASSWORD }}
+          ORG_GRADLE_PROJECT_spongeSnapshotRepo: ${{ secrets.SPONGE_MAVEN_SNAPSHOT_REPO_URL }}
+          ORG_GRADLE_PROJECT_spongeReleaseRepo: ${{ secrets.SPONGE_MAVEN_RELEASE_REPO_URL }}
+          ORG_GRADLE_PROJECT_spongeUsername: ${{ secrets.SPONGE_MAVEN_REPO_USER }}
+          ORG_GRADLE_PROJECT_spongePassword: ${{ secrets.SPONGE_MAVEN_REPO_PASSWORD }}
 
       - name: Publish to Gradle Plugin Repository
         run: ./gradlew publishPlugins -Pgradle.publish.key=$GRADLE_PUBLISH_KEY -Pgradle.publish.secret=$GRADLE_PUBLISH_SECRET
         env:
           GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
           GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
-
