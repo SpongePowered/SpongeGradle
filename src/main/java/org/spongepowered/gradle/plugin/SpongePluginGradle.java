@@ -26,13 +26,31 @@ package org.spongepowered.gradle.plugin;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.file.Directory;
+import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskProvider;
 import org.spongepowered.gradle.common.Constants;
+import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
 
 public final class SpongePluginGradle implements Plugin<Project> {
 
     @Override
     public void apply(final Project project) {
         project.getRepositories().maven(r -> r.setUrl(Constants.Repositories.SPONGE));
-        project.getExtensions().create("spongePlugin", SpongePluginExtension.class, project);
+        final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class, project);
+        final Provider<Directory> generatedResourcesDirectory = project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
+
+        final TaskProvider<WritePluginMetadataTask> writePluginMetadataTask =
+                project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class, task -> {
+                    task.setGroup(Constants.TASK_GROUP);
+                    task.getPluginConfigurations().addAll(sponge.plugins());
+                    task.getOutputDirectory().set(generatedResourcesDirectory);
+                });
+
+        project.getPlugins().withType(JavaPlugin.class, v -> project.getExtensions().getByType(SourceSetContainer.class)
+                .getByName(SourceSet.MAIN_SOURCE_SET_NAME).getResources().srcDir(generatedResourcesDirectory));
     }
 }

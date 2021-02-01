@@ -24,48 +24,10 @@
  */
 package org.spongepowered.gradle.plugin.config;
 
-import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.Property;
+public final class PluginLoaders {
 
-import java.net.MalformedURLException;
-import java.net.URL;
+    public static final String JAVA_PLAIN = "java_plain";
 
-import javax.inject.Inject;
-
-public class PluginLinksConfiguration {
-
-    private final Property<URL> homepage;
-    private final Property<URL> source;
-    private final Property<URL> issues;
-
-    @Inject
-    public PluginLinksConfiguration(final ObjectFactory factory) {
-        this.homepage = factory.property(URL.class);
-        this.source = factory.property(URL.class);
-        this.issues = factory.property(URL.class);
-    }
-
-    public Property<URL> homepage() {
-        return this.homepage;
-    }
-
-    public void homepage(final String homepage) throws MalformedURLException {
-        this.homepage.set(new URL(homepage));
-    }
-
-    public Property<URL> source() {
-        return this.source;
-    }
-
-    public void source(final String source) throws MalformedURLException {
-        this.source.set(new URL(source));
-    }
-
-    public Property<URL> issues() {
-        return this.issues;
-    }
-
-    public void issues(final String issues) throws MalformedURLException {
-        this.issues.set(new URL(issues));
+    private PluginLoaders() {
     }
 }

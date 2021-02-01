@@ -22,50 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugin.config;
+package org.spongepowered.gradle.common;
 
-import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.Property;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-
-import javax.inject.Inject;
-
-public class PluginLinksConfiguration {
-
-    private final Property<URL> homepage;
-    private final Property<URL> source;
-    private final Property<URL> issues;
-
-    @Inject
-    public PluginLinksConfiguration(final ObjectFactory factory) {
-        this.homepage = factory.property(URL.class);
-        this.source = factory.property(URL.class);
-        this.issues = factory.property(URL.class);
-    }
-
-    public Property<URL> homepage() {
-        return this.homepage;
-    }
-
-    public void homepage(final String homepage) throws MalformedURLException {
-        this.homepage.set(new URL(homepage));
-    }
-
-    public Property<URL> source() {
-        return this.source;
-    }
-
-    public void source(final String source) throws MalformedURLException {
-        this.source.set(new URL(source));
-    }
-
-    public Property<URL> issues() {
-        return this.issues;
-    }
-
-    public void issues(final String issues) throws MalformedURLException {
-        this.issues.set(new URL(issues));
-    }
+public enum SpongePlatform {
+    FORGE,
+    VANILLA
 }

@@ -29,6 +29,8 @@ import org.gradle.api.Named;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Nested;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -36,18 +38,37 @@ import javax.inject.Inject;
 public class PluginConfiguration implements Named {
 
     private final String name;
+    private final ObjectFactory factory;
+
+    @Input
     private final Property<String> loader;
+
+    @Input
     private final Property<String> displayName;
+
+    @Input
     private final Property<String> version;
+
+    @Input
     private final Property<String> mainClass;
+
+    @Input
     private final Property<String> description;
+
+    @Input
     private final PluginLinksConfiguration links;
+
+    @Nested
     private final NamedDomainObjectContainer<PluginContributorConfiguration> contributors;
+
+    @Nested
     private final NamedDomainObjectContainer<PluginDependencyConfiguration> dependencies;
 
     @Inject
     public PluginConfiguration(final String name, final ObjectFactory factory) {
         this.name = name;
+        this.factory = factory;
+
         this.loader = factory.property(String.class);
         this.displayName = factory.property(String.class).convention(this.name);
         this.version = factory.property(String.class).convention("0.1");
@@ -120,11 +141,23 @@ public class PluginConfiguration implements Named {
         action.execute(this.contributors);
     }
 
+    public void contributor(final String name, final Action<? super PluginContributorConfiguration> action) {
+        final PluginContributorConfiguration configuration = this.factory.newInstance(PluginContributorConfiguration.class, name);
+        action.execute(configuration);
+        this.contributors.add(configuration);
+    }
+
     public NamedDomainObjectContainer<PluginDependencyConfiguration> dependencies() {
         return this.dependencies;
     }
 
     public void dependencies(final Action<? super NamedDomainObjectContainer<PluginDependencyConfiguration>> action) {
         action.execute(this.dependencies);
+    }
+
+    public void dependency(final String name, final Action<? super PluginDependencyConfiguration> action) {
+        final PluginDependencyConfiguration configuration = this.factory.newInstance(PluginDependencyConfiguration.class, name);
+        action.execute(configuration);
+        this.dependencies.add(configuration);
     }
 }

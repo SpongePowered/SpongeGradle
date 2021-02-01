@@ -27,20 +27,56 @@ package org.spongepowered.gradle.plugin;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
+import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.provider.Property;
+import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 
+import javax.inject.Inject;
+
 public class SpongePluginExtension {
+
+    private final ObjectFactory factory;
     private final NamedDomainObjectContainer<PluginConfiguration> plugins;
 
-    public SpongePluginExtension(final Project project) {
+    private final Property<SpongePlatform> platform;
+    private final Property<String> version;
+
+    @Inject
+    public SpongePluginExtension(final Project project, final ObjectFactory factory) {
+        this.factory = factory;
         this.plugins = project.container(PluginConfiguration.class);
+        this.platform = factory.property(SpongePlatform.class);
+        this.version = factory.property(String.class);
     }
 
-    public NamedDomainObjectContainer<PluginConfiguration> plugins() {
+    protected NamedDomainObjectContainer<PluginConfiguration> plugins() {
         return this.plugins;
     }
 
     public void plugins(final Action<? super NamedDomainObjectContainer<PluginConfiguration>> action) {
         action.execute(this.plugins);
+    }
+
+    public void plugin(final String name, final Action<? super PluginConfiguration> action) {
+        final PluginConfiguration configuration = this.factory.newInstance(PluginConfiguration.class, name);
+        action.execute(configuration);
+        this.plugins.add(configuration);
+    }
+
+    protected Property<SpongePlatform> platform() {
+        return this.platform;
+    }
+
+    public void platform(final SpongePlatform platform) {
+        this.platform.set(platform);
+    }
+
+    protected Property<String> version() {
+        return this.version;
+    }
+
+    public void version(final String version) {
+        this.version.set(version);
     }
 }
