@@ -10,11 +10,10 @@ version = "0.1"
 repositories {
     mavenCentral()
     gradlePluginPortal()
-    maven("https://repo-new.spongepowered.org/repository/maven-public")
 }
 
 dependencies {
-    implementation("org.spongepowered:plugin-meta:0.6.0.1-SNAPSHOT")
+    implementation("org.spongepowered:plugin-meta:0.6.2")
 }
 
 gradlePlugin {

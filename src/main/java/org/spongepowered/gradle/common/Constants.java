@@ -31,7 +31,7 @@ public final class Constants {
     public static final String TASK_GROUP = "sponge gradle";
 
     public static final class Repositories {
-        public static final String SPONGE = "https://repo-new.spongepowered.org/repository/maven-public/";
+        public static final String SPONGE = "https://repo.spongepowered.org/repository/maven-public/";
 
         private Repositories() {
         }

@@ -31,9 +31,8 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
-import org.gradle.api.tasks.TaskProvider;
 import org.spongepowered.gradle.common.Constants;
-import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
+import org.spongepowered.gradle.plugin.task.worker.WritePluginMetadataTask;
 
 public final class SpongePluginGradle implements Plugin<Project> {
 
@@ -43,14 +42,12 @@ public final class SpongePluginGradle implements Plugin<Project> {
         final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class, project);
         final Provider<Directory> generatedResourcesDirectory = project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
 
-        final TaskProvider<WritePluginMetadataTask> writePluginMetadataTask =
-                project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class, task -> {
-                    task.setGroup(Constants.TASK_GROUP);
-                    task.getPluginConfigurations().addAll(sponge.plugins());
-                    task.getOutputDirectory().set(generatedResourcesDirectory);
-                });
-
         project.getPlugins().withType(JavaPlugin.class, v -> project.getExtensions().getByType(SourceSetContainer.class)
                 .getByName(SourceSet.MAIN_SOURCE_SET_NAME).getResources().srcDir(generatedResourcesDirectory));
+
+        project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class, task -> {
+            task.getConfigurations().addAll(sponge.plugins());
+            task.getOutputDirectory().set(generatedResourcesDirectory);
+        });
     }
 }
