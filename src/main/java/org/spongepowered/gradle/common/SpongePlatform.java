@@ -25,6 +25,22 @@
 package org.spongepowered.gradle.common;
 
 public enum SpongePlatform {
-    FORGE,
-    VANILLA
+    FORGE("spongeforge", ""),
+    VANILLA("spongevanilla", "org.spongepowered.vanilla.installer.InstallerMain");
+
+    private final String artifactId;
+    private final String mainClass;
+
+    SpongePlatform(final String artifactId, final String mainClass) {
+        this.artifactId = artifactId;
+        this.mainClass = mainClass;
+    }
+
+    public String artifactId() {
+        return this.artifactId;
+    }
+
+    public String mainClass() {
+        return this.mainClass;
+    }
 }

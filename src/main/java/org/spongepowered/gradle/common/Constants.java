@@ -37,6 +37,13 @@ public final class Constants {
         }
     }
 
+    public static final class Dependencies {
+        public static final String SPONGE_GROUP = "org.spongepowered";
+
+        private Dependencies() {
+        }
+    }
+
     private Constants() {
     }
 

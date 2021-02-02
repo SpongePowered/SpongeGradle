@@ -43,6 +43,7 @@ import org.spongepowered.plugin.metadata.PluginMetadata;
 import org.spongepowered.plugin.metadata.util.PluginMetadataHelper;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -132,6 +133,6 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
         Files.createDirectories(outputDirectory);
         final Path outputFile = outputDirectory.resolve("plugins.json");
         Files.deleteIfExists(outputFile);
-        Files.writeString(outputFile, json);
+        Files.write(outputFile, json.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -46,7 +46,7 @@ public class SpongePluginExtension {
     public SpongePluginExtension(final Project project, final ObjectFactory factory) {
         this.factory = factory;
         this.plugins = project.container(PluginConfiguration.class);
-        this.platform = factory.property(SpongePlatform.class);
+        this.platform = factory.property(SpongePlatform.class).convention(SpongePlatform.VANILLA);
         this.version = factory.property(String.class);
     }
 
