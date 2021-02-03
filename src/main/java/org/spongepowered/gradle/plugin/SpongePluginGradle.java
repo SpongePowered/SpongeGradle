@@ -51,6 +51,8 @@ public final class SpongePluginGradle implements Plugin<Project> {
     @Override
     public void apply(final Project project) {
         project.getRepositories().maven(r -> r.setUrl(Constants.Repositories.SPONGE));
+        project.getPlugins().apply(JavaLibraryPlugin.class);
+
         final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class, project);
         final Provider<Directory> generatedResourcesDirectory = project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
 
@@ -113,10 +115,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
             runServer.configure(it -> it.classpath(project.getTasks().named(JavaPlugin.JAR_TASK_NAME))); // TODO: is there a sensible way to run without the jar?
         });
 
-        project.getPlugins().withType(JavaLibraryPlugin.class, v -> {
-            project.getConfigurations().named(JavaPlugin.COMPILE_ONLY_API_CONFIGURATION_NAME).configure(config -> {
-                config.extendsFrom(spongeApi.get());
-            });
-        });
+        project.getPlugins().withType(JavaLibraryPlugin.class, v -> project.getConfigurations().named(JavaPlugin.COMPILE_ONLY_API_CONFIGURATION_NAME)
+            .configure(config -> config.extendsFrom(spongeApi.get())));
     }
 }
