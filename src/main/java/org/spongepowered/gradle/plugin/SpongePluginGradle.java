@@ -58,10 +58,10 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
         project.afterEvaluate(a -> {
             if (sponge.version().isPresent()) {
-                project.getLogger().lifecycle("SpongeAPI '{}' has been set within the `sponge` configuration. runClient and runServer tasks will be "
+                project.getLogger().lifecycle("SpongeAPI '{}' has been set within the 'sponge' configuration. runClient and runServer tasks will be "
                     + "available. You may use these to test your plugin.", sponge.version().get());
             } else {
-                project.getLogger().lifecycle("SpongeAPI version has not been set within the `sponge` configuration via the `version` task. No "
+                project.getLogger().lifecycle("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
                     + "tasks will be available to run a client or server session for debugging.");
             }
         });
