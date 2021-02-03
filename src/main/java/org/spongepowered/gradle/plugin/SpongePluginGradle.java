@@ -32,6 +32,7 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleDependency;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.JavaExec;
@@ -60,7 +61,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
         final NamedDomainObjectProvider<Configuration> spongeApi = project.getConfigurations().register("spongeApi", config -> config.defaultDependencies(deps -> {
             if (sponge.version().isPresent()) {
-                deps.add(project.getDependencies().create(Constants.Dependencies.SPONGE_GROUP + ":spongeapi:" + sponge.version().get()));
+                deps.add(project.getDependencies().create(Constants.Dependencies.SPONGE_GROUP + ":spongeapi:" + sponge.version().get() + "-SNAPSHOT"));
             }
         }));
 
@@ -109,11 +110,13 @@ public final class SpongePluginGradle implements Plugin<Project> {
                 });
 
 
+            runServer.configure(it -> it.classpath(project.getTasks().named(JavaPlugin.JAR_TASK_NAME))); // TODO: is there a sensible way to run without the jar?
+        });
+
+        project.getPlugins().withType(JavaLibraryPlugin.class, v -> {
             project.getConfigurations().named(JavaPlugin.COMPILE_ONLY_API_CONFIGURATION_NAME).configure(config -> {
                 config.extendsFrom(spongeApi.get());
             });
-
-            runServer.configure(it -> it.classpath(project.getTasks().named(JavaPlugin.JAR_TASK_NAME))); // TODO: is there a sensible way to run without the jar?
         });
     }
 }
