@@ -40,7 +40,7 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.spongepowered.gradle.common.Constants;
-import org.spongepowered.gradle.plugin.task.worker.WritePluginMetadataTask;
+import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,10 +50,22 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
     @Override
     public void apply(final Project project) {
+        project.getLogger().lifecycle("SpongePowered Plugin 'GRADLE' Toolset Version '{}'", Constants.VERSION);
         project.getRepositories().maven(r -> r.setUrl(Constants.Repositories.SPONGE));
         project.getPlugins().apply(JavaLibraryPlugin.class);
 
         final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class, project);
+
+        project.afterEvaluate(a -> {
+            if (sponge.version().isPresent()) {
+                project.getLogger().lifecycle("SpongeAPI '{}' has been set within the `sponge` configuration. runClient and runServer tasks will be "
+                    + "available. You may use these to test your plugin.", sponge.version().get());
+            } else {
+                project.getLogger().lifecycle("SpongeAPI version has not been set within the `sponge` configuration via the `version` task. No "
+                    + "tasks will be available to run a client or server session for debugging.");
+            }
+        });
+
         final Provider<Directory> generatedResourcesDirectory = project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
 
         final TaskProvider<WritePluginMetadataTask> writePluginMetadata = project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class, task -> {

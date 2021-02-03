@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugin.task.worker;
+package org.spongepowered.gradle.plugin.task;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.NamedDomainObjectContainer;
