@@ -1,5 +1,5 @@
 /*
- * This file is part of SpongeGradle, licensed under the MIT License (MIT).
+ * This file is part of spongegradle-plugin-development, licensed under the MIT License (MIT).
  *
  * Copyright (c) SpongePowered <https://www.spongepowered.org>
  * Copyright (c) contributors

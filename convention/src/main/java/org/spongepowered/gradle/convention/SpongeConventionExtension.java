@@ -1,5 +1,5 @@
 /*
- * This file is part of SpongeGradle, licensed under the MIT License (MIT).
+ * This file is part of spongegradle-convention, licensed under the MIT License (MIT).
  *
  * Copyright (c) SpongePowered <https://www.spongepowered.org>
  * Copyright (c) contributors
@@ -22,25 +22,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.common;
+package org.spongepowered.gradle.convention;
 
-public enum SpongePlatform {
-    FORGE("spongeforge", ""),
-    VANILLA("spongevanilla", "org.spongepowered.vanilla.installer.InstallerMain");
+import net.kyori.indra.IndraExtension;
+import net.kyori.indra.data.ApplyTo;
+import org.gradle.api.Action;
+import org.gradle.api.model.ObjectFactory;
+import org.spongepowered.gradle.common.Constants;
 
-    private final String artifactId;
-    private final String mainClass;
+import javax.inject.Inject;
 
-    SpongePlatform(final String artifactId, final String mainClass) {
-        this.artifactId = artifactId;
-        this.mainClass = mainClass;
+public class SpongeConventionExtension {
+    private final IndraExtension extension;
+
+    @Inject
+    public SpongeConventionExtension(final ObjectFactory objects, final IndraExtension extension) {
+        this.extension = extension;
     }
 
-    public String artifactId() {
-        return this.artifactId;
+    public void repository(final String repositoryName) {
+        this.extension.github(Constants.GITHUB_ORGANIZATION, repositoryName);
     }
 
-    public String mainClass() {
-        return this.mainClass;
+    public void repository(final String repositoryName, final Action<ApplyTo> extraConfig) {
+        this.extension.github(Constants.GITHUB_ORGANIZATION, repositoryName, extraConfig);
     }
+
 }

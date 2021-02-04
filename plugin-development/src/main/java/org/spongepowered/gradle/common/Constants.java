@@ -1,5 +1,5 @@
 /*
- * This file is part of SpongeGradle, licensed under the MIT License (MIT).
+ * This file is part of spongegradle-plugin-development, licensed under the MIT License (MIT).
  *
  * Copyright (c) SpongePowered <https://www.spongepowered.org>
  * Copyright (c) contributors
@@ -22,12 +22,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugin.config;
+package org.spongepowered.gradle.common;
 
-public final class PluginLoaders {
+public final class Constants {
 
-    public static final String JAVA_PLAIN = "java_plain";
+    public static final String NAME = "SpongeGradle";
+    public static final String VERSION = Constants.version();
+    public static final String TASK_GROUP = "sponge gradle";
+    public static final String GITHUB_ORGANIZATION = "SpongePowered";
 
-    private PluginLoaders() {
+    public static final class Repositories {
+        public static final String SPONGE = "https://repo.spongepowered.org/repository/maven-public/";
+
+        private Repositories() {
+        }
+    }
+
+    public static final class Dependencies {
+        public static final String SPONGE_GROUP = "org.spongepowered";
+
+        private Dependencies() {
+        }
+    }
+
+    private Constants() {
+    }
+
+    private static String version() {
+        final String rawVersion = Constants.class.getPackage().getImplementationVersion();
+        if (rawVersion == null) {
+            return "dev";
+        } else {
+            return rawVersion;
+        }
     }
 }
