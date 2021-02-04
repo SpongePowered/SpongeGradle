@@ -29,7 +29,6 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.ModuleDependency;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -56,16 +55,6 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
         final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class, project);
 
-        project.afterEvaluate(a -> {
-            if (sponge.version().isPresent()) {
-                project.getLogger().lifecycle("SpongeAPI '{}' has been set within the 'sponge' configuration. 'runClient' and 'runServer'"
-                        + " tasks will be available. You may use these to test your plugin.", sponge.version().get());
-            } else {
-                project.getLogger().lifecycle("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
-                    + "tasks will be available to run a client or server session for debugging.");
-            }
-        });
-
         final Provider<Directory> generatedResourcesDirectory = project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
 
         final TaskProvider<WritePluginMetadataTask> writePluginMetadata = project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class, task -> {
@@ -79,19 +68,35 @@ public final class SpongePluginGradle implements Plugin<Project> {
             }
         }));
 
+        project.getDependencies().getComponents().withModule("org.spongepowered:spongevanilla", SpongeVersioningMetadataRule.class);
+
         final NamedDomainObjectProvider<Configuration> spongeRuntime = project.getConfigurations().register("spongeRuntime", conf -> {
             conf.defaultDependencies(a -> {
                 final Dependency dep = project.getDependencies().create(
                     Constants.Dependencies.SPONGE_GROUP
                         + ":" + sponge.platform().get().artifactId()
-                        + ":" + "1.16.5-" + sponge.version().get() + "-RC+:universal");
+                        + ":+:universal");
 
-                if (dep instanceof ModuleDependency) {
-                    ((ModuleDependency) dep).setTransitive(false); // shaded jar
-                }
+                /*if (dep instanceof ModuleDependency) {
+                    ((ModuleDependency) dep).getAttributes().attribute(SpongeVersioningMetadataRule.API_TARGET, sponge.version().get());
+                }*/
 
                 a.add(dep);
             });
+        });
+
+        project.afterEvaluate(a -> {
+            if (sponge.version().isPresent()) {
+                project.getLogger().lifecycle("SpongeAPI '{}' has been set within the 'spongeApi' configuration. 'runClient' and 'runServer'"
+                    + " tasks will be available. You may use these to test your plugin.", sponge.version().get());
+
+                spongeRuntime.configure(config -> {
+                    config.getAttributes().attribute(SpongeVersioningMetadataRule.API_TARGET, sponge.version().get());
+                });
+            } else {
+                project.getLogger().lifecycle("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
+                    + "tasks will be available to run a client or server session for debugging.");
+            }
         });
 
         final TaskProvider<JavaExec> runServer = project.getTasks().register("runServer", JavaExec.class, task -> {
@@ -122,7 +127,6 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
                     project.getTasks().named(s.getProcessResourcesTaskName()).configure(processResources -> processResources.dependsOn(writePluginMetadata));
                 });
-
 
             runServer.configure(it -> it.classpath(project.getTasks().named(JavaPlugin.JAR_TASK_NAME))); // TODO: is there a sensible way to run without the jar?
         });
