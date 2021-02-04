@@ -36,13 +36,10 @@ public class PluginDependencyConfiguration implements Named {
 
     private final String name;
 
-    @Input
     private final Property<String> version;
 
-    @Input
     private final Property<PluginDependency.LoadOrder> loadOrder;
 
-    @Input
     private final Property<Boolean> optional;
 
     @Inject
@@ -53,12 +50,14 @@ public class PluginDependencyConfiguration implements Named {
         this.optional = factory.property(Boolean.class).convention(false);
     }
 
+    @Input
     @Override
     public String getName() {
         return this.name;
     }
 
-    public Property<String> version() {
+    @Input
+    public Property<String> getVersion() {
         return this.version;
     }
 
@@ -66,7 +65,8 @@ public class PluginDependencyConfiguration implements Named {
         this.version.set(version);
     }
 
-    public Property<PluginDependency.LoadOrder> loadOrder() {
+    @Input
+    public Property<PluginDependency.LoadOrder> getLoadOrder() {
         return this.loadOrder;
     }
 
@@ -74,7 +74,8 @@ public class PluginDependencyConfiguration implements Named {
         this.loadOrder.set(loadOrder);
     }
 
-    public Property<Boolean> optional() {
+    @Input
+    public Property<Boolean> getOptional() {
         return this.optional;
     }
 

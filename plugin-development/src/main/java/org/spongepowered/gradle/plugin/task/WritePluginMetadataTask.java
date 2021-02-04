@@ -72,34 +72,34 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
 
             metadataBuilder
                 .setId(configuration.getName())
-                .setLoader(configuration.loader().get())
-                .setName(configuration.displayName().get())
-                .setVersion(configuration.version().get())
-                .setMainClass(configuration.mainClass().get())
-                .setDescription(configuration.description().get())
+                .setLoader(configuration.getLoader().get())
+                .setName(configuration.getDisplayName().get())
+                .setVersion(configuration.getVersion().get())
+                .setMainClass(configuration.getMainClass().get())
+                .setDescription(configuration.getDescription().get())
             ;
 
             final PluginLinks.Builder linksBuilder = PluginLinks.builder();
-            final PluginLinksConfiguration linksConfiguration = configuration.links();
-            if (linksConfiguration.homepage().isPresent()) {
-                linksBuilder.setHomepage(linksConfiguration.homepage().get());
+            final PluginLinksConfiguration linksConfiguration = configuration.getLinks();
+            if (linksConfiguration.getHomepage().isPresent()) {
+                linksBuilder.setHomepage(linksConfiguration.getHomepage().get());
             }
-            if (linksConfiguration.source().isPresent()) {
-                linksBuilder.setSource(linksConfiguration.source().get());
+            if (linksConfiguration.getSource().isPresent()) {
+                linksBuilder.setSource(linksConfiguration.getSource().get());
             }
-            if (linksConfiguration.issues().isPresent()) {
-                linksBuilder.setIssues(linksConfiguration.issues().get());
+            if (linksConfiguration.getIssues().isPresent()) {
+                linksBuilder.setIssues(linksConfiguration.getIssues().get());
             }
             metadataBuilder.setLinks(linksBuilder.build());
 
             final List<PluginContributor> contributors = new ArrayList<>();
 
-            for (final PluginContributorConfiguration contributor : configuration.contributors()) {
+            for (final PluginContributorConfiguration contributor : configuration.getContributors()) {
                 final PluginContributor.Builder contributorBuilder = PluginContributor.builder();
 
                 contributorBuilder.setName(contributor.getName());
-                if (contributor.description().isPresent()) {
-                    contributorBuilder.setDescription(contributor.description().get());
+                if (contributor.getDescription().isPresent()) {
+                    contributorBuilder.setDescription(contributor.getDescription().get());
                 }
                 contributors.add(contributorBuilder.build());
             }
@@ -108,16 +108,16 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
 
             final List<PluginDependency> dependencies = new ArrayList<>();
 
-            for (final PluginDependencyConfiguration dependency : configuration.dependencies()) {
+            for (final PluginDependencyConfiguration dependency : configuration.getDependencies()) {
                 final PluginDependency.Builder dependencyBuilder = PluginDependency.builder();
 
                 dependencyBuilder.setId(dependency.getName());
-                dependencyBuilder.setVersion(dependency.version().get());
-                if (dependency.loadOrder().isPresent()) {
-                    dependencyBuilder.setLoadOrder(dependency.loadOrder().get());
+                dependencyBuilder.setVersion(dependency.getVersion().get());
+                if (dependency.getLoadOrder().isPresent()) {
+                    dependencyBuilder.setLoadOrder(dependency.getLoadOrder().get());
                 }
-                if (dependency.optional().isPresent()) {
-                    dependencyBuilder.setOptional(dependency.optional().get());
+                if (dependency.getOptional().isPresent()) {
+                    dependencyBuilder.setOptional(dependency.getOptional().get());
                 }
                 dependencies.add(dependencyBuilder.build());
             }

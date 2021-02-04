@@ -35,7 +35,6 @@ public class PluginContributorConfiguration implements Named {
 
     private final String name;
 
-    @Input
     private final Property<String> description;
 
     @Inject
@@ -44,12 +43,14 @@ public class PluginContributorConfiguration implements Named {
         this.description = factory.property(String.class);
     }
 
+    @Input
     @Override
     public String getName() {
         return this.name;
     }
 
-    public Property<String> description() {
+    @Input
+    public Property<String> getDescription() {
         return this.description;
     }
 

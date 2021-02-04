@@ -40,28 +40,20 @@ public class PluginConfiguration implements Named {
     private final String name;
     private final ObjectFactory factory;
 
-    @Input
     private final Property<String> loader;
 
-    @Input
     private final Property<String> displayName;
 
-    @Input
     private final Property<String> version;
 
-    @Input
     private final Property<String> mainClass;
 
-    @Input
     private final Property<String> description;
 
-    @Input
     private final PluginLinksConfiguration links;
 
-    @Nested
     private final NamedDomainObjectContainer<PluginContributorConfiguration> contributors;
 
-    @Nested
     private final NamedDomainObjectContainer<PluginDependencyConfiguration> dependencies;
 
     @Inject
@@ -81,11 +73,13 @@ public class PluginConfiguration implements Named {
     }
 
     @Override
+    @Input
     public @Nonnull String getName() {
         return this.name;
     }
 
-    public Property<String> loader() {
+    @Input
+    public Property<String> getLoader() {
         return this.loader;
     }
 
@@ -93,7 +87,8 @@ public class PluginConfiguration implements Named {
         this.loader.set(loader);
     }
 
-    public Property<String> displayName() {
+    @Input
+    public Property<String> getDisplayName() {
         return this.displayName;
     }
 
@@ -101,7 +96,8 @@ public class PluginConfiguration implements Named {
         this.displayName.set(displayName);
     }
 
-    public Property<String> version() {
+    @Input
+    public Property<String> getVersion() {
         return this.version;
     }
 
@@ -109,7 +105,8 @@ public class PluginConfiguration implements Named {
         this.version.set(version);
     }
 
-    public Property<String> mainClass() {
+    @Input
+    public Property<String> getMainClass() {
         return this.mainClass;
     }
 
@@ -117,7 +114,8 @@ public class PluginConfiguration implements Named {
         this.mainClass.set(mainClass);
     }
 
-    public Property<String> description() {
+    @Input
+    public Property<String> getDescription() {
         return this.description;
     }
 
@@ -125,7 +123,8 @@ public class PluginConfiguration implements Named {
         this.description.set(description);
     }
 
-    public PluginLinksConfiguration links() {
+    @Nested
+    public PluginLinksConfiguration getLinks() {
         return this.links;
     }
 
@@ -133,7 +132,8 @@ public class PluginConfiguration implements Named {
         action.execute(this.links);
     }
 
-    public NamedDomainObjectContainer<PluginContributorConfiguration> contributors() {
+    @Nested
+    public NamedDomainObjectContainer<PluginContributorConfiguration> getContributors() {
         return this.contributors;
     }
 
@@ -147,7 +147,8 @@ public class PluginConfiguration implements Named {
         this.contributors.add(configuration);
     }
 
-    public NamedDomainObjectContainer<PluginDependencyConfiguration> dependencies() {
+    @Nested
+    public NamedDomainObjectContainer<PluginDependencyConfiguration> getDependencies() {
         return this.dependencies;
     }
 
