@@ -14,7 +14,7 @@ indraPluginPublishing {
     )
     plugin(
         id = "implementation",
-        mainClass = "org.spongepowered.gradle.convention.SpongeImplementationPlugin",
+        mainClass = "org.spongepowered.gradle.convention.SpongeImplementationConventionPlugin",
         displayName = "SpongePowered Implementation Convention",
         description = "Conventions for implementations of Sponge projects",
         tags = listOf("sponge", "minecraft", "convention")

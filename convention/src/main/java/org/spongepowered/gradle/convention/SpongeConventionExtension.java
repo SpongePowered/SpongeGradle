@@ -26,26 +26,65 @@ package org.spongepowered.gradle.convention;
 
 import net.kyori.indra.IndraExtension;
 import net.kyori.indra.data.ApplyTo;
+import org.cadixdev.gradle.licenser.LicenseExtension;
 import org.gradle.api.Action;
-import org.gradle.api.model.ObjectFactory;
+import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.ExtraPropertiesExtension;
 import org.spongepowered.gradle.common.Constants;
+
+import java.util.Objects;
 
 import javax.inject.Inject;
 
 public class SpongeConventionExtension {
-    private final IndraExtension extension;
+    private final IndraExtension indra;
+    private final LicenseExtension licenseExtension;
 
     @Inject
-    public SpongeConventionExtension(final ObjectFactory objects, final IndraExtension extension) {
-        this.extension = extension;
+    public SpongeConventionExtension(final IndraExtension indra, final LicenseExtension license) {
+        this.indra = indra;
+        this.licenseExtension = license;
     }
 
+    /**
+     * Set the repository used in Maven metadata.
+     *
+     * @param repositoryName the target repository name
+     */
     public void repository(final String repositoryName) {
-        this.extension.github(Constants.GITHUB_ORGANIZATION, repositoryName);
+        this.indra.github(Constants.GITHUB_ORGANIZATION, repositoryName);
     }
 
+    /**
+     * Set the repository used in Maven metadata.
+     *
+     * @param repositoryName the target repository name
+     * @param extraConfig extra options to apply to the repository
+     */
     public void repository(final String repositoryName, final Action<ApplyTo> extraConfig) {
-        this.extension.github(Constants.GITHUB_ORGANIZATION, repositoryName, extraConfig);
+        this.indra.github(Constants.GITHUB_ORGANIZATION, repositoryName, extraConfig);
+    }
+
+    public void mitLicense() {
+        this.indra.mitLicense();
+    }
+
+    /**
+     * Get template parameters used by the license plugin for headers.
+     *
+     * @return the parameters
+     */
+    public ExtraPropertiesExtension licenseParameters() {
+        return ((ExtensionAware) this.licenseExtension).getExtensions().getExtraProperties();
+    }
+
+    /**
+     * Act on template parameters used by the license plugin for headers.
+     *
+     * @param configureAction the action to use to configure license header properties
+     */
+    public void licenseParameters(final Action<ExtraPropertiesExtension> configureAction) {
+        Objects.requireNonNull(configureAction, "configureAction").execute(((ExtensionAware) this.licenseExtension).getExtensions().getExtraProperties());
     }
 
 }

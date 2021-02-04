@@ -27,6 +27,10 @@ subprojects {
         }
     }
 
+    dependencies {
+        "compileOnlyApi"("org.checkerframework:checker-qual:3.10.0")
+    }
+
     extensions.configure(IndraExtension::class) {
         github("SpongePowered", "SpongeGradle") {
             ci = true
