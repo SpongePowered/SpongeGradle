@@ -22,15 +22,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.convention;
+package org.spongepowered.gradle.convention.invoker
 
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
+class SignJarInvoker {
 
-public class SpongeImplementationConventionPlugin implements Plugin<Project> {
-
-    @Override
-    public void apply(final Project target) {
-
+    /**
+     * Invoke the ant {@code signjar} task
+     */
+    static void signJar(
+        final AntBuilder ant,
+        final File jar,
+        final String alias,
+        final String storepass,
+        final File keystore,
+        final boolean verbose,
+        final boolean strict
+    ) {
+        ant.signjar(
+                jar: jar,
+                alias: alias,
+                storepass: storepass,
+                keystore: keystore,
+                verbose: verbose,
+                strict: strict
+        )
     }
 }

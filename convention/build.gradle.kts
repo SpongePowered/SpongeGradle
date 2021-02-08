@@ -1,7 +1,19 @@
+plugins {
+    groovy
+}
+
+tasks.withType(GroovyCompile::class).configureEach {
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
+    options.release.set(indra.javaVersions.target)
+}
+
 dependencies {
     api(project(":spongegradle-plugin-development"))
+    implementation(localGroovy())
     api("net.kyori:indra-common:1.3.1")
     api("gradle.plugin.org.cadixdev.gradle:licenser:0.5.0")
+    api("com.google.code.gson:gson:2.8.6")
 }
 
 indraPluginPublishing {

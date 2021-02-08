@@ -24,38 +24,23 @@
  */
 package org.spongepowered.gradle.convention;
 
-import org.gradle.api.artifacts.dsl.RepositoryHandler;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
 
-public final class ConventionConstants {
+public class SpongeImplementationConventionPlugin implements Plugin<Project> {
 
-    private ConventionConstants() {
+    @Override
+    public void apply(final Project target) {
+        target.getPlugins().apply(SpongeConventionPlugin.class);
+
+        // Configure source sets:
+        // applaunch
+        // launch
+        // accessor
+        // mixins
+        // main
+        // installer
+        // - can see: nothing
+        // - can be seen by: everything
     }
-
-    public static final class ProjectProperties {
-        public static final String SPONGE_SIGNING_KEY = "spongeSigningKey";
-        public static final String SPONGE_SIGNING_PASSWORD = "spongeSigningPassword";
-        public static final String SPONGE_SNAPSHOT_REPO = "spongeSnapshotRepo";
-        public static final String SPONGE_RELEASE_REPO = "spongeReleaseRepo";
-        public static final String SPONGE_KEY_STORE = "spongeKeyStore";
-        public static final String SPONGE_KEY_STORE_ALIAS = "spongeKeyStoreAlias";
-        public static final String SPONGE_KEY_STORE_PASSWORD = "spongeKeyStorePassword";
-
-        private ProjectProperties() {
-        }
-    }
-
-    public static final class Locations {
-        public static final String LICENSE_HEADER = "HEADER.txt";
-
-        private Locations() {
-        }
-    }
-
-    public static void spongeRepo(final RepositoryHandler repos) {
-        repos.maven(repo -> {
-            repo.setUrl("https://repo.spongepowered.org/repository/maven-public/");
-            repo.setName("sponge");
-        });
-    }
-
 }

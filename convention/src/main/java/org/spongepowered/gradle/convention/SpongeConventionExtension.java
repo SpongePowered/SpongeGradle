@@ -28,8 +28,11 @@ import net.kyori.indra.IndraExtension;
 import net.kyori.indra.data.ApplyTo;
 import org.cadixdev.gradle.licenser.LicenseExtension;
 import org.gradle.api.Action;
+import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
+import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.tasks.bundling.Jar;
 import org.spongepowered.gradle.common.Constants;
 
 import java.util.Objects;
@@ -39,11 +42,13 @@ import javax.inject.Inject;
 public class SpongeConventionExtension {
     private final IndraExtension indra;
     private final LicenseExtension licenseExtension;
+    private final Manifest sharedManifest;
 
     @Inject
-    public SpongeConventionExtension(final IndraExtension indra, final LicenseExtension license) {
+    public SpongeConventionExtension(final IndraExtension indra, final LicenseExtension license, final JavaPluginConvention convention) {
         this.indra = indra;
         this.licenseExtension = license;
+        this.sharedManifest = convention.manifest();
     }
 
     /**
@@ -85,6 +90,30 @@ public class SpongeConventionExtension {
      */
     public void licenseParameters(final Action<ExtraPropertiesExtension> configureAction) {
         Objects.requireNonNull(configureAction, "configureAction").execute(((ExtensionAware) this.licenseExtension).getExtensions().getExtraProperties());
+    }
+
+
+    /**
+     * Get a manifest that will be included in all {@link Jar} tasks.
+     *
+     * <p>This allows applying project-wide identifying metadata.</p>
+     *
+     * @return the shared manifest
+     */
+    public Manifest sharedManifest() {
+        return this.sharedManifest;
+    }
+
+
+    /**
+     * Configure a manifest that will be included in all {@link Jar} tasks.
+     *
+     * <p>This allows applying project-wide identifying metadata.</p>
+     *
+     * @param configureAction action to configure with
+     */
+    public void sharedManifest(final Action<Manifest> configureAction) {
+        Objects.requireNonNull(configureAction, "configureAction").execute(this.sharedManifest);
     }
 
 }

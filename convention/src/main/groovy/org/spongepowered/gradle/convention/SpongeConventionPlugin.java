@@ -34,26 +34,41 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
+import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat;
 import org.gradle.api.tasks.testing.logging.TestLoggingContainer;
 import org.gradle.jvm.tasks.Jar;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugins.signing.SigningExtension;
 import org.gradle.plugins.signing.SigningPlugin;
 import org.gradle.plugins.signing.signatory.pgp.PgpSignatoryProvider;
+import org.spongepowered.gradle.convention.task.SignJarTask;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 
 public class SpongeConventionPlugin implements Plugin<Project> {
     private @MonotonicNonNull Project project;
@@ -63,20 +78,27 @@ public class SpongeConventionPlugin implements Plugin<Project> {
         this.project = target;
         this.applyPlugins(target.getPlugins());
         final IndraExtension indra = Indra.extension(target);
-        target.getExtensions().create(
+        final SpongeConventionExtension sponge = target.getExtensions().create(
             "spongeConvention",
             SpongeConventionExtension.class,
             indra,
-            target.getExtensions().getByType(LicenseExtension.class)
+            target.getExtensions().getByType(LicenseExtension.class),
+            target.getConvention().getPlugin(JavaPluginConvention.class)
         );
 
         this.configurePublicationMetadata(indra);
         this.configureStandardTasks();
         this.configureLicenseHeaders(target.getExtensions().getByType(LicenseExtension.class));
+        this.configureJarTasks(sponge);
+        this.configureJarSigning();
 
-        target.getPlugins().withType(SigningPlugin.class, $ -> {
-            this.configureSigning(this.project.getExtensions().getByType(SigningExtension.class));
-        });
+        target.getPlugins().withType(SigningPlugin.class, $ ->
+            this.configureSigning(this.project.getExtensions().getByType(SigningExtension.class)));
+    }
+
+    private void configureJarTasks(final SpongeConventionExtension sponge) {
+        final Manifest manifest = sponge.sharedManifest();
+        this.project.getTasks().withType(Jar.class).configureEach(task -> task.getManifest().from(manifest));
     }
 
     private void configureStandardTasks() {
@@ -121,7 +143,7 @@ public class SpongeConventionPlugin implements Plugin<Project> {
     }
 
     private void configureLicenseHeaders(final LicenseExtension licenses) {
-        licenses.setHeader(this.project.getRootProject().file("HEADER.txt"));
+        licenses.setHeader(this.project.getRootProject().file(ConventionConstants.Locations.LICENSE_HEADER));
         final ExtraPropertiesExtension ext = ((ExtensionAware) licenses).getExtensions().getExtraProperties();
         ext.set("name", this.project.getRootProject().getName());
     }
@@ -149,5 +171,73 @@ public class SpongeConventionPlugin implements Plugin<Project> {
         } else {
             extension.setSignatories(new PgpSignatoryProvider()); // don't use gpg agent
         }
+    }
+
+    private void configureJarSigning() {
+        if (!this.project.hasProperty(ConventionConstants.ProjectProperties.SPONGE_KEY_STORE)) {
+            return;
+        }
+
+        // We have to replace the default artifact which is a bit ugly
+        // https://github.com/gradle/gradle/pull/13650 should make it easier
+        @SuppressWarnings("deprecation")
+        final String[] outgoingConfigurations = {JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME, JavaPlugin.RUNTIME_CONFIGURATION_NAME};
+        final String keyStoreProp = (String) this.project.property(ConventionConstants.ProjectProperties.SPONGE_KEY_STORE);
+        final File fileTemp = new File(keyStoreProp);
+        final File keyStoreFile;
+        if (fileTemp.exists()) {
+            keyStoreFile = fileTemp;
+        } else {
+            // Write keystore to a temporary file
+            final Path dest = this.project.getLayout().getProjectDirectory().file(".gradle/signing-key").getAsFile().toPath();
+            try {
+                Files.createDirectories(dest.getParent());
+                Files.createFile(dest, PosixFilePermissions.asFileAttribute(new HashSet<>(Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE))));
+            } catch (final IOException ignored) {
+                // oh well
+            }
+
+            final byte[] decoded = Base64.getDecoder().decode(keyStoreProp);
+            try (final OutputStream out = Files.newOutputStream(dest)) {
+                out.write(decoded);
+            } catch (final IOException ex) {
+                throw new GradleException("Unable to write key file to disk", ex);
+            }
+
+            // Delete the temporary file when the runtime exits
+            keyStoreFile = dest.toFile();
+            keyStoreFile.deleteOnExit();
+        }
+
+        this.project.getTasks().matching(it -> it.getName().equals("jar") && it instanceof Jar).whenTaskAdded(task -> {
+            final Jar jarTask = (Jar) task;
+            jarTask.getArchiveClassifier().set("unsigned");
+            final TaskProvider<SignJarTask> sign = this.project.getTasks().register("signJar", SignJarTask.class, config -> {
+                config.dependsOn(jarTask);
+                config.from(this.project.zipTree(jarTask.getOutputs().getFiles().getSingleFile()));
+                config.setManifest(jarTask.getManifest());
+                config.getArchiveClassifier().set("");
+                config.getKeyStore().set(keyStoreFile);
+                config.getAlias().set((String) this.project.property(ConventionConstants.ProjectProperties.SPONGE_KEY_STORE_ALIAS));
+                config.getStorePassword().set((String) this.project.property(ConventionConstants.ProjectProperties.SPONGE_SIGNING_PASSWORD));
+            });
+
+            for (final String configName : outgoingConfigurations) {
+                this.project.getConfigurations().named(configName, conf -> {
+                    conf.getOutgoing().artifact(sign);
+                });
+            }
+
+            this.project.getTasks().named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME, t -> t.dependsOn(sign));
+        });
+
+        this.project.afterEvaluate(p -> {
+            // Remove the unsigned artifact from publications
+            for (final String outgoing : outgoingConfigurations) {
+                p.getConfigurations().named(outgoing, conf -> {
+                    conf.getOutgoing().getArtifacts().removeIf(it -> Objects.equals(it.getClassifier(), "unsigned"));
+                });
+            }
+        });
     }
 }
