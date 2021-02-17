@@ -40,8 +40,10 @@ import org.gradle.api.plugins.ExtraPropertiesExtension;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.resources.TextResourceFactory;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat;
 import org.gradle.api.tasks.testing.logging.TestLoggingContainer;
@@ -70,8 +72,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 
-public class SpongeConventionPlugin implements Plugin<Project> {
+import javax.inject.Inject;
+
+public abstract class SpongeConventionPlugin implements Plugin<Project> {
     private @MonotonicNonNull Project project;
+
+    @Inject
+    protected abstract TextResourceFactory getResourceFactory();
 
     @Override
     public void apply(final Project target) {
@@ -99,19 +106,23 @@ public class SpongeConventionPlugin implements Plugin<Project> {
     private void configureJarTasks(final SpongeConventionExtension sponge) {
         final Manifest manifest = sponge.sharedManifest();
         this.project.getTasks().withType(Jar.class).configureEach(task -> task.getManifest().from(manifest));
+
+        // Add some standard attributes
+        final Map<String, Object> attributes = new HashMap<>();
+        attributes.put("Specification-Title", this.project.getName());
+        attributes.put("Specification-Vendor", "SpongePowered");
+        attributes.put("Specification-Version", this.project.getVersion());
+        attributes.put("Implementation-Title", this.project.getName());
+        attributes.put("Implementation-Vendor", "SpongePowered");
+        attributes.put("Implementation-Version", this.project.getVersion());
+        manifest.attributes(attributes);
     }
 
     private void configureStandardTasks() {
         final TaskContainer tasks = this.project.getTasks();
-        tasks.withType(Jar.class).configureEach(jar -> {
-            final Map<String, Object> attributes = new HashMap<>();
-            attributes.put("Specification-Title", this.project.getName());
-            attributes.put("Specification-Vendor", "SpongePowered");
-            attributes.put("Specification-Version", this.project.getVersion());
-            attributes.put("Implementation-Title", this.project.getName());
-            attributes.put("Implementation-Vendor", "SpongePowered");
-            attributes.put("Implementation-Version", this.project.getVersion());
-            jar.getManifest().attributes(attributes);
+
+        tasks.withType(JavaCompile.class).configureEach(compile -> {
+            compile.getOptions().getCompilerArgs().addAll(Arrays.asList("-Xmaxerrs", "1000"));
         });
 
         tasks.withType(Test.class).configureEach(test -> {
@@ -128,10 +139,16 @@ public class SpongeConventionPlugin implements Plugin<Project> {
     }
 
     private void configurePublicationMetadata(final IndraExtension indra) {
-        indra.configurePublications(pub -> pub.pom(pom -> pom.developers(devs -> devs.developer(dev -> {
-            dev.getName().set("SpongePowered Team");
-            dev.getEmail().set("staff@spongepowered.org");
-        }))));
+        indra.configurePublications(pub -> pub.pom(pom -> {
+            pom.developers(devs -> devs.developer(dev -> {
+                dev.getName().set("SpongePowered Team");
+                dev.getEmail().set("staff@spongepowered.org");
+            }));
+            pom.organization(org -> {
+                org.getName().set("SpongePowered");
+                org.getUrl().set("https://spongepowered.org/");
+            });
+        }));
 
         final @Nullable String spongeSnapshotRepo = (String) this.project.findProperty(ConventionConstants.ProjectProperties.SPONGE_SNAPSHOT_REPO);
         final @Nullable String spongeReleaseRepo = (String) this.project.findProperty(ConventionConstants.ProjectProperties.SPONGE_RELEASE_REPO);
@@ -219,7 +236,7 @@ public class SpongeConventionPlugin implements Plugin<Project> {
                 config.getArchiveClassifier().set("");
                 config.getKeyStore().set(keyStoreFile);
                 config.getAlias().set((String) this.project.property(ConventionConstants.ProjectProperties.SPONGE_KEY_STORE_ALIAS));
-                config.getStorePassword().set((String) this.project.property(ConventionConstants.ProjectProperties.SPONGE_SIGNING_PASSWORD));
+                config.getStorePassword().set((String) this.project.property(ConventionConstants.ProjectProperties.SPONGE_KEY_STORE_PASSWORD));
             });
 
             for (final String configName : outgoingConfigurations) {

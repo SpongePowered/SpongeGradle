@@ -51,6 +51,14 @@ public final class ConventionConstants {
         }
     }
 
+    public static final class Configurations {
+        public static final String PARENT_PROJECT = "parentProject";
+        public static final String IMPLEMENTATION_LIBS = "implementationLibs";
+
+        private Configurations() {
+        }
+    }
+
     public static void spongeRepo(final RepositoryHandler repos) {
         repos.maven(repo -> {
             repo.setUrl("https://repo.spongepowered.org/repository/maven-public/");
