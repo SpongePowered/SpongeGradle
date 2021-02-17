@@ -18,14 +18,14 @@ dependencies {
 
 indraPluginPublishing {
     plugin(
-        id = "convention",
+        id = "sponge.dev",
         mainClass = "org.spongepowered.gradle.convention.SpongeConventionPlugin",
         displayName = "SpongePowered Convention",
         description = "Gradle conventions for Sponge organization projects",
         tags = listOf("sponge", "convention")
     )
     plugin(
-        id = "implementation",
+        id = "sponge.impl",
         mainClass = "org.spongepowered.gradle.convention.SpongeImplementationConventionPlugin",
         displayName = "SpongePowered Implementation Convention",
         description = "Conventions for implementations of Sponge projects",
