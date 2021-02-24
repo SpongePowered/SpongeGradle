@@ -25,15 +25,11 @@
 package org.spongepowered.gradle.plugin;
 
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
-import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
-import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -43,12 +39,8 @@ import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
-import org.gradle.plugins.ide.eclipse.EclipsePlugin;
-import org.jetbrains.gradle.ext.IdeaExtPlugin;
 import org.spongepowered.gradle.common.Constants;
 import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
-import org.spongepowered.gradle.vanilla.MinecraftExtension;
-import org.spongepowered.gradle.vanilla.ProvideMinecraftPlugin;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -65,11 +57,11 @@ public final class SpongePluginGradle implements Plugin<Project> {
         project.getLogger().lifecycle("SpongePowered Plugin 'GRADLE' Toolset Version '{}'", Constants.VERSION);
         project.getRepositories().maven(r -> r.setUrl(Constants.Repositories.SPONGE));
         project.getPlugins().apply(JavaLibraryPlugin.class);
-        project.getPlugins().apply(ProvideMinecraftPlugin.class);
-        project.getPlugins().apply(IdeaExtPlugin.class);
-        project.getPlugins().apply(EclipsePlugin.class);
+        // project.getPlugins().apply(ProvideMinecraftPlugin.class);
+        // project.getPlugins().apply(IdeaExtPlugin.class);
+        // project.getPlugins().apply(EclipsePlugin.class);
 
-        final MinecraftExtension minecraft = project.getExtensions().getByType(MinecraftExtension.class);
+        // final MinecraftExtension minecraft = project.getExtensions().getByType(MinecraftExtension.class);
         final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class, project);
 
         this.configurePluginMetaGeneration(sponge);
@@ -98,7 +90,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
             });
         });
 
-        minecraft.version().set(spongeRuntime.map(conf -> {
+        /*minecraft.version().set(spongeRuntime.map(conf -> {
             final ArtifactCollection collection = conf.getIncoming().artifactView(viewSpec -> viewSpec.componentFilter(id -> id instanceof ModuleComponentIdentifier && ((ModuleComponentIdentifier) id).getModule().equals(sponge.platform().get().artifactId()))).getArtifacts();
             for (final ResolvedArtifactResult result : collection) {
                 final String version = result.getVariant().getAttributes().getAttribute(SpongeVersioningMetadataRule.MINECRAFT_TARGET);
@@ -108,7 +100,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
             }
             throw new GradleException("Could not determine selected Minecraft version");
         }));
-        minecraft.version().finalizeValueOnRead();
+        minecraft.version().finalizeValueOnRead();*/
 
         /* TODO: fixing SV metadata so these work
         // Because we have VanillaGradle, we can use dev environment-like run configurations

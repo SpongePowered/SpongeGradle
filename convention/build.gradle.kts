@@ -24,11 +24,11 @@ indraPluginPublishing {
         description = "Gradle conventions for Sponge organization projects",
         tags = listOf("sponge", "convention")
     )
-    plugin(
+    /*plugin(
         id = "sponge.impl",
         mainClass = "org.spongepowered.gradle.convention.SpongeImplementationConventionPlugin",
         displayName = "SpongePowered Implementation Convention",
         description = "Conventions for implementations of Sponge projects",
         tags = listOf("sponge", "minecraft", "convention")
-    )
+    )*/
 }
