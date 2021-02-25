@@ -30,6 +30,9 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.component.ComponentIdentifier;
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -45,6 +48,7 @@ import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
 public final class SpongePluginGradle implements Plugin<Project> {
 
@@ -130,6 +134,24 @@ public final class SpongePluginGradle implements Plugin<Project> {
             task.getMainClass().set(sponge.platform().get().mainClass());
             final Directory workingDirectory = project.getLayout().getProjectDirectory().dir("run");
             task.setWorkingDir(workingDirectory);
+
+            // Register the javaagent
+            task.getJvmArgumentProviders().add(() -> {
+                for (final ResolvedArtifactResult dep : spongeRuntime.get().getIncoming().artifactView(view -> view.setLenient(true)).getArtifacts()) {
+                    final ComponentIdentifier id = dep.getVariant().getOwner();
+                    task.getLogger().debug("Inspecting artifact {}", id);
+                    if (id instanceof ModuleComponentIdentifier) {
+                        final ModuleComponentIdentifier moduleId = (ModuleComponentIdentifier) id;
+                        if (moduleId.getGroup().equals(Constants.Dependencies.SPONGE_GROUP)
+                            && moduleId.getModule().equals(sponge.platform().get().artifactId())) {
+                            task.getLogger().info("Using file {} as Sponge agent", dep.getFile());
+                            return Collections.singletonList("-javaagent:" + dep.getFile());
+                        }
+                    }
+                }
+                task.getLogger().error("Failed to find a java agent!");
+                return Collections.emptyList();
+            });
 
             task.doFirst(a -> {
                 final Path path = workingDirectory.getAsFile().toPath();
