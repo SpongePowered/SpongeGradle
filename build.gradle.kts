@@ -69,6 +69,21 @@ subprojects {
         header = rootProject.file("HEADER.txt")
     }
 
+    extensions.configure(SigningExtension::class) {
+        val spongeSigningKey = project.findProperty("spongeSigningKey") as String?
+        val spongeSigningPassword = project.findProperty("spongeSigningPassword") as String?
+        if (spongeSigningKey != null && spongeSigningPassword != null) {
+            val keyFile = file(spongeSigningKey)
+            if (keyFile.exists()) {
+                useInMemoryPgpKeys(file(spongeSigningKey).readText(Charsets.UTF_8), spongeSigningPassword)
+            } else {
+                useInMemoryPgpKeys(spongeSigningKey, spongeSigningPassword)
+            }
+        } else {
+            signatories = PgpSignatoryProvider() // don't use gpg agent
+        }
+    }
+
     extensions.findByType(IndraPluginPublishingExtension::class)?.apply {
         pluginIdBase.set("$group.gradle")
     }
