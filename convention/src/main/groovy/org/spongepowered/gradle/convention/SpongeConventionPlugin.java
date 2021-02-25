@@ -166,11 +166,9 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
     }
 
     private void configureSigning(final SigningExtension extension) {
-        this.project.getLogger().lifecycle("Configuring signing for {}", this.project.getDisplayName());
         final String spongeSigningKey = (String) this.project.findProperty(ConventionConstants.ProjectProperties.SPONGE_SIGNING_KEY);
         final String spongeSigningPassword = (String) this.project.findProperty(ConventionConstants.ProjectProperties.SPONGE_SIGNING_PASSWORD);
         if (spongeSigningKey != null && spongeSigningPassword != null) {
-            this.project.getLogger().lifecycle("Signing key and password found for for {}", this.project.getDisplayName());
             final File keyFile = this.project.file(spongeSigningKey);
             if (keyFile.exists()) {
                 final StringBuilder contents = new StringBuilder();
