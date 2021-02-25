@@ -14,7 +14,7 @@ Quick start: (see [sponge-plugin-template](https://github.com/SpongePowered/spon
 ```kotlin
 plugins {
     // [...any plugins...] 
-    id("org.spongepowered.gradle.plugin") version "1.0.0"
+    id("org.spongepowered.gradle.plugin") version "1.0.1"
 }
 
 sponge {
