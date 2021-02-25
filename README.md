@@ -9,12 +9,12 @@ The gradle plugin to assist with plugin development.
 - Generates plugin metadata files for the `main` source set
 - Adds a task to run a SpongeVanilla server
 
-Example:
+Quick start: (see [sponge-plugin-template](https://github.com/SpongePowered/sponge-plugin-template) for a full example)
 
 ```kotlin
 plugins {
     // [...any plugins...] 
-    id("org.spongepowered.gradle.plugin") version "1.0-SNAPSHOT"
+    id("org.spongepowered.gradle.plugin") version "1.0.0"
 }
 
 sponge {

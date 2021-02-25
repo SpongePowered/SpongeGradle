@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "org.spongepowered"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 subprojects {
     plugins.apply {
@@ -68,6 +68,10 @@ subprojects {
             publishSnapshotsTo("sponge", spongeSnapshotRepo)
             publishReleasesTo("sponge", spongeReleaseRepo)
         }
+    }
+
+    extensions.configure(com.gradle.publish.PluginBundleExtension::class) {
+        website = "https://spongepowered.org/"
     }
 
     extensions.configure(LicenseExtension::class) {
