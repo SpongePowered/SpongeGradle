@@ -1,5 +1,6 @@
 import net.kyori.indra.IndraExtension
 import net.kyori.indra.gradle.IndraPluginPublishingExtension
+import net.kyori.indra.util.grgit
 import org.cadixdev.gradle.licenser.LicenseExtension
 
 plugins {
@@ -29,6 +30,19 @@ subprojects {
 
     dependencies {
         "compileOnlyApi"("org.checkerframework:checker-qual:3.10.0")
+    }
+
+    tasks.withType(Jar::class).configureEach {
+        manifest.attributes(
+                "Git-Commit" to grgit(project)?.head()?.id,
+                "Git-Branch" to grgit(project)?.branch?.current()?.name,
+                "Specification-Title" to project.name,
+                "Specification-Vendor" to "SpongePowered",
+                "Specification-Version" to project.version,
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+                "Implementation-Vendor" to "SpongePowered"
+        )
     }
 
     extensions.configure(IndraExtension::class) {
