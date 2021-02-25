@@ -40,14 +40,16 @@ public class SpongePluginExtension {
     private final NamedDomainObjectContainer<PluginConfiguration> plugins;
 
     private final Property<SpongePlatform> platform;
-    private final Property<String> version;
+    private final Property<String> apiVersion;
+    private final Property<Boolean> injectRepositories;
 
     @Inject
     public SpongePluginExtension(final Project project, final ObjectFactory factory) {
         this.factory = factory;
         this.plugins = project.container(PluginConfiguration.class);
         this.platform = factory.property(SpongePlatform.class).convention(SpongePlatform.VANILLA);
-        this.version = factory.property(String.class);
+        this.apiVersion = factory.property(String.class);
+        this.injectRepositories = factory.property(Boolean.class).convention(true);
     }
 
     protected NamedDomainObjectContainer<PluginConfiguration> plugins() {
@@ -72,11 +74,19 @@ public class SpongePluginExtension {
         this.platform.set(platform);
     }
 
-    protected Property<String> version() {
-        return this.version;
+    protected Property<String> apiVersion() {
+        return this.apiVersion;
     }
 
-    public void version(final String version) {
-        this.version.set(version);
+    public void apiVersion(final String version) {
+        this.apiVersion.set(version);
+    }
+
+    public Property<Boolean> injectRepositories() {
+        return this.injectRepositories;
+    }
+
+    public void injectRepositories(final boolean value) {
+        this.injectRepositories.set(value);
     }
 }

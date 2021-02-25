@@ -59,7 +59,6 @@ public final class SpongePluginGradle implements Plugin<Project> {
         this.project = project;
 
         project.getLogger().lifecycle("SpongePowered Plugin 'GRADLE' Toolset Version '{}'", Constants.VERSION);
-        project.getRepositories().maven(r -> r.setUrl(Constants.Repositories.SPONGE));
         project.getPlugins().apply(JavaLibraryPlugin.class);
         // project.getPlugins().apply(ProvideMinecraftPlugin.class);
         // project.getPlugins().apply(IdeaExtPlugin.class);
@@ -70,22 +69,59 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
         this.configurePluginMetaGeneration(sponge);
 
+        this.addApiDependency(sponge);
+        final NamedDomainObjectProvider<Configuration> spongeRuntime = this.addRuntimeDependency(sponge);
+        final TaskProvider<JavaExec> runServer = this.createRunTask(spongeRuntime, sponge);
+
+        project.afterEvaluate(a -> {
+            if (sponge.apiVersion().isPresent()) {
+                // TODO: client run task
+                /*project.getLogger().lifecycle("SpongeAPI '{}' has been set within the 'spongeApi' configuration. 'runClient' and 'runServer'"
+                    + " tasks will be available. You may use these to test your plugin.", sponge.version().get());*/
+
+                spongeRuntime.configure(config -> {
+                    config.getAttributes().attribute(SpongeVersioningMetadataRule.API_TARGET, sponge.apiVersion().get());
+                });
+            } else {
+                project.getLogger().info("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
+                    + "tasks will be available to run a client or server session for debugging.");
+                runServer.configure(t -> t.setEnabled(false));
+            }
+            if (sponge.injectRepositories().get()) {
+                project.getRepositories().maven(r -> {
+                    r.setUrl(Constants.Repositories.SPONGE);
+                    r.setName("sponge");
+                });
+            }
+        });
+    }
+
+    private void addApiDependency(final SpongePluginExtension sponge) {
         // SpongeAPI dependency
-        final NamedDomainObjectProvider<Configuration> spongeApi = project.getConfigurations().register("spongeApi", config -> config.defaultDependencies(deps -> {
-            if (sponge.version().isPresent()) {
-                deps.add(project.getDependencies().create(Constants.Dependencies.SPONGE_GROUP + ":spongeapi:" + sponge.version().get() + "-SNAPSHOT"));
+        final NamedDomainObjectProvider<Configuration> spongeApi = this.project.getConfigurations()
+            .register("spongeApi", config -> config.defaultDependencies(deps -> {
+            if (sponge.apiVersion().isPresent()) {
+                deps.add(
+                    this.project.getDependencies().create(
+                        Constants.Dependencies.SPONGE_GROUP
+                            + ":" + Constants.Dependencies.SPONGE_API
+                            + ":" + sponge.apiVersion().get() + "-SNAPSHOT"
+                    )
+                );
             }
         }));
 
         // Add SpongeAPI as a dependency
-        project.getPlugins().withType(JavaLibraryPlugin.class, v -> project.getConfigurations().named(JavaPlugin.COMPILE_ONLY_API_CONFIGURATION_NAME)
-            .configure(config -> config.extendsFrom(spongeApi.get())));
+        this.project.getPlugins().withType(JavaLibraryPlugin.class, v ->
+            this.project.getConfigurations().named(JavaPlugin.COMPILE_ONLY_API_CONFIGURATION_NAME)
+                .configure(config -> config.extendsFrom(spongeApi.get())));
+    }
 
-        // Dev server run configurations
-        project.getDependencies().getComponents().withModule("org.spongepowered:spongevanilla", SpongeVersioningMetadataRule.class);
-        final NamedDomainObjectProvider<Configuration> spongeRuntime = project.getConfigurations().register("spongeRuntime", conf -> {
+    private NamedDomainObjectProvider<Configuration> addRuntimeDependency(final SpongePluginExtension sponge) {
+        this.project.getDependencies().getComponents().withModule("org.spongepowered:spongevanilla", SpongeVersioningMetadataRule.class);
+        return this.project.getConfigurations().register("spongeRuntime", conf -> {
             conf.defaultDependencies(a -> {
-                final Dependency dep = project.getDependencies().create(
+                final Dependency dep = this.project.getDependencies().create(
                     Constants.Dependencies.SPONGE_GROUP
                         + ":" + sponge.platform().get().artifactId()
                         + ":+:universal");
@@ -93,6 +129,10 @@ public final class SpongePluginGradle implements Plugin<Project> {
                 a.add(dep);
             });
         });
+    }
+
+    private TaskProvider<JavaExec> createRunTask(final NamedDomainObjectProvider<Configuration> spongeRuntime, final SpongePluginExtension sponge) {
+        // Dev server run configurations
 
         /*minecraft.version().set(spongeRuntime.map(conf -> {
             final ArtifactCollection collection = conf.getIncoming().artifactView(viewSpec -> viewSpec.componentFilter(id -> id instanceof ModuleComponentIdentifier && ((ModuleComponentIdentifier) id).getModule().equals(sponge.platform().get().artifactId()))).getArtifacts();
@@ -122,8 +162,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
         });
 
          */
-
-        final TaskProvider<JavaExec> runServer = project.getTasks().register("runServer", JavaExec.class, task -> {
+        final TaskProvider<JavaExec> runServer = this.project.getTasks().register("runServer", JavaExec.class, task -> {
             task.setGroup(Constants.TASK_GROUP);
             task.setDescription("Run a Sponge server to test this plugin");
             task.setStandardInput(System.in);
@@ -132,7 +171,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
             task.getInputs().files(spongeRuntimeFiles);
             task.classpath(spongeRuntimeFiles);
             task.getMainClass().set(sponge.platform().get().mainClass());
-            final Directory workingDirectory = project.getLayout().getProjectDirectory().dir("run");
+            final Directory workingDirectory = this.project.getLayout().getProjectDirectory().dir("run");
             task.setWorkingDir(workingDirectory);
 
             // Register the javaagent
@@ -163,33 +202,24 @@ public final class SpongePluginGradle implements Plugin<Project> {
             });
         });
 
-        project.getPlugins().withType(JavaPlugin.class, v -> {
+        this.project.getPlugins().withType(JavaPlugin.class, v -> {
             // TODO: Use shadow jar here if that plugin is applied
-            runServer.configure(it -> it.classpath(project.getTasks().named(JavaPlugin.JAR_TASK_NAME))); // TODO: is there a sensible way to run without the jar?
+            runServer.configure(it -> it.classpath(this.project.getTasks().named(JavaPlugin.JAR_TASK_NAME))); // TODO: is there a sensible way to run without the jar?
         });
 
-        project.afterEvaluate(a -> {
-            if (sponge.version().isPresent()) {
-                project.getLogger().lifecycle("SpongeAPI '{}' has been set within the 'spongeApi' configuration. 'runClient' and 'runServer'"
-                    + " tasks will be available. You may use these to test your plugin.", sponge.version().get());
-
-                spongeRuntime.configure(config -> {
-                    config.getAttributes().attribute(SpongeVersioningMetadataRule.API_TARGET, sponge.version().get());
-                });
-            } else {
-                project.getLogger().lifecycle("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
-                    + "tasks will be available to run a client or server session for debugging.");
-            }
-        });
-
+        return runServer;
     }
 
     private void configurePluginMetaGeneration(final SpongePluginExtension sponge) {
+        // Configure some useful default values
         sponge.plugins().configureEach(plugin -> {
             plugin.getDisplayName().convention(this.project.provider(this.project::getName));
             plugin.getVersion().convention(this.project.provider(() -> String.valueOf(this.project.getVersion())));
+            plugin.getDependencies().matching(dep -> dep.getName().equals(Constants.Dependencies.SPONGE_API))
+                .configureEach(dep -> dep.getVersion().convention(sponge.apiVersion()));
         });
 
+        // Then configure the generated sources
         final Provider<Directory> generatedResourcesDirectory = this.project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
 
         final TaskProvider<WritePluginMetadataTask> writePluginMetadata = this.project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class, task -> {

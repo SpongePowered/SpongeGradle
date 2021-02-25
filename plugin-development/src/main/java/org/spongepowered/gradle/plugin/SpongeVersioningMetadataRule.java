@@ -61,7 +61,7 @@ public class SpongeVersioningMetadataRule implements ComponentMetadataRule {
         final String apiTarget = match.group("api");
         final @Nullable String rc = match.group("rc");
 
-        details.setStatusScheme(STATUS_SCHEME);
+        details.setStatusScheme(SpongeVersioningMetadataRule.STATUS_SCHEME);
         if (rc != null) {
             details.setStatus("rc");
         }
