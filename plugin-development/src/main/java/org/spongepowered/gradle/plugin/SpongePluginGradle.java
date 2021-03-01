@@ -215,6 +215,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
         sponge.plugins().configureEach(plugin -> {
             plugin.getDisplayName().convention(this.project.provider(this.project::getName));
             plugin.getVersion().convention(this.project.provider(() -> String.valueOf(this.project.getVersion())));
+            plugin.getDescription().convention(this.project.provider(() -> this.project.getDescription()));
             plugin.getDependencies().matching(dep -> dep.getName().equals(Constants.Dependencies.SPONGE_API))
                 .configureEach(dep -> dep.getVersion().convention(sponge.apiVersion()));
         });

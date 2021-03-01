@@ -27,6 +27,7 @@ package org.spongepowered.gradle.plugin.config;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -47,6 +48,7 @@ public class PluginLinksConfiguration {
     }
 
     @Input
+    @Optional
     public Property<URL> getHomepage() {
         return this.homepage;
     }
@@ -56,6 +58,7 @@ public class PluginLinksConfiguration {
     }
 
     @Input
+    @Optional
     public Property<URL> getSource() {
         return this.source;
     }
@@ -65,6 +68,7 @@ public class PluginLinksConfiguration {
     }
 
     @Input
+    @Optional
     public Property<URL> getIssues() {
         return this.issues;
     }
