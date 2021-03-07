@@ -48,6 +48,7 @@ subprojects {
     extensions.configure(IndraExtension::class) {
         github("SpongePowered", "SpongeGradle") {
             ci = true
+            publishing = true
         }
         mitLicense()
 

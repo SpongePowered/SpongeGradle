@@ -55,6 +55,8 @@ jobs:
         if: "${{ runner.os == 'Linux' && env.STATUS != 'release' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}"
         run: ./gradlew -PforceSign=true publish
         env:
+          ORG_GRADLE_PROJECT_githubPackagesUsername: "${{ github.actor }}"
+          ORG_GRADLE_PROJECT_githubPackagesPassword: "${{ secrets.GITHUB_TOKEN }}"
           ORG_GRADLE_PROJECT_spongeSnapshotRepo: "${{ secrets.SPONGE_MAVEN_SNAPSHOT_REPO_URL }}"
           ORG_GRADLE_PROJECT_spongeReleaseRepo: "${{ secrets.SPONGE_MAVEN_RELEASE_REPO_URL }}"
           ORG_GRADLE_PROJECT_spongeUsername: "${{ secrets.SPONGE_MAVEN_REPO_USER }}"
@@ -65,6 +67,8 @@ jobs:
         if: "${{ runner.os == 'Linux' && env.STATUS == 'release' && github.event_name == 'release' }}"
         run: ./gradlew publish publishPlugins
         env:
+          ORG_GRADLE_PROJECT_githubPackagesUsername: "${{ github.actor }}"
+          ORG_GRADLE_PROJECT_githubPackagesPassword: "${{ secrets.GITHUB_TOKEN }}"
           ORG_GRADLE_PROJECT_spongeSnapshotRepo: "${{ secrets.SPONGE_MAVEN_SNAPSHOT_REPO_URL }}"
           ORG_GRADLE_PROJECT_spongeReleaseRepo: "${{ secrets.SPONGE_MAVEN_RELEASE_REPO_URL }}"
           ORG_GRADLE_PROJECT_spongeUsername: "${{ secrets.SPONGE_MAVEN_REPO_USER }}"
