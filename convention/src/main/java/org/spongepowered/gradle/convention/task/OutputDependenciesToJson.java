@@ -58,6 +58,9 @@ import java.util.stream.Collectors;
 
 public abstract class OutputDependenciesToJson extends DefaultTask {
 
+    // From http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
+    private static final char[] hexArray = "0123456789abcdef".toCharArray();
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     /**
@@ -122,8 +125,7 @@ public abstract class OutputDependenciesToJson extends DefaultTask {
     public void generateDependenciesJson() {
         final Configuration foundConfig;
         if (this.getExcludeConfiguration().isPresent()) {
-            final Configuration config = this.getProject().getConfigurations()
-                .detachedConfiguration(this.getConfiguration().get().getAllDependencies().toArray(new Dependency[0]));
+            final Configuration config = this.getConfiguration().get().copyRecursive();
             final Configuration excludes = this.getExcludeConfiguration().get();
             excludes.getAllDependencies().forEach(dep -> {
                 final Map<String, String> params = new HashMap<>();
@@ -139,7 +141,7 @@ public abstract class OutputDependenciesToJson extends DefaultTask {
         final List<DependencyDescriptor> descriptors = foundConfig.getResolvedConfiguration().getFirstLevelModuleDependencies().stream()
             .flatMap(dep -> dep.getAllModuleArtifacts().stream())
             // only jars with the allowed classifiers
-            .filter(it -> it.getExtension().equals("jar") && this.getAllowedClassifiers().get().contains(it.getClassifier() /* nullable */))
+            .filter(it -> it.getExtension().equals("jar") && this.getAllowedClassifiers().get().contains(it.getClassifier() == null ? "" : it.getClassifier()))
             .filter(it -> !Objects.equals(it.getModuleVersion().getId().getName(), "SpongeAPI"))
             .distinct()
             .map(dependency -> {
@@ -162,7 +164,7 @@ public abstract class OutputDependenciesToJson extends DefaultTask {
                         hasher.update(buf, 0, read);
                     }
 
-                    md5hash = Hex.encodeHexString(hasher.digest());
+                    md5hash = OutputDependenciesToJson.toHexString(hasher.digest());
                 } catch (final IOException | NoSuchAlgorithmException ex) {
                     throw new GradleException("Failed to create hash for " + dependency, ex);
                 }
@@ -186,6 +188,16 @@ public abstract class OutputDependenciesToJson extends DefaultTask {
         } catch (final IOException ex) {
             throw new GradleException("Failed to write dependencies manifest", ex);
         }
+    }
+
+    public static String toHexString(final byte[] bytes) {
+        final char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            final int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = OutputDependenciesToJson.hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = OutputDependenciesToJson.hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 
 }
