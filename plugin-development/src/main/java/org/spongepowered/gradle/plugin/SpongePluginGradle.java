@@ -42,6 +42,7 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.SourceSet;
@@ -50,6 +51,7 @@ import org.gradle.api.tasks.TaskProvider;
 import org.gradle.jvm.tasks.Jar;
 import org.gradle.process.CommandLineArgumentProvider;
 import org.spongepowered.gradle.common.Constants;
+import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
 
@@ -171,6 +173,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
          */
         final Directory projectDir = this.project.getLayout().getProjectDirectory();
+        final Property<SpongePlatform> spongePlatform = sponge.platform();
         final TaskProvider<JavaExec> runServer = this.project.getTasks().register("runServer", JavaExec.class, task -> {
             task.setGroup(Constants.TASK_GROUP);
             task.setDescription("Run a Sponge server to test this plugin");
@@ -194,7 +197,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
                         if (id instanceof ModuleComponentIdentifier) {
                             final ModuleComponentIdentifier moduleId = (ModuleComponentIdentifier) id;
                             if (moduleId.getGroup().equals(Constants.Dependencies.SPONGE_GROUP)
-                                && moduleId.getModule().equals(sponge.platform().get().artifactId())) {
+                                && moduleId.getModule().equals(spongePlatform.get().artifactId())) {
                                 task.getLogger().info("Using file {} as Sponge agent", dep.getFile());
                                 return Collections.singletonList("-javaagent:" + dep.getFile());
                             }
