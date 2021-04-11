@@ -39,6 +39,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Context information for individual tests
@@ -102,7 +103,7 @@ public class TestContext {
                 builder.append(buffer, 0, read);
             }
         }
-        return builder.toString();
+        return TestContext.normalizeLineEndings(builder.toString());
     }
 
     /**
@@ -128,7 +129,7 @@ public class TestContext {
             }
         }
 
-        final String expected = builder.toString();
+        final String expected = TestContext.normalizeLineEndings(builder.toString());
 
         Assertions.assertEquals(expected, actualOutput);
     }
@@ -148,5 +149,11 @@ public class TestContext {
 
     public BuildResult build(final String... extraArgs) {
         return this.runner(extraArgs).build();
+    }
+
+    private static final Pattern LINE_ENDING = Pattern.compile("\r\n");
+
+    static String normalizeLineEndings(final String input) {
+        return TestContext.LINE_ENDING.matcher(input).replaceAll("\n");
     }
 }
