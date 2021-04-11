@@ -41,6 +41,7 @@ import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -187,7 +188,7 @@ class SpongePluginPluginFunctionalTest {
                                 });
                                 break; // if successful
                             } catch (final IOException ex) { // then try again
-                                Thread.sleep(500); // hope the locks go bye
+                                Thread.sleep(500 * (i + 1)); // hope the locks go bye
                             }
                         }
                     }
