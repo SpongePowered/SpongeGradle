@@ -25,15 +25,20 @@
 package org.spongepowered.gradle.plugin;
 
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectCollection;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.Directory;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
@@ -42,7 +47,10 @@ import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.jvm.tasks.Jar;
+import org.gradle.process.CommandLineArgumentProvider;
 import org.spongepowered.gradle.common.Constants;
+import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
 
 import java.io.IOException;
@@ -162,6 +170,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
         });
 
          */
+        final Directory projectDir = this.project.getLayout().getProjectDirectory();
         final TaskProvider<JavaExec> runServer = this.project.getTasks().register("runServer", JavaExec.class, task -> {
             task.setGroup(Constants.TASK_GROUP);
             task.setDescription("Run a Sponge server to test this plugin");
@@ -171,40 +180,53 @@ public final class SpongePluginGradle implements Plugin<Project> {
             task.getInputs().files(spongeRuntimeFiles);
             task.classpath(spongeRuntimeFiles);
             task.getMainClass().set(sponge.platform().get().mainClass());
-            final Directory workingDirectory = this.project.getLayout().getProjectDirectory().dir("run");
+            final Directory workingDirectory = projectDir.dir("run");
             task.setWorkingDir(workingDirectory);
 
             // Register the javaagent
-            task.getJvmArgumentProviders().add(() -> {
-                for (final ResolvedArtifactResult dep : spongeRuntime.get().getIncoming().artifactView(view -> view.setLenient(true)).getArtifacts()) {
-                    final ComponentIdentifier id = dep.getVariant().getOwner();
-                    task.getLogger().debug("Inspecting artifact {}", id);
-                    if (id instanceof ModuleComponentIdentifier) {
-                        final ModuleComponentIdentifier moduleId = (ModuleComponentIdentifier) id;
-                        if (moduleId.getGroup().equals(Constants.Dependencies.SPONGE_GROUP)
-                            && moduleId.getModule().equals(sponge.platform().get().artifactId())) {
-                            task.getLogger().info("Using file {} as Sponge agent", dep.getFile());
-                            return Collections.singletonList("-javaagent:" + dep.getFile());
+            task.getJvmArgumentProviders().add(new CommandLineArgumentProvider() {
+                @Override
+                public Iterable<String> asArguments() {
+                    for (final ResolvedArtifactResult dep : spongeRuntime.get().getIncoming().artifactView(view -> view.setLenient(true))
+                        .getArtifacts()) {
+                        final ComponentIdentifier id = dep.getVariant().getOwner();
+                        task.getLogger().debug("Inspecting artifact {}", id);
+                        if (id instanceof ModuleComponentIdentifier) {
+                            final ModuleComponentIdentifier moduleId = (ModuleComponentIdentifier) id;
+                            if (moduleId.getGroup().equals(Constants.Dependencies.SPONGE_GROUP)
+                                && moduleId.getModule().equals(sponge.platform().get().artifactId())) {
+                                task.getLogger().info("Using file {} as Sponge agent", dep.getFile());
+                                return Collections.singletonList("-javaagent:" + dep.getFile());
+                            }
                         }
                     }
+                    task.getLogger().error("Failed to find a java agent!");
+                    return Collections.emptyList();
                 }
-                task.getLogger().error("Failed to find a java agent!");
-                return Collections.emptyList();
             });
 
-            task.doFirst(a -> {
-                final Path path = workingDirectory.getAsFile().toPath();
-                try {
-                    Files.createDirectories(path);
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
+            task.doFirst(new Action<Task>() {
+                @Override
+                public void execute(final Task a) {
+                    final Path path = workingDirectory.getAsFile().toPath();
+                    try {
+                        Files.createDirectories(path);
+                    } catch (final IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             });
         });
 
         this.project.getPlugins().withType(JavaPlugin.class, v -> {
             // TODO: Use shadow jar here if that plugin is applied
-            runServer.configure(it -> it.classpath(this.project.getTasks().named(JavaPlugin.JAR_TASK_NAME))); // TODO: is there a sensible way to run without the jar?
+            final TaskProvider<?> jarTask = this.project.getTasks().named(JavaPlugin.JAR_TASK_NAME);
+            runServer.configure(new Action<JavaExec>() {
+                @Override
+                public void execute(final JavaExec it) {
+                    it.classpath(jarTask);
+                }
+            }); // TODO: is there a sensible way to run without the jar?
         });
 
         return runServer;
@@ -212,27 +234,41 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
     private void configurePluginMetaGeneration(final SpongePluginExtension sponge) {
         // Configure some useful default values
-        sponge.plugins().configureEach(plugin -> {
-            plugin.getDisplayName().convention(this.project.provider(this.project::getName));
-            plugin.getVersion().convention(this.project.provider(() -> String.valueOf(this.project.getVersion())));
-            plugin.getDescription().convention(this.project.provider(() -> this.project.getDescription()));
-            plugin.getDependencies().matching(dep -> dep.getName().equals(Constants.Dependencies.SPONGE_API))
-                .configureEach(dep -> dep.getVersion().convention(sponge.apiVersion()));
+        final Provider<String> displayName = this.project.provider(this.project::getName);
+        final Provider<String> version = this.project.provider(() -> this.project.getVersion() == null ? null : String.valueOf(this.project.getVersion()));
+        final Provider<String> description = this.project.provider(this.project::getDescription);
+        final Provider<String> spongeApiVersion = sponge.apiVersion();
+        sponge.plugins().configureEach(new Action<PluginConfiguration>() {
+            @Override
+            public void execute(final PluginConfiguration plugin) {
+                plugin.getDisplayName().convention(displayName);
+                plugin.getVersion().convention(version);
+                plugin.getDescription().convention(description);
+                plugin.getDependencies().matching(dep -> dep.getName().equals(Constants.Dependencies.SPONGE_API))
+                    .configureEach(dep -> dep.getVersion().convention(spongeApiVersion));
+            }
         });
 
         // Then configure the generated sources
         final Provider<Directory> generatedResourcesDirectory = this.project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
+        final NamedDomainObjectContainer<PluginConfiguration> plugins = sponge.plugins();
 
-        final TaskProvider<WritePluginMetadataTask> writePluginMetadata = this.project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class, task -> {
-            task.getConfigurations().addAll(sponge.plugins());
-            task.getOutputDirectory().set(generatedResourcesDirectory);
-        });
+        final TaskProvider<WritePluginMetadataTask> writePluginMetadata = this.project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class,
+            new Action<WritePluginMetadataTask>() {
+                @Override
+                public void execute(final WritePluginMetadataTask task) {
+                    task.getConfigurations().addAll(plugins);
+                    task.getOutputDirectory().set(generatedResourcesDirectory);
+                }
+            }
+        );
 
         this.project.getPlugins().withType(JavaPlugin.class, v -> {
-            this.project.getExtensions().getByType(SourceSetContainer.class).named(SourceSet.MAIN_SOURCE_SET_NAME, s -> {
-                s.getResources().srcDir(generatedResourcesDirectory);
-
-                this.project.getTasks().named(s.getProcessResourcesTaskName()).configure(processResources -> processResources.dependsOn(writePluginMetadata));
+            this.project.getExtensions().getByType(SourceSetContainer.class).named(SourceSet.MAIN_SOURCE_SET_NAME, new Action<SourceSet>() {
+                @Override
+                public void execute(final SourceSet s) {
+                    s.getResources().srcDir(writePluginMetadata.map(Task::getOutputs));
+                }
             });
         });
     }
