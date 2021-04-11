@@ -41,8 +41,11 @@ import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -146,19 +149,49 @@ class SpongePluginPluginFunctionalTest {
         ).flatMap(test -> Arrays.stream(variants)
             .map(variant -> {
                 final List<String> extraArgs = SpongePluginPluginFunctionalTest.processArgs(commonArgs, variant[1]);
-                final TestContext context;
+                final Path tempDirectory;
                 try {
-                    context = new TestContext(
-                        this.getClass(),
-                        test.name,
-                        Files.createTempDirectory(runDirectory, test.name + System.nanoTime()),
-                        variant[0],
-                        extraArgs
-                    );
+                    tempDirectory = Files.createTempDirectory(runDirectory, test.name + System.nanoTime());
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
                 }
-                return DynamicTest.dynamicTest(test.name + " (gradle " + variant[0] + ", args=" + extraArgs + ")", () -> test.method.accept(context));
+                final TestContext context = new TestContext(
+                    this.getClass(),
+                    test.name,
+                    tempDirectory,
+                    variant[0],
+                    extraArgs
+                );
+                return DynamicTest.dynamicTest(test.name + " (gradle " + variant[0] + ", args=" + extraArgs + ")", () -> {
+                    try {
+                        test.method.accept(context);
+                    } finally {
+                        // force-delete... thanks windows
+                        for (int i = 0; i < 3; i++) {
+                            try {
+                                Files.walkFileTree(tempDirectory, new FileVisitor<Path>() {
+                                    @Override public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) { return FileVisitResult.CONTINUE; }
+                                    @Override public FileVisitResult visitFileFailed(final Path file, final IOException exc) { return FileVisitResult.CONTINUE; }
+
+                                    @Override
+                                    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                                        Files.delete(file);
+                                        return FileVisitResult.CONTINUE;
+                                    }
+
+                                    @Override
+                                    public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
+                                        Files.delete(dir);
+                                        return FileVisitResult.CONTINUE;
+                                    }
+                                });
+                                break; // if successful
+                            } catch (final IOException ex) { // then try again
+                                Thread.sleep(500); // hope the locks go bye
+                            }
+                        }
+                    }
+                });
             }));
     }
 
