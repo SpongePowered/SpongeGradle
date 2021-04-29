@@ -197,8 +197,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
 
         // We have to replace the default artifact which is a bit ugly
         // https://github.com/gradle/gradle/pull/13650 should make it easier
-        @SuppressWarnings("deprecation")
-        final String[] outgoingConfigurations = {JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME, JavaPlugin.RUNTIME_CONFIGURATION_NAME};
+        final String[] outgoingConfigurations = {JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME, JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME};
         final String keyStoreProp = (String) this.project.property(ConventionConstants.ProjectProperties.SPONGE_KEY_STORE);
         final File fileTemp = new File(keyStoreProp);
         final File keyStoreFile;
