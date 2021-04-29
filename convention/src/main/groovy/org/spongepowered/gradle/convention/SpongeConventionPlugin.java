@@ -76,9 +76,6 @@ import javax.inject.Inject;
 public abstract class SpongeConventionPlugin implements Plugin<Project> {
     private @MonotonicNonNull Project project;
 
-    @Inject
-    protected abstract TextResourceFactory getResourceFactory();
-
     @Override
     public void apply(final Project target) {
         this.project = target;
@@ -160,7 +157,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
     }
 
     private void configureLicenseHeaders(final LicenseExtension licenses) {
-        licenses.getHeader().set(this.getResourceFactory().fromFile(this.project.getRootProject().file(ConventionConstants.Locations.LICENSE_HEADER)));
+        licenses.setHeader(this.project.getRootProject().file(ConventionConstants.Locations.LICENSE_HEADER));
         licenses.properties(ext -> {
             ext.set("name", this.project.getRootProject().getName());
         });
