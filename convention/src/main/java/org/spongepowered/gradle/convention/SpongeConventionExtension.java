@@ -25,7 +25,7 @@
 package org.spongepowered.gradle.convention;
 
 import net.kyori.indra.IndraExtension;
-import net.kyori.indra.data.ApplyTo;
+import net.kyori.indra.api.model.ApplyTo;
 import org.cadixdev.gradle.licenser.LicenseExtension;
 import org.gradle.api.Action;
 import org.gradle.api.java.archives.Manifest;

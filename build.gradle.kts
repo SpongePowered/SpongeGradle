@@ -1,6 +1,5 @@
 import net.kyori.indra.IndraExtension
 import net.kyori.indra.gradle.IndraPluginPublishingExtension
-import net.kyori.indra.util.grgit
 import org.cadixdev.gradle.licenser.LicenseExtension
 
 plugins {
@@ -20,6 +19,7 @@ subprojects {
         apply("net.kyori.indra")
         apply("net.kyori.indra.license-header")
         apply("net.kyori.indra.publishing.gradle-plugin")
+        apply("net.kyori.indra.git")
     }
 
     repositories {
@@ -29,26 +29,26 @@ subprojects {
     }
 
     dependencies {
-        "compileOnlyApi"("org.checkerframework:checker-qual:3.10.0")
+        "compileOnlyApi"("org.checkerframework:checker-qual:3.12.0")
     }
 
+    val indraGit = extensions.getByType(net.kyori.indra.git.IndraGitExtension::class)
     tasks.withType(Jar::class).configureEach {
+        indraGit.applyVcsInformationToManifest(manifest)
         manifest.attributes(
-                "Git-Commit" to grgit(project)?.head()?.id,
-                "Git-Branch" to grgit(project)?.branch?.current()?.name,
-                "Specification-Title" to project.name,
-                "Specification-Vendor" to "SpongePowered",
-                "Specification-Version" to project.version,
-                "Implementation-Title" to project.name,
-                "Implementation-Version" to project.version,
-                "Implementation-Vendor" to "SpongePowered"
+            "Specification-Title" to project.name,
+            "Specification-Vendor" to "SpongePowered",
+            "Specification-Version" to project.version,
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            "Implementation-Vendor" to "SpongePowered"
         )
     }
 
     extensions.configure(IndraExtension::class) {
         github("SpongePowered", "SpongeGradle") {
-            ci = true
-            publishing = true
+            ci(true)
+            publishing(true)
         }
         mitLicense()
 
@@ -71,21 +71,17 @@ subprojects {
         }
     }
 
-    extensions.configure(com.gradle.publish.PluginBundleExtension::class) {
-        website = "https://spongepowered.org/"
-    }
-
     extensions.configure(LicenseExtension::class) {
         val name: String by project
         val organization: String by project
         val projectUrl: String by project
 
-        (this as ExtensionAware).extra.apply {
+        properties {
             this["name"] = name
             this["organization"] = organization
             this["url"] = projectUrl
         }
-        header = rootProject.file("HEADER.txt")
+        header(rootProject.file("HEADER.txt"))
     }
 
     extensions.configure(SigningExtension::class) {
@@ -104,6 +100,7 @@ subprojects {
     }
 
     extensions.findByType(IndraPluginPublishingExtension::class)?.apply {
-        pluginIdBase.set("$group.gradle")
+        pluginIdBase("$group.gradle")
+        website("https://spongepowered.org/")
     }
 }

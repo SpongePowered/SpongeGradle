@@ -6,8 +6,8 @@ pluginManagement {
     }
 
     plugins {
-        val indraVersion = "1.3.1"
-        id("com.gradle.plugin-publish") version "0.12.0"
+        val indraVersion = "2.0.0"
+        id("com.gradle.plugin-publish") version "0.14.0"
         id("net.kyori.indra") version indraVersion
         id("net.kyori.indra.license-header") version indraVersion
         id("net.kyori.indra.publishing.gradle-plugin") version indraVersion

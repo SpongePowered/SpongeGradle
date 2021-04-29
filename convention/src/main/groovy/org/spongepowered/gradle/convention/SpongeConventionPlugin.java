@@ -28,6 +28,7 @@ import net.kyori.indra.Indra;
 import net.kyori.indra.IndraExtension;
 import net.kyori.indra.IndraLicenseHeaderPlugin;
 import net.kyori.indra.IndraPlugin;
+import net.kyori.indra.git.GitPlugin;
 import org.cadixdev.gradle.licenser.LicenseExtension;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -35,8 +36,6 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.java.archives.Manifest;
-import org.gradle.api.plugins.ExtensionAware;
-import org.gradle.api.plugins.ExtraPropertiesExtension;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.PluginContainer;
@@ -84,7 +83,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
     public void apply(final Project target) {
         this.project = target;
         this.applyPlugins(target.getPlugins());
-        final IndraExtension indra = Indra.extension(target);
+        final IndraExtension indra = Indra.extension(target.getExtensions());
         final SpongeConventionExtension sponge = target.getExtensions().create(
             "spongeConvention",
             SpongeConventionExtension.class,
@@ -136,6 +135,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
     private void applyPlugins(final PluginContainer plugins) {
         plugins.apply(IndraPlugin.class);
         plugins.apply(IndraLicenseHeaderPlugin.class);
+        plugins.apply(GitPlugin.class);
     }
 
     private void configurePublicationMetadata(final IndraExtension indra) {
@@ -160,9 +160,10 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
     }
 
     private void configureLicenseHeaders(final LicenseExtension licenses) {
-        licenses.setHeader(this.project.getRootProject().file(ConventionConstants.Locations.LICENSE_HEADER));
-        final ExtraPropertiesExtension ext = ((ExtensionAware) licenses).getExtensions().getExtraProperties();
-        ext.set("name", this.project.getRootProject().getName());
+        licenses.getHeader().set(this.getResourceFactory().fromFile(this.project.getRootProject().file(ConventionConstants.Locations.LICENSE_HEADER)));
+        licenses.properties(ext -> {
+            ext.set("name", this.project.getRootProject().getName());
+        });
     }
 
     private void configureSigning(final SigningExtension extension) {

@@ -5,24 +5,24 @@ plugins {
 tasks.withType(GroovyCompile::class).configureEach {
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
-    options.release.set(indra.javaVersions.target)
+    options.release.set(indra.javaVersions().target())
 }
 
 dependencies {
     api(project(":spongegradle-plugin-development"))
     implementation(localGroovy())
-    api("net.kyori:indra-common:1.3.1")
-    api("gradle.plugin.org.cadixdev.gradle:licenser:0.5.0")
+    api("net.kyori:indra-common:2.0.0")
+    api("gradle.plugin.org.cadixdev.gradle:licenser:0.6.0")
     api("com.google.code.gson:gson:2.8.6")
 }
 
 indraPluginPublishing {
     plugin(
-        id = "sponge.dev",
-        mainClass = "org.spongepowered.gradle.convention.SpongeConventionPlugin",
-        displayName = "SpongePowered Convention",
-        description = "Gradle conventions for Sponge organization projects",
-        tags = listOf("sponge", "convention")
+        "sponge.dev",
+        "org.spongepowered.gradle.convention.SpongeConventionPlugin",
+        "SpongePowered Convention",
+        "Gradle conventions for Sponge organization projects",
+        listOf("sponge", "convention")
     )
     /*plugin(
         id = "sponge.impl",

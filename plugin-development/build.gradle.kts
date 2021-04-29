@@ -32,10 +32,10 @@ gradlePlugin.testSourceSets(functionalTest)
 
 indraPluginPublishing {
     plugin(
-            id = "plugin",
-            mainClass = "org.spongepowered.gradle.plugin.SpongePluginGradle",
-            displayName = "Sponge Plugin",
-            description = "Set up a project for building Sponge plugins",
-            tags = listOf("minecraft", "sponge", "plugin-development")
+            "plugin",
+            "org.spongepowered.gradle.plugin.SpongePluginGradle",
+            "Sponge Plugin",
+            "Set up a project for building Sponge plugins",
+            listOf("minecraft", "sponge", "plugin-development")
     )
 }
