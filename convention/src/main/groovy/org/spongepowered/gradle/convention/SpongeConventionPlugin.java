@@ -29,6 +29,7 @@ import net.kyori.indra.IndraExtension;
 import net.kyori.indra.IndraLicenseHeaderPlugin;
 import net.kyori.indra.IndraPlugin;
 import net.kyori.indra.git.GitPlugin;
+import net.kyori.indra.git.IndraGitExtension;
 import org.cadixdev.gradle.licenser.LicenseExtension;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -39,7 +40,6 @@ import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.PluginContainer;
-import org.gradle.api.resources.TextResourceFactory;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -97,13 +97,13 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
         target.getPlugins().withType(SigningPlugin.class, $ ->
             target.afterEvaluate(p -> this.configureSigning(p.getExtensions().getByType(SigningExtension.class))));
 
-        target.afterEvaluate($ -> {
+        target.afterEvaluate(proj -> {
             // Only configure manifest after evaluate so we can capture project version properly
-            this.configureJarTasks(sponge);
+            this.configureJarTasks(sponge, proj.getExtensions().getByType(IndraGitExtension.class));
         });
     }
 
-    private void configureJarTasks(final SpongeConventionExtension sponge) {
+    private void configureJarTasks(final SpongeConventionExtension sponge, final IndraGitExtension git) {
         final Manifest manifest = sponge.sharedManifest();
         this.project.getTasks().withType(Jar.class).configureEach(task -> task.getManifest().from(manifest));
 
@@ -116,6 +116,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
         attributes.put("Implementation-Vendor", "SpongePowered");
         attributes.put("Implementation-Version", this.project.getVersion());
         manifest.attributes(attributes);
+        git.applyVcsInformationToManifest(manifest);
     }
 
     private void configureStandardTasks() {
