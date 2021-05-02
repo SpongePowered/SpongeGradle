@@ -92,11 +92,15 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
         this.configurePublicationMetadata(indra);
         this.configureStandardTasks();
         this.configureLicenseHeaders(target.getExtensions().getByType(LicenseExtension.class));
-        this.configureJarTasks(sponge);
         this.configureJarSigning();
 
         target.getPlugins().withType(SigningPlugin.class, $ ->
             target.afterEvaluate(p -> this.configureSigning(p.getExtensions().getByType(SigningExtension.class))));
+
+        target.afterEvaluate($ -> {
+            // Only configure manifest after evaluate so we can capture project version properly
+            this.configureJarTasks(sponge);
+        });
     }
 
     private void configureJarTasks(final SpongeConventionExtension sponge) {
