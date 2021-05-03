@@ -71,8 +71,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.inject.Inject;
-
 public abstract class SpongeConventionPlugin implements Plugin<Project> {
     private @MonotonicNonNull Project project;
 
