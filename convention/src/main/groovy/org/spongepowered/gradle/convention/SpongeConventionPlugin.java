@@ -97,16 +97,15 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
         target.getPlugins().withType(SigningPlugin.class, $ ->
             target.afterEvaluate(p -> this.configureSigning(p.getExtensions().getByType(SigningExtension.class))));
 
+        final Manifest manifest = sponge.sharedManifest();
+        this.project.getTasks().withType(Jar.class).configureEach(task -> task.getManifest().from(manifest));
         target.afterEvaluate(proj -> {
             // Only configure manifest after evaluate so we can capture project version properly
-            this.configureJarTasks(sponge, proj.getExtensions().getByType(IndraGitExtension.class));
+            this.configureJarTasks(manifest, proj.getExtensions().getByType(IndraGitExtension.class));
         });
     }
 
-    private void configureJarTasks(final SpongeConventionExtension sponge, final IndraGitExtension git) {
-        final Manifest manifest = sponge.sharedManifest();
-        this.project.getTasks().withType(Jar.class).configureEach(task -> task.getManifest().from(manifest));
-
+    private void configureJarTasks(final Manifest manifest, final IndraGitExtension git) {
         // Add some standard attributes
         final Map<String, Object> attributes = new HashMap<>();
         attributes.put("Specification-Title", this.project.getName());
