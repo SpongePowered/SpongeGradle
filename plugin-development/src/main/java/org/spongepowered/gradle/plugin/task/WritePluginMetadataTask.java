@@ -71,58 +71,51 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
             final PluginMetadata.Builder metadataBuilder = PluginMetadata.builder();
 
             metadataBuilder
-                .setId(configuration.getName())
-                .setLoader(configuration.getLoader().get())
-                .setName(configuration.getDisplayName().get())
-                .setVersion(configuration.getVersion().get())
-                .setMainClass(configuration.getMainClass().get())
-                .setDescription(configuration.getDescription().get())
+                .id(configuration.getName())
+                .loader(configuration.getLoader().get())
+                .name(configuration.getDisplayName().get())
+                .version(configuration.getVersion().get())
+                .mainClass(configuration.getMainClass().get())
+                .description(configuration.getDescription().get())
             ;
 
             final PluginLinks.Builder linksBuilder = PluginLinks.builder();
             final PluginLinksConfiguration linksConfiguration = configuration.getLinks();
             if (linksConfiguration.getHomepage().isPresent()) {
-                linksBuilder.setHomepage(linksConfiguration.getHomepage().get());
+                linksBuilder.homepage(linksConfiguration.getHomepage().get());
             }
             if (linksConfiguration.getSource().isPresent()) {
-                linksBuilder.setSource(linksConfiguration.getSource().get());
+                linksBuilder.source(linksConfiguration.getSource().get());
             }
             if (linksConfiguration.getIssues().isPresent()) {
-                linksBuilder.setIssues(linksConfiguration.getIssues().get());
+                linksBuilder.issues(linksConfiguration.getIssues().get());
             }
-            metadataBuilder.setLinks(linksBuilder.build());
-
-            final List<PluginContributor> contributors = new ArrayList<>();
+            metadataBuilder.links(linksBuilder.build());
 
             for (final PluginContributorConfiguration contributor : configuration.getContributors()) {
                 final PluginContributor.Builder contributorBuilder = PluginContributor.builder();
 
-                contributorBuilder.setName(contributor.getName());
+                contributorBuilder.name(contributor.getName());
                 if (contributor.getDescription().isPresent()) {
-                    contributorBuilder.setDescription(contributor.getDescription().get());
+                    contributorBuilder.description(contributor.getDescription().get());
                 }
-                contributors.add(contributorBuilder.build());
+                metadataBuilder.addContributor(contributorBuilder.build());
             }
-
-            metadataBuilder.setContributors(contributors);
-
-            final List<PluginDependency> dependencies = new ArrayList<>();
 
             for (final PluginDependencyConfiguration dependency : configuration.getDependencies()) {
                 final PluginDependency.Builder dependencyBuilder = PluginDependency.builder();
 
-                dependencyBuilder.setId(dependency.getName());
-                dependencyBuilder.setVersion(dependency.getVersion().get());
+                dependencyBuilder.id(dependency.getName());
+                dependencyBuilder.version(dependency.getVersion().get());
                 if (dependency.getLoadOrder().isPresent()) {
-                    dependencyBuilder.setLoadOrder(dependency.getLoadOrder().get());
+                    dependencyBuilder.loadOrder(dependency.getLoadOrder().get());
                 }
                 if (dependency.getOptional().isPresent()) {
-                    dependencyBuilder.setOptional(dependency.getOptional().get());
+                    dependencyBuilder.optional(dependency.getOptional().get());
                 }
-                dependencies.add(dependencyBuilder.build());
-            }
 
-            metadataBuilder.setDependencies(dependencies);
+                metadataBuilder.addDependency(dependencyBuilder.build());
+            }
 
             metadata.add(metadataBuilder.build());
         }
