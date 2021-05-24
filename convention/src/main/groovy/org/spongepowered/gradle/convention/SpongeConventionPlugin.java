@@ -36,6 +36,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.java.archives.Attributes;
 import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -105,14 +106,13 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
 
     private void configureJarTasks(final Manifest manifest, final IndraGitExtension git) {
         // Add some standard attributes
-        final Map<String, Object> attributes = new HashMap<>();
-        attributes.put("Specification-Title", this.project.getName());
-        attributes.put("Specification-Vendor", "SpongePowered");
-        attributes.put("Specification-Version", this.project.getVersion());
-        attributes.put("Implementation-Title", this.project.getName());
-        attributes.put("Implementation-Vendor", "SpongePowered");
-        attributes.put("Implementation-Version", this.project.getVersion());
-        manifest.attributes(attributes);
+        final Attributes attributes = manifest.getAttributes();
+        attributes.putIfAbsent("Specification-Title", this.project.getName());
+        attributes.putIfAbsent("Specification-Vendor", "SpongePowered");
+        attributes.putIfAbsent("Specification-Version", this.project.getVersion());
+        attributes.putIfAbsent("Implementation-Title", this.project.getName());
+        attributes.putIfAbsent("Implementation-Vendor", "SpongePowered");
+        attributes.putIfAbsent("Implementation-Version", this.project.getVersion());
         git.applyVcsInformationToManifest(manifest);
     }
 
