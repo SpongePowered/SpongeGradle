@@ -26,7 +26,6 @@ package org.spongepowered.gradle.plugin;
 
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectCollection;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Plugin;
@@ -38,7 +37,6 @@ import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.Directory;
-import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
@@ -48,7 +46,7 @@ import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
-import org.gradle.jvm.tasks.Jar;
+import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.process.CommandLineArgumentProvider;
 import org.spongepowered.gradle.common.Constants;
 import org.spongepowered.gradle.common.SpongePlatform;
@@ -221,13 +219,18 @@ public final class SpongePluginGradle implements Plugin<Project> {
             });
         });
 
-        this.project.getPlugins().withType(JavaPlugin.class, v -> {
-            // TODO: Use shadow jar here if that plugin is applied
-            final TaskProvider<?> jarTask = this.project.getTasks().named(JavaPlugin.JAR_TASK_NAME);
+        this.project.afterEvaluate(p -> {
+            final TaskProvider<AbstractArchiveTask> archiveTask;
+            if (p.getPlugins().hasPlugin(Constants.Plugins.SHADOW_PLUGIN_ID)) {
+                archiveTask = p.getTasks().named(Constants.Plugins.SHADOW_JAR_TASK_NAME, AbstractArchiveTask.class);
+            } else {
+                archiveTask = p.getTasks().named(JavaPlugin.JAR_TASK_NAME, AbstractArchiveTask.class);
+            }
             runServer.configure(new Action<JavaExec>() {
                 @Override
                 public void execute(final JavaExec it) {
-                    it.classpath(jarTask);
+                    it.dependsOn(archiveTask);
+                    it.classpath(archiveTask.map(AbstractArchiveTask::getArchiveFile));
                 }
             }); // TODO: is there a sensible way to run without the jar?
         });

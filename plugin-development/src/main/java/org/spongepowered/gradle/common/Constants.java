@@ -46,6 +46,14 @@ public final class Constants {
         }
     }
 
+    public static final class Plugins {
+        public static final String SHADOW_PLUGIN_ID = "com.github.johnrengelman.shadow";
+        public static final String SHADOW_JAR_TASK_NAME = "shadowJar";
+
+        private Plugins() {
+        }
+    }
+
     private Constants() {
     }
 
