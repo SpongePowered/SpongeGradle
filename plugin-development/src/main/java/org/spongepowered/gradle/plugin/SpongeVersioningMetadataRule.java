@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 public class SpongeVersioningMetadataRule implements ComponentMetadataRule {
     // <mc version>-<API target>-<RC<BUILD> // development
     // <mc version>-<API target> // stable
-    private static final Pattern SPONGE_IMPL_VERSION = Pattern.compile("(?<mc>[^-]+)-(?<api>[\\d.]+)(?:-RC(?<rc>\\d+))?");
+    private static final Pattern SPONGE_IMPL_VERSION = Pattern.compile("(?<mc>[\\d+.]+-(?:pre|rc)[\\d]+|[^-]+)-(?<api>[\\d.]+)(?:-RC(?<rc>\\d+))?");
     private static final List<String> STATUS_SCHEME = Collections.unmodifiableList(Arrays.asList("rc", "release"));
 
     public static final Attribute<String> MINECRAFT_TARGET = Attribute.of("org.spongepowered.minecraft-target", String.class);
