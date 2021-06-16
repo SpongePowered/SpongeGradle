@@ -10,6 +10,7 @@ configurations.named(functionalTest.compileClasspathConfigurationName) { extends
 configurations.named(functionalTest.runtimeClasspathConfigurationName) { extendsFrom(configurations.testRuntimeClasspath.get()) }
 
 dependencies {
+    functionalTest.implementationConfigurationName(testFixtures("net.kyori:mammoth:1.1.0-SNAPSHOT"))
     functionalTest.implementationConfigurationName("com.google.code.gson:gson:2.8.7")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.7.2")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.2")
