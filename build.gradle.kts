@@ -23,6 +23,12 @@ subprojects {
     }
 
     repositories {
+        mavenLocal {
+            mavenContent {
+                snapshotsOnly()
+                includeGroup("net.kyori")
+            }
+        }
         maven("https://repo.spongepowered.org/repository/maven-public/") {
             name = "sponge"
         }

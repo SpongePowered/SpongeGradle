@@ -30,27 +30,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import net.kyori.mammoth.test.TestContext;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.gradle.testkit.runner.UnexpectedBuildFailure;
 import org.gradle.testkit.runner.UnexpectedBuildSuccess;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.api.function.ThrowingConsumer;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.DisplayName;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
 import java.util.jar.JarFile;
-import java.util.stream.Stream;
 
 /**
  * Simple functional tests for the Sponge plugin development plugin.
@@ -61,6 +51,8 @@ import java.util.stream.Stream;
  */
 class SpongePluginPluginFunctionalTest {
 
+    @DisplayName("simplebuild")
+    @SpongeGradleFunctionalTest
     void testSimpleBuild(final TestContext ctx) throws IOException {
         ctx.copyInput("build.gradle.kts");
         ctx.copyInput("settings.gradle.kts");
@@ -74,6 +66,8 @@ class SpongePluginPluginFunctionalTest {
         ctx.assertOutputEquals("sponge_plugins.json", "build/generated/sponge/plugin/META-INF/sponge_plugins.json");
     }
 
+    @DisplayName("missingproperties")
+    @SpongeGradleFunctionalTest
     void testBuildFailsWhenMissingProperties(final TestContext ctx) throws IOException {
         ctx.copyInput("build.gradle.kts");
         ctx.copyInput("settings.gradle.kts");
@@ -91,6 +85,8 @@ class SpongePluginPluginFunctionalTest {
         assertTrue(result.getOutput().contains(".entrypoint"));
     }
 
+    @DisplayName("propertiesinferred")
+    @SpongeGradleFunctionalTest
     void testPropertiesInferredFromProjectConfiguration(final TestContext ctx) throws IOException {
         ctx.copyInput("build.gradle.kts");
         ctx.copyInput("settings.gradle.kts");
@@ -109,6 +105,8 @@ class SpongePluginPluginFunctionalTest {
         );
     }
 
+    @DisplayName("complexbuild")
+    @SpongeGradleFunctionalTest
     void testComplexBuild(final TestContext ctx) throws IOException {
         ctx.copyInput("build.gradle.kts");
         ctx.copyInput("settings.gradle.kts");
@@ -124,69 +122,4 @@ class SpongePluginPluginFunctionalTest {
             assertNotNull(jf.getEntry("META-INF/sponge_plugins.json"));
         }
     }
-
-    // the test framework itself (still fairly basic)
-
-    @TestFactory
-    Stream<DynamicTest> functionalTests(@TempDir final Path runDirectory) {
-        if (System.getenv("CI") != null && ManagementFactory.getOperatingSystemMXBean().getName().toLowerCase(Locale.ROOT).contains("windows")) {
-            // these tests fail on CI on windows for some reason related to cleaning up the temporary directory at the end of the run
-            return Stream.of();
-        }
-
-        // Common arguments for Gradle
-        final List<String> commonArgs = Arrays.asList("--warning-mode", "fail", "--stacktrace");
-
-        // Test variants
-        final String[][] variants = {
-            {"6.9.2", ""},
-            {"7.3.3", ""},
-            {"6.9.2", "--configuration-cache"},
-            {"7.3.3", "--configuration-cache"},
-        };
-
-        // The actual tests to execute
-        return Stream.of(
-            new Pair("simplebuild", this::testSimpleBuild),
-            new Pair("missingproperties", this::testBuildFailsWhenMissingProperties),
-            new Pair("propertiesinferred", this::testPropertiesInferredFromProjectConfiguration),
-            new Pair("complexbuild", this::testComplexBuild)
-        ).flatMap(test -> Arrays.stream(variants)
-            .map(variant -> {
-                final List<String> extraArgs = SpongePluginPluginFunctionalTest.processArgs(commonArgs, variant[1]);
-                final Path tempDirectory;
-                try {
-                    tempDirectory = Files.createTempDirectory(runDirectory, test.name + System.nanoTime());
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
-                }
-                final TestContext context = new TestContext(
-                    this.getClass(),
-                    test.name,
-                    tempDirectory,
-                    variant[0],
-                    extraArgs
-                );
-                return DynamicTest.dynamicTest(test.name + " (gradle " + variant[0] + ", args=" + extraArgs + ")", () -> test.method.accept(context));
-            }));
-    }
-
-    private static List<String> processArgs(final List<String> common, final String extra) {
-        final List<String> ret = new ArrayList<>(common);
-        if (!extra.isEmpty()) {
-            Collections.addAll(ret, extra.split(" ", -1));
-        }
-        return ret;
-    }
-
-    static class Pair {
-        final String name;
-        final ThrowingConsumer<TestContext> method;
-
-        public Pair(final String name, final ThrowingConsumer<TestContext> method) {
-            this.name = name;
-            this.method = method;
-        }
-    }
-
 }

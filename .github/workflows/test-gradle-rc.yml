@@ -1,0 +1,105 @@
+name: "Run tests against latest Gradle RC/nightly"
+
+on:
+  schedule:
+    - cron: '3 1 * * 5'
+  workflow_dispatch:
+    inputs:
+      gradle-version:
+        description: "A specific Gradle version to test against"
+        default: "-"
+        required: false
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.number || github.ref }}"
+  cancel-in-progress: true
+  
+env:
+  RUNTIME_VERSION: 11
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+    runs-on: "${{ matrix.os }}"
+    steps:
+      - name: "checkout repository"
+        uses: "actions/checkout@v2"
+      - name: "validate gradle wrapper"
+        uses: "gradle/wrapper-validation-action@v1"
+      - name: "setup jdk ${{ env.RUNTIME_VERSION }}"
+        uses: "actions/setup-java@v2"
+        with:
+          distribution: "temurin"
+          java-version: "${{ env.RUNTIME_VERSION }}"
+      - name: "determine target version"
+        uses: "actions/github-script@v5"
+        id: "determine-target"
+        with:
+          script: |
+            const fs = require('fs');
+            const https = require('https');
+            
+            const GRADLE_API = "services.gradle.org";
+            const RC_ENDPOINT = "/versions/release-candidate";
+            const NIGHTLY_ENDPOINT = "/versions/nightly";
+            
+            const override = core.getInput('gradle-version');
+            
+            let target = null;
+            if (override && override != '-') {
+              core.notice('Declared override: ' + override);
+              target = override;
+            } else {
+              async function readToText(endpoint) {
+                // Attempt to fetch content
+                return new Promise((resolve, reject) => {
+                    let data = '';
+                    https.get({hostname: GRADLE_API, path: endpoint}, (res) => {
+                      res.on('data', (chunk) => { data += chunk });
+                      res.on('end', () => resolve(data));
+                    }).on('error', (err) => reject(err));
+                });
+              }
+              
+              let desc = await readToText(RC_ENDPOINT);
+              if (!desc || desc == '') {
+                desc = await readToText(NIGHTLY_ENDPOINT);
+              }
+              
+              if (desc != '') { // successful
+                 target = JSON.parse(desc).version
+              }
+            }
+           
+            if (target != null) {
+              core.notice('Testing with Gradle version ' + target);
+              // Then persist the found version
+              core.setOutput('target', target);
+              
+              let targetDir = 'plugin-development/src/functionalTest/resources/'
+              fs.mkdirSync(targetDir, {recursive: true});
+              fs.writeFileSync(targetDir + 'injected-gradle-versions', target + '\n' + target + ':--configuration-cache\n'); 
+            } else {
+              core.notice('No RC or nightly Gradle build found');
+            }
+      - name: "run gradle build / added tests on ${{ steps.determine-target.outputs.target }}"
+        uses: "gradle/gradle-build-action@v2"
+        if: "${{ steps.determine-target.outputs.target }}"
+        with:
+          arguments: "build"
+      - name: "archive test results"
+        if: "${{ always() }}"
+        uses: "actions/upload-artifact@v2"
+        with:
+          name: "${{ runner.os }}-test-results"
+          path: |
+            build/reports/
+            */build/reports/
+      - name: "run gradle build / compiling on ${{ steps.determine-target.outputs.target }}"
+        uses: "gradle/gradle-build-action@v2"
+        if: "${{ steps.determine-target.outputs.target }}"
+        with:
+          gradle-version: "${{ steps.determine-target.outputs.target }}"
+          arguments: "build --warning-mode=all"
