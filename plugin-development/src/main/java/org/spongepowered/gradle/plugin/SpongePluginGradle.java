@@ -119,10 +119,14 @@ public final class SpongePluginGradle implements Plugin<Project> {
             }
         }));
 
-        // Add SpongeAPI as a dependency
-        this.project.getPlugins().withType(JavaLibraryPlugin.class, v ->
+        this.project.getPlugins().withType(JavaLibraryPlugin.class, v -> {
+            // Add SpongeAPI as a dependency
             this.project.getConfigurations().named(JavaPlugin.COMPILE_ONLY_API_CONFIGURATION_NAME)
-                .configure(config -> config.extendsFrom(spongeApi.get())));
+                .configure(config -> config.extendsFrom(spongeApi.get()));
+            // and as an AP
+            this.project.getConfigurations().named(JavaPlugin.ANNOTATION_PROCESSOR_CONFIGURATION_NAME)
+                .configure(config -> config.extendsFrom(spongeApi.get()));
+        });
     }
 
     private NamedDomainObjectProvider<Configuration> addRuntimeDependency(final SpongePluginExtension sponge) {
