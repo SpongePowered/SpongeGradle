@@ -41,6 +41,7 @@ public final class Constants {
     public static final class Dependencies {
         public static final String SPONGE_GROUP = "org.spongepowered";
         public static final String SPONGE_API = "spongeapi";
+        public static final String SNAPSHOT_SUFFIX = "-SNAPSHOT";
 
         private Dependencies() {
         }

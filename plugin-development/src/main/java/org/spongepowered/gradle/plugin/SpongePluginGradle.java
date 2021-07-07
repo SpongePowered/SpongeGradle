@@ -36,6 +36,7 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
+import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -88,7 +89,18 @@ public final class SpongePluginGradle implements Plugin<Project> {
                     + " tasks will be available. You may use these to test your plugin.", sponge.version().get());*/
 
                 spongeRuntime.configure(config -> {
-                    config.getAttributes().attribute(SpongeVersioningMetadataRule.API_TARGET, sponge.apiVersion().get());
+                    final String apiVersion = sponge.apiVersion().get();
+
+                    final boolean isSnapshot = apiVersion.endsWith(Constants.Dependencies.SNAPSHOT_SUFFIX);
+                    config.getAttributes().attribute(
+                        SpongeVersioningMetadataRule.API_TARGET,
+                        isSnapshot ? apiVersion.substring(0, apiVersion.length() - Constants.Dependencies.SNAPSHOT_SUFFIX.length())
+                                   : apiVersion
+                    );
+
+                    /*if (!isSnapshot) { // todo: re-enable once a -SNAPSHOT becomes mandatory
+                        config.getAttributes().attribute(Attribute.of("org.gradle.status", String.class), "release");
+                    }*/
                 });
             } else {
                 project.getLogger().info("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
@@ -107,17 +119,20 @@ public final class SpongePluginGradle implements Plugin<Project> {
     private void addApiDependency(final SpongePluginExtension sponge) {
         // SpongeAPI dependency
         final NamedDomainObjectProvider<Configuration> spongeApi = this.project.getConfigurations()
-            .register("spongeApi", config -> config.defaultDependencies(deps -> {
-            if (sponge.apiVersion().isPresent()) {
-                deps.add(
-                    this.project.getDependencies().create(
-                        Constants.Dependencies.SPONGE_GROUP
-                            + ":" + Constants.Dependencies.SPONGE_API
-                            + ":" + sponge.apiVersion().get() + "-SNAPSHOT"
-                    )
-                );
-            }
-        }));
+            .register("spongeApi", config -> config
+                .setVisible(false)
+                .defaultDependencies(deps -> {
+                    if (sponge.apiVersion().isPresent()) {
+                        final String apiVersion = sponge.apiVersion().get();
+                        deps.add(
+                            this.project.getDependencies().create(
+                                Constants.Dependencies.SPONGE_GROUP
+                                    + ":" + Constants.Dependencies.SPONGE_API
+                                    + ":" + (apiVersion.endsWith(Constants.Dependencies.SNAPSHOT_SUFFIX) ? apiVersion : (apiVersion + Constants.Dependencies.SNAPSHOT_SUFFIX))
+                            )
+                        );
+                    }
+                }));
 
         this.project.getPlugins().withType(JavaLibraryPlugin.class, v -> {
             // Add SpongeAPI as a dependency
