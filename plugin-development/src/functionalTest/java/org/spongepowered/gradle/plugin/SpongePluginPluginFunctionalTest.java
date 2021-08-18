@@ -138,10 +138,10 @@ class SpongePluginPluginFunctionalTest {
 
         // Test variants
         final String[][] variants = {
-            {"6.8.3", ""},
-            {"7.0.2", ""},
-            {"6.8.3", "--configuration-cache"},
-            {"7.0.2", "--configuration-cache"},
+            {"6.9", ""},
+            {"7.2", ""},
+            {"6.9", "--configuration-cache"},
+            {"7.2", "--configuration-cache"},
         };
 
         // The actual tests to execute
