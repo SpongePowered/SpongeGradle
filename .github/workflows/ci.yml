@@ -4,8 +4,8 @@ name: Build, Test, and Deploy
 
 on:
   push:
-    branches: "*"
-    tags-ignore: ["*"]
+    branches: "**"
+    tags-ignore: ["**"]
   pull_request:
   release:
     types: [released]
@@ -52,7 +52,7 @@ jobs:
             echo "STATUS=release" >> $GITHUB_ENV
           fi
       - name: Publish with Gradle (snapshot)
-        if: "${{ runner.os == 'Linux' && env.STATUS != 'release' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}"
+        if: "${{ runner.os == 'Linux' && env.STATUS != 'release' && github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release/')) }}"
         run: ./gradlew -PforceSign=true publish
         env:
           ORG_GRADLE_PROJECT_githubPackagesUsername: "${{ github.actor }}"
