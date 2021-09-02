@@ -24,107 +24,150 @@
  */
 package org.spongepowered.gradle.plugin.task;
 
+import com.google.gson.Gson;
+import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.spongepowered.gradle.common.Constants;
+import org.spongepowered.gradle.plugin.config.MetadataContainerConfiguration;
+import org.spongepowered.gradle.plugin.config.PluginBrandingConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginContributorConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginDependencyConfiguration;
+import org.spongepowered.gradle.plugin.config.PluginInheritableConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginLinksConfiguration;
-import org.spongepowered.plugin.metadata.PluginContributor;
-import org.spongepowered.plugin.metadata.PluginDependency;
-import org.spongepowered.plugin.metadata.PluginLinks;
-import org.spongepowered.plugin.metadata.PluginMetadata;
-import org.spongepowered.plugin.metadata.util.PluginMetadataHelper;
+import org.spongepowered.gradle.plugin.config.PluginLoaderConfiguration;
+import org.spongepowered.plugin.metadata.builtin.MetadataContainer;
+import org.spongepowered.plugin.metadata.builtin.MetadataParser;
+import org.spongepowered.plugin.metadata.builtin.StandardInheritable;
+import org.spongepowered.plugin.metadata.builtin.model.StandardPluginBranding;
+import org.spongepowered.plugin.metadata.builtin.model.StandardPluginContributor;
+import org.spongepowered.plugin.metadata.builtin.model.StandardPluginDependency;
+import org.spongepowered.plugin.metadata.builtin.model.StandardPluginLinks;
+import org.spongepowered.plugin.metadata.builtin.StandardPluginMetadata;
+import org.spongepowered.plugin.metadata.builtin.model.StandardPluginLoader;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 @CacheableTask
 public abstract class WritePluginMetadataTask extends DefaultTask {
+
+    private static final Gson GSON = MetadataParser.gsonBuilder().create();
 
     public WritePluginMetadataTask() {
         this.setGroup(Constants.TASK_GROUP);
     }
     
     @Nested
-    public abstract NamedDomainObjectContainer<PluginConfiguration> getConfigurations();
+    public abstract Property<MetadataContainerConfiguration> getSourceContainer();
 
     @OutputDirectory
     public abstract DirectoryProperty getOutputDirectory();
 
     @TaskAction
     public void execute() throws IOException {
-        final PluginMetadataHelper helper = PluginMetadataHelper.builder().build();
-        final List<PluginMetadata> metadata = new ArrayList<>();
+        final MetadataContainerConfiguration src = this.getSourceContainer().get();
+        final MetadataContainer.Builder container = new MetadataContainer.Builder();
+        container.license(src.getLicense().get())
+            .loader(this.convertLoader(src.getLoader()))
+            .globalMetadata(this.populateBuilder(src.getGlobal(), StandardInheritable.builder()).build());
+        if (src.getMappings().isPresent()) {
+            container.mappings(src.getMappings().get());
+        }
 
-        for (final PluginConfiguration configuration : this.getConfigurations()) {
-            final PluginMetadata.Builder metadataBuilder = PluginMetadata.builder();
+        for (final PluginConfiguration configuration : src.getPlugins()) {
+            final StandardPluginMetadata.Builder metadataBuilder = new StandardPluginMetadata.Builder();
+
+            this.populateBuilder(configuration, metadataBuilder)
+                    .entrypoint(configuration.getEntrypoint().get());
 
             metadataBuilder
                 .id(configuration.getName())
-                .loader(configuration.getLoader().get())
                 .name(configuration.getDisplayName().get())
-                .version(configuration.getVersion().get())
-                .mainClass(configuration.getMainClass().get())
+                .entrypoint(configuration.getEntrypoint().get())
                 .description(configuration.getDescription().get())
             ;
 
-            final PluginLinks.Builder linksBuilder = PluginLinks.builder();
-            final PluginLinksConfiguration linksConfiguration = configuration.getLinks();
-            if (linksConfiguration.getHomepage().isPresent()) {
-                linksBuilder.homepage(linksConfiguration.getHomepage().get());
-            }
-            if (linksConfiguration.getSource().isPresent()) {
-                linksBuilder.source(linksConfiguration.getSource().get());
-            }
-            if (linksConfiguration.getIssues().isPresent()) {
-                linksBuilder.issues(linksConfiguration.getIssues().get());
-            }
-            metadataBuilder.links(linksBuilder.build());
-
-            for (final PluginContributorConfiguration contributor : configuration.getContributors()) {
-                final PluginContributor.Builder contributorBuilder = PluginContributor.builder();
-
-                contributorBuilder.name(contributor.getName());
-                if (contributor.getDescription().isPresent()) {
-                    contributorBuilder.description(contributor.getDescription().get());
-                }
-                metadataBuilder.addContributor(contributorBuilder.build());
-            }
-
-            for (final PluginDependencyConfiguration dependency : configuration.getDependencies()) {
-                final PluginDependency.Builder dependencyBuilder = PluginDependency.builder();
-
-                dependencyBuilder.id(dependency.getName());
-                dependencyBuilder.version(dependency.getVersion().get());
-                if (dependency.getLoadOrder().isPresent()) {
-                    dependencyBuilder.loadOrder(dependency.getLoadOrder().get());
-                }
-                if (dependency.getOptional().isPresent()) {
-                    dependencyBuilder.optional(dependency.getOptional().get());
-                }
-
-                metadataBuilder.addDependency(dependencyBuilder.build());
-            }
-
-            metadata.add(metadataBuilder.build());
+            container.addMetadata(metadataBuilder.build());
         }
 
-        final String json = helper.toJson(metadata);
         final Path outputDirectory = this.getOutputDirectory().getAsFile().get().toPath().resolve("META-INF");
         Files.createDirectories(outputDirectory);
         final Path outputFile = outputDirectory.resolve("plugins.json");
         Files.deleteIfExists(outputFile);
-        Files.write(outputFile, json.getBytes(StandardCharsets.UTF_8));
+        try {
+            MetadataParser.write(outputFile, container.build(), WritePluginMetadataTask.GSON, true);
+        } catch (final InvalidVersionSpecificationException ex) {
+            throw new InvalidUserDataException(ex.getMessage(), ex);
+        }
+    }
+
+    private StandardPluginLoader convertLoader(final PluginLoaderConfiguration src) {
+        return StandardPluginLoader.builder()
+            .name(src.getName().get())
+            .version(src.getVersion().get())
+            .build();
+    }
+
+    private <T extends StandardInheritable.AbstractBuilder<?, T>> T populateBuilder(final PluginInheritableConfiguration src, final T builder) {
+        builder.version(src.getVersion().get());
+
+        final StandardPluginLinks.Builder linksBuilder = StandardPluginLinks.builder();
+        final PluginLinksConfiguration linksConfiguration = src.getLinks();
+        if (linksConfiguration.getHomepage().isPresent()) {
+            linksBuilder.homepage(linksConfiguration.getHomepage().get());
+        }
+        if (linksConfiguration.getSource().isPresent()) {
+            linksBuilder.source(linksConfiguration.getSource().get());
+        }
+        if (linksConfiguration.getIssues().isPresent()) {
+            linksBuilder.issues(linksConfiguration.getIssues().get());
+        }
+        builder.links(linksBuilder.build());
+
+        // TODO: validate paths here?
+        final StandardPluginBranding.Builder brandingBuilder = StandardPluginBranding.builder();
+        final PluginBrandingConfiguration brandingConfiguration = src.getBranding();
+        if (brandingConfiguration.getIcon().isPresent()) {
+            brandingBuilder.icon(brandingConfiguration.getIcon().get());
+        }
+        if (brandingConfiguration.getLogo().isPresent()) {
+            brandingBuilder.icon(brandingConfiguration.getLogo().get());
+        }
+        builder.branding(brandingBuilder.build());
+
+        for (final PluginContributorConfiguration contributor : src.getContributors()) {
+            final StandardPluginContributor.Builder contributorBuilder = StandardPluginContributor.builder();
+
+            contributorBuilder.name(contributor.getName());
+            if (contributor.getDescription().isPresent()) {
+                contributorBuilder.description(contributor.getDescription().get());
+            }
+            builder.addContributor(contributorBuilder.build());
+        }
+
+        for (final PluginDependencyConfiguration dependency : src.getDependencies()) {
+            final StandardPluginDependency.Builder dependencyBuilder = StandardPluginDependency.builder();
+
+            dependencyBuilder.id(dependency.getName());
+            dependencyBuilder.version(dependency.getVersion().get());
+            if (dependency.getLoadOrder().isPresent()) {
+                dependencyBuilder.loadOrder(dependency.getLoadOrder().get());
+            }
+            if (dependency.getOptional().isPresent()) {
+                dependencyBuilder.optional(dependency.getOptional().get());
+            }
+
+            builder.addDependency(dependencyBuilder.build());
+        }
+        return builder;
     }
 }

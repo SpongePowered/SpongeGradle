@@ -24,46 +24,67 @@
  */
 package org.spongepowered.gradle.plugin;
 
-import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
-import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.spongepowered.gradle.common.SpongePlatform;
+import org.spongepowered.gradle.plugin.config.MetadataContainerConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
+import org.spongepowered.gradle.plugin.config.PluginInheritableConfiguration;
+import org.spongepowered.gradle.plugin.config.PluginLoaderConfiguration;
 
 import javax.inject.Inject;
 
-public class SpongePluginExtension {
+public class SpongePluginExtension implements MetadataContainerConfiguration {
 
-    private final ObjectFactory factory;
+    // Plugin metadata
+    private final Property<String> license;
+    private final Property<String> mappings;
+    private final PluginLoaderConfiguration loader;
+    private final PluginInheritableConfiguration global;
     private final NamedDomainObjectContainer<PluginConfiguration> plugins;
 
+    // Dependency management
     private final Property<SpongePlatform> platform;
     private final Property<String> apiVersion;
     private final Property<Boolean> injectRepositories;
 
     @Inject
-    public SpongePluginExtension(final Project project, final ObjectFactory factory) {
-        this.factory = factory;
-        this.plugins = project.container(PluginConfiguration.class);
+    public SpongePluginExtension(final ObjectFactory factory) {
+        this.license = factory.property(String.class);
+        this.mappings = factory.property(String.class);
+        this.loader = factory.newInstance(PluginLoaderConfiguration.class);
+        this.global = factory.newInstance(PluginInheritableConfiguration.class);
+        this.plugins = factory.domainObjectContainer(PluginConfiguration.class);
+
         this.platform = factory.property(SpongePlatform.class).convention(SpongePlatform.VANILLA);
         this.apiVersion = factory.property(String.class);
         this.injectRepositories = factory.property(Boolean.class).convention(true);
     }
 
-    protected NamedDomainObjectContainer<PluginConfiguration> plugins() {
+    @Override
+    public Property<String> getLicense() {
+        return this.license;
+    }
+
+    @Override
+    public Property<String> getMappings() {
+        return this.mappings;
+    }
+
+    @Override
+    public PluginLoaderConfiguration getLoader() {
+        return this.loader;
+    }
+
+    @Override
+    public PluginInheritableConfiguration getGlobal() {
+        return this.global;
+    }
+
+    @Override
+    public NamedDomainObjectContainer<PluginConfiguration> getPlugins() {
         return this.plugins;
-    }
-
-    public void plugins(final Action<? super NamedDomainObjectContainer<PluginConfiguration>> action) {
-        action.execute(this.plugins);
-    }
-
-    public void plugin(final String name, final Action<? super PluginConfiguration> action) {
-        final PluginConfiguration configuration = this.factory.newInstance(PluginConfiguration.class, name);
-        action.execute(configuration);
-        this.plugins.add(configuration);
     }
 
     protected Property<SpongePlatform> platform() {

@@ -29,7 +29,7 @@ import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
-import org.spongepowered.plugin.metadata.PluginDependency;
+import org.spongepowered.plugin.metadata.model.PluginDependency;
 
 import javax.inject.Inject;
 

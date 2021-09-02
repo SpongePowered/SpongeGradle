@@ -36,7 +36,6 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
-import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -74,7 +73,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
         // project.getPlugins().apply(EclipsePlugin.class);
 
         // final MinecraftExtension minecraft = project.getExtensions().getByType(MinecraftExtension.class);
-        final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class, project);
+        final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class);
 
         this.configurePluginMetaGeneration(sponge);
 
@@ -259,30 +258,16 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
     private void configurePluginMetaGeneration(final SpongePluginExtension sponge) {
         // Configure some useful default values
-        final Provider<String> displayName = this.project.provider(this.project::getName);
-        final Provider<String> version = this.project.provider(() -> this.project.getVersion() == null ? null : String.valueOf(this.project.getVersion()));
-        final Provider<String> description = this.project.provider(this.project::getDescription);
-        final Provider<String> spongeApiVersion = sponge.apiVersion();
-        sponge.plugins().configureEach(new Action<PluginConfiguration>() {
-            @Override
-            public void execute(final PluginConfiguration plugin) {
-                plugin.getDisplayName().convention(displayName);
-                plugin.getVersion().convention(version);
-                plugin.getDescription().convention(description);
-                plugin.getDependencies().matching(dep -> dep.getName().equals(Constants.Dependencies.SPONGE_API))
-                    .configureEach(dep -> dep.getVersion().convention(spongeApiVersion));
-            }
-        });
+        sponge.getPlugins().configureEach(new ConfigurePluginAction(this.project, sponge));
 
         // Then configure the generated sources
         final Provider<Directory> generatedResourcesDirectory = this.project.getLayout().getBuildDirectory().dir("generated/sponge/plugin");
-        final NamedDomainObjectContainer<PluginConfiguration> plugins = sponge.plugins();
 
         final TaskProvider<WritePluginMetadataTask> writePluginMetadata = this.project.getTasks().register("writePluginMetadata", WritePluginMetadataTask.class,
             new Action<WritePluginMetadataTask>() {
                 @Override
                 public void execute(final WritePluginMetadataTask task) {
-                    task.getConfigurations().addAll(plugins);
+                    task.getSourceContainer().set(sponge);
                     task.getOutputDirectory().set(generatedResourcesDirectory);
                 }
             }
@@ -296,6 +281,29 @@ public final class SpongePluginGradle implements Plugin<Project> {
                 }
             });
         });
+    }
+
+    private static class ConfigurePluginAction implements Action<PluginConfiguration> {
+        private final Provider<String> displayName;
+        private final Provider<String> version;
+        private final Provider<String> description;
+        private final Provider<String> spongeApiVersion;
+
+        ConfigurePluginAction(final Project project, final SpongePluginExtension sponge) {
+            this.displayName = project.provider(project::getName);
+            this.version = project.provider(() -> project.getVersion() == null ? null : String.valueOf(project.getVersion()));
+            this.description = project.provider(project::getDescription);
+            this.spongeApiVersion = sponge.apiVersion();
+        }
+
+        @Override
+        public void execute(final PluginConfiguration plugin) {
+            plugin.getDisplayName().convention(this.displayName);
+            plugin.getVersion().convention(this.version);
+            plugin.getDescription().convention(this.description);
+            plugin.getDependencies().matching(dep -> dep.getName().equals(Constants.Dependencies.SPONGE_API))
+                .configureEach(dep -> dep.getVersion().convention(this.spongeApiVersion));
+        }
     }
 
 }

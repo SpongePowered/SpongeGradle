@@ -1,31 +1,36 @@
 {
-    "plugins": [
+  "loader": {
+    "name": "java_plain",
+    "version": "1.0"
+  },
+  "license": "CHANGEME",
+  "plugins": [
+    {
+      "id": "example",
+      "entrypoint": "org.spongepowered.example.Example",
+      "name": "Example",
+      "description": "Just testing things...",
+      "version": "0.1",
+      "branding": {},
+      "links": {
+        "homepage": "https://spongepowered.org",
+        "source": "https://spongepowered.org/source",
+        "issues": "https://spongepowered.org/issues"
+      },
+      "contributors": [
         {
-            "loader": "java_plain",
-            "id": "example",
-            "name": "Example",
-            "version": "0.1",
-            "main-class": "org.spongepowered.example.Example",
-            "description": "Just testing things...",
-            "links": {
-                "homepage": "https://spongepowered.org",
-                "source": "https://spongepowered.org/source",
-                "issues": "https://spongepowered.org/issues"
-            },
-            "contributors": [
-                {
-                    "name": "Spongie",
-                    "description": "Lead Developer"
-                }
-            ],
-            "dependencies": [
-                {
-                    "id": "spongeapi",
-                    "version": "8.0.0",
-                    "load-order": "AFTER",
-                    "optional": false
-                }
-            ]
+          "name": "Spongie",
+          "description": "Lead Developer"
         }
-    ]
+      ],
+      "dependencies": [
+        {
+          "id": "spongeapi",
+          "version": "8.0.0",
+          "load-order": "after",
+          "optional": false
+        }
+      ]
+    }
+  ]
 }

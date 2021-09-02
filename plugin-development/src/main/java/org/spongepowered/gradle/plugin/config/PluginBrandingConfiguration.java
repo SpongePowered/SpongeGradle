@@ -24,65 +24,47 @@
  */
 package org.spongepowered.gradle.plugin.config;
 
-import org.gradle.api.Named;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
+import org.spongepowered.plugin.metadata.model.PluginBranding;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
-public class PluginConfiguration extends PluginInheritableConfiguration implements Named {
+/**
+ * Configuration for {@link PluginBranding}.
+ */
+public class PluginBrandingConfiguration {
 
-    private final String name;
+    private final Property<String> icon;
 
-    private final Property<String> displayName;
-
-    private final Property<String> entrypoint;
-
-    private final Property<String> description;
+    private final Property<String> logo;
 
     @Inject
-    public PluginConfiguration(final String name, final ObjectFactory factory) {
-        super(factory);
-        this.name = name;
-
-        this.displayName = factory.property(String.class).convention(this.name);
-        this.entrypoint = factory.property(String.class);
-        this.description = factory.property(String.class);
+    public PluginBrandingConfiguration(final ObjectFactory objects) {
+        this.icon = objects.property(String.class);
+        this.logo = objects.property(String.class);
     }
 
-    @Override
+    @Optional
     @Input
-    public @Nonnull String getName() {
-        return this.name;
+    public Property<String> getIcon() {
+        return this.icon;
     }
 
+    public void icon(final String icon) {
+        this.icon.set(icon);
+    }
+
+    @Optional
     @Input
-    public Property<String> getDisplayName() {
-        return this.displayName;
+    public Property<String> getLogo() {
+        return this.logo;
     }
 
-    public void displayName(final String displayName) {
-        this.displayName.set(displayName);
-    }
-
-    @Input
-    public Property<String> getEntrypoint() {
-        return this.entrypoint;
-    }
-
-    public void entrypoint(final String mainClass) {
-        this.entrypoint.set(mainClass);
-    }
-
-    @Input
-    public Property<String> getDescription() {
-        return this.description;
-    }
-
-    public void description(final String description) {
-        this.description.set(description);
+    public void logo(final String logo) {
+        this.logo.set(logo);
     }
 
 }

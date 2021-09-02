@@ -86,8 +86,9 @@ class SpongePluginPluginFunctionalTest {
             result.getOutput().contains("No value has been specified for property") // Gradle 6.x
                 || result.getOutput().contains("doesn't have a configured value") // Gradle 7.x
         );
+        assertTrue(result.getOutput().contains(".license"));
         assertTrue(result.getOutput().contains(".loader"));
-        assertTrue(result.getOutput().contains(".mainClass"));
+        assertTrue(result.getOutput().contains(".entrypoint"));
     }
 
     void testPropertiesInferredFromProjectConfiguration(final TestContext ctx) throws IOException {
@@ -138,9 +139,9 @@ class SpongePluginPluginFunctionalTest {
 
         // Test variants
         final String[][] variants = {
-            {"6.9", ""},
+            {"6.9.1", ""},
             {"7.2", ""},
-            {"6.9", "--configuration-cache"},
+            {"6.9.1", "--configuration-cache"},
             {"7.2", "--configuration-cache"},
         };
 
