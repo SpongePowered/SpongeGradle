@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "org.spongepowered"
-version = "1.1.2-SNAPSHOT"
+version = "2.0.0-SNAPSHOT"
 
 subprojects {
     plugins.apply {
@@ -29,7 +29,7 @@ subprojects {
     }
 
     dependencies {
-        "compileOnlyApi"("org.checkerframework:checker-qual:3.13.0")
+        "compileOnlyApi"("org.checkerframework:checker-qual:3.17.0")
     }
 
     val indraGit = extensions.getByType(net.kyori.indra.git.IndraGitExtension::class)
