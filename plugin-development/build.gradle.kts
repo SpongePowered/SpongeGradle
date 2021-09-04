@@ -1,5 +1,5 @@
 dependencies {
-    implementation("org.spongepowered:plugin-meta:0.8.0-SNAPSHOT")
+    implementation("org.spongepowered:plugin-meta:0.8.0")
     // implementation("org.spongepowered:vanillagradle:0.2-SNAPSHOT")
     // implementation("gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.10")
 }
