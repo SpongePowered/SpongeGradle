@@ -24,7 +24,7 @@
  */
 package org.spongepowered.example;
 
-import org.spongepowered.plugin.jvm.Plugin;
+import org.spongepowered.plugin.builtin.jvm.Plugin;
 
 @Plugin("example")
 public class Example {
