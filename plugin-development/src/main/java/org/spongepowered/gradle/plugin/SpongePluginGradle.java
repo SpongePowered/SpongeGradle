@@ -26,7 +26,6 @@ package org.spongepowered.gradle.plugin;
 
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -36,6 +35,7 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
+import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -97,9 +97,9 @@ public final class SpongePluginGradle implements Plugin<Project> {
                                    : apiVersion
                     );
 
-                    /*if (!isSnapshot) { // todo: re-enable once a -SNAPSHOT becomes mandatory
+                    if (!isSnapshot) { // todo: re-enable once a -SNAPSHOT becomes mandatory
                         config.getAttributes().attribute(Attribute.of("org.gradle.status", String.class), "release");
-                    }*/
+                    }
                 });
             } else {
                 project.getLogger().info("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
@@ -127,7 +127,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
                             this.project.getDependencies().create(
                                 Constants.Dependencies.SPONGE_GROUP
                                     + ":" + Constants.Dependencies.SPONGE_API
-                                    + ":" + (apiVersion.endsWith(Constants.Dependencies.SNAPSHOT_SUFFIX) ? apiVersion : (apiVersion + Constants.Dependencies.SNAPSHOT_SUFFIX))
+                                    + ":" + apiVersion
                             )
                         );
                     }
