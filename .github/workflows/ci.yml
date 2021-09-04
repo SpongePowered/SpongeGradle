@@ -42,7 +42,15 @@ jobs:
             build/reports/
             */build/reports/
 
-      # Then publish if we are all set up to do so
+      # Checks branch name to see if we're going to potentially publish this
+      - name: Check branch for publish
+        uses: actions-ecosystem/action-regex-match@v2.0.2
+        id: branch-name
+        with:
+          text: ${{ github.ref }}
+          regex: '^refs/heads/(master|(\d+\.(?:\d+\.)x))$' # master or something like 0.8.x or 2.x
+
+    # Then publish if we are all set up to do so
       - name: Determine status
         if: "${{ runner.os == 'Linux' }}"
         run: |
@@ -52,7 +60,7 @@ jobs:
             echo "STATUS=release" >> $GITHUB_ENV
           fi
       - name: Publish with Gradle (snapshot)
-        if: "${{ runner.os == 'Linux' && env.STATUS != 'release' && github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release/')) }}"
+        if: "${{ runner.os == 'Linux' && env.STATUS != 'release' && github.event_name == 'push' && steps.branch-name.outputs.match != '' }}"
         run: ./gradlew -PforceSign=true publish
         env:
           ORG_GRADLE_PROJECT_githubPackagesUsername: "${{ github.actor }}"
