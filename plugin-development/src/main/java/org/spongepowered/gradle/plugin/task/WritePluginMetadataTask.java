@@ -42,7 +42,7 @@ import org.spongepowered.gradle.plugin.config.PluginContributorConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginDependencyConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginInheritableConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginLinksConfiguration;
-import org.spongepowered.gradle.plugin.config.PluginLoaderConfiguration;
+import org.spongepowered.gradle.plugin.config.ContainerLoaderConfiguration;
 import org.spongepowered.plugin.metadata.builtin.MetadataContainer;
 import org.spongepowered.plugin.metadata.builtin.MetadataParser;
 import org.spongepowered.plugin.metadata.builtin.StandardInheritable;
@@ -51,7 +51,7 @@ import org.spongepowered.plugin.metadata.builtin.model.StandardPluginContributor
 import org.spongepowered.plugin.metadata.builtin.model.StandardPluginDependency;
 import org.spongepowered.plugin.metadata.builtin.model.StandardPluginLinks;
 import org.spongepowered.plugin.metadata.builtin.StandardPluginMetadata;
-import org.spongepowered.plugin.metadata.builtin.model.StandardPluginLoader;
+import org.spongepowered.plugin.metadata.builtin.model.StandardContainerLoader;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -78,7 +78,7 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
         final MetadataContainer.Builder container = new MetadataContainer.Builder();
         container.license(src.getLicense().get())
             .loader(this.convertLoader(src.getLoader()))
-            .globalMetadata(this.populateBuilder(src.getGlobal(), StandardInheritable.builder()).build());
+            .globalMetadata(this.populateBuilder(src.getGlobal(), new StandardInheritable.Builder()).build());
         if (src.getMappings().isPresent()) {
             container.mappings(src.getMappings().get());
         }
@@ -101,7 +101,7 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
 
         final Path outputDirectory = this.getOutputDirectory().getAsFile().get().toPath().resolve("META-INF");
         Files.createDirectories(outputDirectory);
-        final Path outputFile = outputDirectory.resolve("plugins.json");
+        final Path outputFile = outputDirectory.resolve("sponge_plugins.json");
         Files.deleteIfExists(outputFile);
         try {
             MetadataParser.write(outputFile, container.build(), WritePluginMetadataTask.GSON, true);
@@ -110,8 +110,8 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
         }
     }
 
-    private StandardPluginLoader convertLoader(final PluginLoaderConfiguration src) {
-        return StandardPluginLoader.builder()
+    private StandardContainerLoader convertLoader(final ContainerLoaderConfiguration src) {
+        return StandardContainerLoader.builder()
             .name(src.getName().get())
             .version(src.getVersion().get())
             .build();

@@ -30,13 +30,13 @@ import org.gradle.api.tasks.Input;
 
 import javax.inject.Inject;
 
-public class PluginLoaderConfiguration {
+public class ContainerLoaderConfiguration {
 
     private final Property<String> name;
     private final Property<String> version;
 
     @Inject
-    public PluginLoaderConfiguration(final ObjectFactory objects) {
+    public ContainerLoaderConfiguration(final ObjectFactory objects) {
         this.name = objects.property(String.class);
         this.version = objects.property(String.class);
     }

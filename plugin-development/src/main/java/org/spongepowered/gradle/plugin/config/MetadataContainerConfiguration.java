@@ -82,9 +82,10 @@ public interface MetadataContainerConfiguration {
      *
      * @return the loader
      */
-    @Nested PluginLoaderConfiguration getLoader();
+    @Nested
+    ContainerLoaderConfiguration getLoader();
 
-    default void loader(final Action<? super PluginLoaderConfiguration> action) {
+    default void loader(final Action<? super ContainerLoaderConfiguration> action) {
         Objects.requireNonNull(action, "action").execute(this.getLoader());
     }
 

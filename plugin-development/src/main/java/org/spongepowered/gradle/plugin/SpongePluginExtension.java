@@ -31,7 +31,7 @@ import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.MetadataContainerConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginInheritableConfiguration;
-import org.spongepowered.gradle.plugin.config.PluginLoaderConfiguration;
+import org.spongepowered.gradle.plugin.config.ContainerLoaderConfiguration;
 
 import javax.inject.Inject;
 
@@ -40,7 +40,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
     // Plugin metadata
     private final Property<String> license;
     private final Property<String> mappings;
-    private final PluginLoaderConfiguration loader;
+    private final ContainerLoaderConfiguration loader;
     private final PluginInheritableConfiguration global;
     private final NamedDomainObjectContainer<PluginConfiguration> plugins;
 
@@ -53,7 +53,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
     public SpongePluginExtension(final ObjectFactory factory) {
         this.license = factory.property(String.class);
         this.mappings = factory.property(String.class);
-        this.loader = factory.newInstance(PluginLoaderConfiguration.class);
+        this.loader = factory.newInstance(ContainerLoaderConfiguration.class);
         this.global = factory.newInstance(PluginInheritableConfiguration.class);
         this.plugins = factory.domainObjectContainer(PluginConfiguration.class);
 
@@ -73,7 +73,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
     }
 
     @Override
-    public PluginLoaderConfiguration getLoader() {
+    public ContainerLoaderConfiguration getLoader() {
         return this.loader;
     }
 
