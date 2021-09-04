@@ -71,7 +71,7 @@ class SpongePluginPluginFunctionalTest {
         assertEquals(TaskOutcome.SUCCESS, result.task(":writePluginMetadata").getOutcome());
 
         // Then make sure we actually generated a plugins file
-        ctx.assertOutputEquals("plugins.json", "build/generated/sponge/plugin/META-INF/plugins.json");
+        ctx.assertOutputEquals("sponge_plugins.json", "build/generated/sponge/plugin/META-INF/sponge_plugins.json");
     }
 
     void testBuildFailsWhenMissingProperties(final TestContext ctx) throws IOException {
@@ -98,7 +98,7 @@ class SpongePluginPluginFunctionalTest {
         final BuildResult result = ctx.build("writePluginMetadata");
         assertEquals(TaskOutcome.SUCCESS, result.task(":writePluginMetadata").getOutcome());
 
-        final JsonObject plugins = new Gson().fromJson(ctx.readOutput("build/generated/sponge/plugin/META-INF/plugins.json"), JsonObject.class);
+        final JsonObject plugins = new Gson().fromJson(ctx.readOutput("build/generated/sponge/plugin/META-INF/sponge_plugins.json"), JsonObject.class);
         final JsonObject plugin = plugins.getAsJsonArray("plugins").get(0).getAsJsonObject();
 
         // Compare properties drawn from build
@@ -121,7 +121,7 @@ class SpongePluginPluginFunctionalTest {
         final Path jar = ctx.outputDirectory().resolve("build/libs/complexbuild-1.0-SNAPSHOT.jar");
 
         try (final JarFile jf = new JarFile(jar.toFile())) {
-            assertNotNull(jf.getEntry("META-INF/plugins.json"));
+            assertNotNull(jf.getEntry("META-INF/sponge_plugins.json"));
         }
     }
 
