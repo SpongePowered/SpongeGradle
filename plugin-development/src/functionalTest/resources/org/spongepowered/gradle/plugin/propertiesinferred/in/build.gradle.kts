@@ -12,7 +12,7 @@ description = "An example of properties coming from build configuration"
 
 // This is the 'minimal' build configuration
 sponge {
-    apiVersion("8.0.0")
+    apiVersion("8.0.0-SNAPSHOT")
 
     license("CHANGEME")
     loader {

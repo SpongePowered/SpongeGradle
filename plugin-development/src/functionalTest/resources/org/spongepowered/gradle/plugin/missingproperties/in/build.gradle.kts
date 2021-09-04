@@ -7,7 +7,7 @@ plugins {
 }
 
 sponge {
-    apiVersion("8.0.0")
+    apiVersion("8.0.0-SNAPSHOT")
     loader {
         // name(PluginLoaders.JAVA_PLAIN)
         version("1.0")
