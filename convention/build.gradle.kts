@@ -6,6 +6,7 @@ tasks.withType(GroovyCompile::class).configureEach {
     sourceCompatibility = "1.8"
     targetCompatibility = "1.8"
     options.release.set(indra.javaVersions().target())
+    options.compilerArgs.add("-Xlint:all")
 }
 
 dependencies {

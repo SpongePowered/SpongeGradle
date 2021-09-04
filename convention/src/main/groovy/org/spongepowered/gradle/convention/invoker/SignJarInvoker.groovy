@@ -24,6 +24,8 @@
  */
 package org.spongepowered.gradle.convention.invoker
 
+import org.gradle.api.AntBuilder
+
 class SignJarInvoker {
 
     /**

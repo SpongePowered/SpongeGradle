@@ -39,7 +39,7 @@ import org.gradle.api.Project;
 import org.gradle.api.java.archives.Attributes;
 import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
@@ -85,7 +85,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
             SpongeConventionExtension.class,
             indra,
             target.getExtensions().getByType(LicenseExtension.class),
-            target.getConvention().getPlugin(JavaPluginConvention.class)
+            target.getExtensions().getByType(JavaPluginExtension.class)
         );
 
         this.configurePublicationMetadata(indra);

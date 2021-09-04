@@ -31,7 +31,7 @@ import org.gradle.api.Action;
 import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
-import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.bundling.Jar;
 import org.spongepowered.gradle.common.Constants;
 
@@ -45,10 +45,10 @@ public class SpongeConventionExtension {
     private final Manifest sharedManifest;
 
     @Inject
-    public SpongeConventionExtension(final IndraExtension indra, final LicenseExtension license, final JavaPluginConvention convention) {
+    public SpongeConventionExtension(final IndraExtension indra, final LicenseExtension license, final JavaPluginExtension extension) {
         this.indra = indra;
         this.licenseExtension = license;
-        this.sharedManifest = convention.manifest();
+        this.sharedManifest = extension.manifest();
     }
 
     /**
