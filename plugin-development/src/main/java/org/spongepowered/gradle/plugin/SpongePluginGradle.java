@@ -35,7 +35,6 @@ import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
-import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaLibraryPlugin;
@@ -96,10 +95,6 @@ public final class SpongePluginGradle implements Plugin<Project> {
                         isSnapshot ? apiVersion.substring(0, apiVersion.length() - Constants.Dependencies.SNAPSHOT_SUFFIX.length())
                                    : apiVersion
                     );
-
-                    if (!isSnapshot) { // todo: re-enable once a -SNAPSHOT becomes mandatory
-                        config.getAttributes().attribute(Attribute.of("org.gradle.status", String.class), "release");
-                    }
                 });
             } else {
                 project.getLogger().info("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
