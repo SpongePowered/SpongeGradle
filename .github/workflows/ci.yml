@@ -24,8 +24,9 @@ jobs:
       - name: Check out
         uses: actions/checkout@v2
       - name: Setup JDK 11
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
+          distribution: temurin
           java-version: 11
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
@@ -50,7 +51,7 @@ jobs:
           text: ${{ github.ref }}
           regex: '^refs/heads/(master|(\d+\.(?:\d+\.)x))$' # master or something like 0.8.x or 2.x
 
-    # Then publish if we are all set up to do so
+      # Then publish if we are all set up to do so
       - name: Determine status
         if: "${{ runner.os == 'Linux' }}"
         run: |

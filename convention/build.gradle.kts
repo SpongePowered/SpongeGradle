@@ -12,9 +12,9 @@ tasks.withType(GroovyCompile::class).configureEach {
 dependencies {
     api(project(":spongegradle-plugin-development"))
     implementation(localGroovy())
-    api("net.kyori:indra-common:2.0.5")
-    api("gradle.plugin.org.cadixdev.gradle:licenser:0.6.0")
-    api("com.google.code.gson:gson:2.8.6")
+    api("net.kyori:indra-common:2.0.6")
+    api("gradle.plugin.org.cadixdev.gradle:licenser:0.6.1")
+    api("com.google.code.gson:gson:2.8.9")
 }
 
 indraPluginPublishing {
