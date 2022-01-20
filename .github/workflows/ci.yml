@@ -49,7 +49,7 @@ jobs:
         id: branch-name
         with:
           text: ${{ github.ref }}
-          regex: '^refs/heads/(master|(\d+\.(?:\d+\.)x))$' # master or something like 0.8.x or 2.x
+          regex: '^refs/heads/(master|(\d+\.(?:\d+\.)?x))$' # master or something like 0.8.x or 2.x
 
       # Then publish if we are all set up to do so
       - name: Determine status
