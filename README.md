@@ -2,7 +2,7 @@
 
 A suite of plugins for Sponge plugin developers, and Sponge's own projects.
 
-## `org.spongepowered.gradle.plugin`
+## [`org.spongepowered.gradle.plugin`](https://plugins.gradle.org/plugin/org.spongepowered.gradle.plugin)
 
 The gradle plugin to assist with plugin development.
 
@@ -14,16 +14,20 @@ Quick start: (see [sponge-plugin-template](https://github.com/SpongePowered/spon
 ```kotlin
 plugins {
     // [...any plugins...] 
-    id("org.spongepowered.gradle.plugin") version "1.0.1"
+    id("org.spongepowered.gradle.plugin") version "2.0.1"
 }
 
 sponge {
     apiVersion("8.0.0")
+    loader {
+        name(PluginLoaders.JAVA_PLAIN)
+        version("1.0")
+    }
+    license("CHANGEME")
     plugin("example") {
-        loader(PluginLoaders.JAVA_PLAIN)
         displayName("Example")
         version("0.1")
-        mainClass("org.spongepowered.example.Example")
+        entrypoint("org.spongepowered.example.Example")
         description("Just testing things...")
         links {
             homepage("https://spongepowered.org")
