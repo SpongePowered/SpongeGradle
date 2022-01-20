@@ -67,9 +67,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Objects;
 
 public abstract class SpongeConventionPlugin implements Plugin<Project> {

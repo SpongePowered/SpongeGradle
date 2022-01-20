@@ -41,12 +41,12 @@ class SignJarInvoker {
         final boolean strict
     ) {
         ant.signjar(
-                jar: jar,
-                alias: alias,
-                storepass: storepass,
-                keystore: keystore,
-                verbose: verbose,
-                strict: strict
+            jar: jar,
+            alias: alias,
+            storepass: storepass,
+            keystore: keystore,
+            verbose: verbose,
+            strict: strict
         )
     }
 }
