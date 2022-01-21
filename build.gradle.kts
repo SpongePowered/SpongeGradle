@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "org.spongepowered"
-version = "2.0.1"
+version = "2.0.2-SNAPSHOT"
 
 subprojects {
     plugins.apply {
