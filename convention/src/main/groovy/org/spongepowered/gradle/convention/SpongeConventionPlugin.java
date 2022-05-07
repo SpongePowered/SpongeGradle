@@ -38,6 +38,9 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.java.archives.Attributes;
 import org.gradle.api.java.archives.Manifest;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
+import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginContainer;
@@ -71,6 +74,10 @@ import java.util.HashSet;
 import java.util.Objects;
 
 public abstract class SpongeConventionPlugin implements Plugin<Project> {
+    private static final Logger LOGGER = Logging.getLogger(SpongeConventionPlugin.class);
+
+    private static final String DISABLE_CADIX_LICENSER = "sponge.disableCadixLicenser";
+
     private @MonotonicNonNull Project project;
 
     @Override
@@ -78,17 +85,23 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
         this.project = target;
         this.applyPlugins(target.getPlugins());
         final IndraExtension indra = Indra.extension(target.getExtensions());
+        ExtensionAware licenseExtension = (ExtensionAware) target.getExtensions().findByType(LicenseExtension.class);
+        if (licenseExtension == null) {
+            licenseExtension = (ExtensionAware) target.getObjects().newInstance(EmptyExtension.class);
+        }
         final SpongeConventionExtension sponge = target.getExtensions().create(
             "spongeConvention",
             SpongeConventionExtension.class,
             indra,
-            target.getExtensions().getByType(LicenseExtension.class),
+            licenseExtension,
             target.getExtensions().getByType(JavaPluginExtension.class)
         );
 
         this.configurePublicationMetadata(indra);
         this.configureStandardTasks();
-        this.configureLicenseHeaders(target.getExtensions().getByType(LicenseExtension.class));
+        if (!"true".equals(this.project.findProperty(SpongeConventionPlugin.DISABLE_CADIX_LICENSER))) {
+            this.configureLicenseHeaders(target.getExtensions().getByType(LicenseExtension.class));
+        }
         this.configureJarSigning();
 
         target.getPlugins().withType(SigningPlugin.class, $ ->
@@ -131,7 +144,9 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
 
     private void applyPlugins(final PluginContainer plugins) {
         plugins.apply(IndraPlugin.class);
-        plugins.apply(IndraLicenseHeaderPlugin.class);
+        if (!"true".equals(this.project.findProperty(SpongeConventionPlugin.DISABLE_CADIX_LICENSER))) {
+            plugins.apply(IndraLicenseHeaderPlugin.class);
+        }
         plugins.apply(GitPlugin.class);
     }
 
@@ -207,8 +222,8 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
             try {
                 Files.createDirectories(dest.getParent());
                 Files.createFile(dest, PosixFilePermissions.asFileAttribute(new HashSet<>(Arrays.asList(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE))));
-            } catch (final IOException ignored) {
-                // oh well
+            } catch (final IOException ex) {
+                LOGGER.debug("Failed to create and set permissions on temporary key file", ex);
             }
 
             final byte[] decoded = Base64.getDecoder().decode(keyStoreProp);

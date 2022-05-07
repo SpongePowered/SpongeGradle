@@ -26,7 +26,6 @@ package org.spongepowered.gradle.convention;
 
 import net.kyori.indra.IndraExtension;
 import net.kyori.indra.api.model.ApplyTo;
-import org.cadixdev.gradle.licenser.LicenseExtension;
 import org.gradle.api.Action;
 import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.plugins.ExtensionAware;
@@ -41,11 +40,11 @@ import javax.inject.Inject;
 
 public class SpongeConventionExtension {
     private final IndraExtension indra;
-    private final LicenseExtension licenseExtension;
+    private final ExtensionAware licenseExtension;
     private final Manifest sharedManifest;
 
     @Inject
-    public SpongeConventionExtension(final IndraExtension indra, final LicenseExtension license, final JavaPluginExtension extension) {
+    public SpongeConventionExtension(final IndraExtension indra, final ExtensionAware license, final JavaPluginExtension extension) {
         this.indra = indra;
         this.licenseExtension = license;
         this.sharedManifest = extension.manifest();
@@ -80,7 +79,7 @@ public class SpongeConventionExtension {
      * @return the parameters
      */
     public ExtraPropertiesExtension licenseParameters() {
-        return ((ExtensionAware) this.licenseExtension).getExtensions().getExtraProperties();
+        return this.licenseExtension.getExtensions().getExtraProperties();
     }
 
     /**
@@ -89,7 +88,7 @@ public class SpongeConventionExtension {
      * @param configureAction the action to use to configure license header properties
      */
     public void licenseParameters(final Action<ExtraPropertiesExtension> configureAction) {
-        Objects.requireNonNull(configureAction, "configureAction").execute(((ExtensionAware) this.licenseExtension).getExtensions().getExtraProperties());
+        Objects.requireNonNull(configureAction, "configureAction").execute(this.licenseExtension.getExtensions().getExtraProperties());
     }
 
 
