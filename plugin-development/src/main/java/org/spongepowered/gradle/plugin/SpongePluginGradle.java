@@ -47,6 +47,7 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.process.CommandLineArgumentProvider;
+import org.spongepowered.gradle.ApiVersionCompatibilityRule;
 import org.spongepowered.gradle.common.Constants;
 import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
@@ -89,11 +90,9 @@ public final class SpongePluginGradle implements Plugin<Project> {
                 spongeRuntime.configure(config -> {
                     final String apiVersion = sponge.apiVersion().get();
 
-                    final boolean isSnapshot = apiVersion.endsWith(Constants.Dependencies.SNAPSHOT_SUFFIX);
                     config.getAttributes().attribute(
                         SpongeVersioningMetadataRule.API_TARGET,
-                        isSnapshot ? apiVersion.substring(0, apiVersion.length() - Constants.Dependencies.SNAPSHOT_SUFFIX.length())
-                                   : apiVersion
+                        generateApiReleasedVersion(apiVersion)
                     );
                 });
             } else {
@@ -108,6 +107,23 @@ public final class SpongePluginGradle implements Plugin<Project> {
                 });
             }
         });
+    }
+    private static String generateApiReleasedVersion(final String apiVersion) {
+        final String[] apiSplit = apiVersion.replace("-SNAPSHOT", "").split("\\.");
+        final boolean isSnapshot = apiVersion.contains("-SNAPSHOT");
+
+        // This is to determine if the split api version has at the least a minimum version.
+        final String apiMajor = apiSplit[0];
+        final String minorVersion;
+        if (apiSplit.length > 1) {
+            minorVersion = apiSplit[1];
+        } else {
+            minorVersion = "0";
+        }
+        final int latestReleasedVersion = Math.max(Integer.parseInt(minorVersion) - 1, 0);
+        // And then here, we determine if the api version still has a patch version, to just ignore it.
+        final String latestReleasedApiMinor = isSnapshot ? String.valueOf(latestReleasedVersion) : minorVersion;
+        return apiMajor + "." + latestReleasedApiMinor + ".0";
     }
 
     private void addApiDependency(final SpongePluginExtension sponge) {
@@ -140,6 +156,7 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
     private NamedDomainObjectProvider<Configuration> addRuntimeDependency(final SpongePluginExtension sponge) {
         this.project.getDependencies().getComponents().withModule("org.spongepowered:spongevanilla", SpongeVersioningMetadataRule.class);
+        this.project.getDependencies().getAttributesSchema().attribute(SpongeVersioningMetadataRule.API_TARGET).getCompatibilityRules().add(ApiVersionCompatibilityRule.class);
         return this.project.getConfigurations().register("spongeRuntime", conf -> {
             conf.defaultDependencies(a -> {
                 final Dependency dep = this.project.getDependencies().create(
