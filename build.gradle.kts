@@ -1,11 +1,11 @@
+import com.diffplug.gradle.spotless.SpotlessExtension
 import net.kyori.indra.IndraExtension
 import net.kyori.indra.gradle.IndraPluginPublishingExtension
-import org.cadixdev.gradle.licenser.LicenseExtension
 
 plugins {
     id("com.gradle.plugin-publish") apply false
     id("net.kyori.indra") apply false
-    id("net.kyori.indra.license-header") apply false
+    id("com.diffplug.spotless") apply false
     id("net.kyori.indra.publishing.gradle-plugin") apply false
 }
 
@@ -17,7 +17,7 @@ subprojects {
         apply(JavaGradlePluginPlugin::class)
         apply("com.gradle.plugin-publish")
         apply("net.kyori.indra")
-        apply("net.kyori.indra.license-header")
+        apply("com.diffplug.spotless")
         apply("net.kyori.indra.publishing.gradle-plugin")
         apply("net.kyori.indra.git")
     }
@@ -77,17 +77,28 @@ subprojects {
         }
     }
 
-    extensions.configure(LicenseExtension::class) {
+    extensions.configure(SpotlessExtension::class) {
         val name: String by project
         val organization: String by project
         val projectUrl: String by project
 
-        properties {
-            this["name"] = name
-            this["organization"] = organization
-            this["url"] = projectUrl
+        java {
+            val lineSep = System.lineSeparator()
+            val contents = rootProject.file("HEADER.txt")
+                .readLines().asSequence()
+                .map { (" * " + it).trimEnd() }
+                .joinToString(prefix = "/*${lineSep}", postfix = "${lineSep} */", separator = lineSep)
+              
+            val formattedContents = groovy.text.SimpleTemplateEngine()
+                .createTemplate(contents)
+                .make(mutableMapOf(
+                    "name" to name,
+                    "organization" to organization,
+                    "url" to projectUrl
+                ))
+            
+            licenseHeader(formattedContents.toString())
         }
-        header(rootProject.file("HEADER.txt"))
     }
 
     extensions.configure(SigningExtension::class) {
