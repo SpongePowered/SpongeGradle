@@ -47,7 +47,6 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.process.CommandLineArgumentProvider;
-import org.spongepowered.gradle.ApiVersionCompatibilityRule;
 import org.spongepowered.gradle.common.Constants;
 import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;

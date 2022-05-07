@@ -39,11 +39,11 @@ import java.lang.annotation.Target;
  * A <em>meta-annotation</em> containing our test configuration.
  */
 @GradleFunctionalTest
-@GradleParameters({"--warning-mode", "all", "--stacktrace"})
+@GradleParameters({"--warning-mode", "fail", "--stacktrace"})
 @TestVariant(gradleVersion = "6.9.2")
-@TestVariant(gradleVersion = "7.3.3")
+@TestVariant(gradleVersion = "7.4.2")
 @TestVariant(gradleVersion = "6.9.2", extraArguments = "--configuration-cache")
-@TestVariant(gradleVersion = "7.3.3", extraArguments = "--configuration-cache")
+@TestVariant(gradleVersion = "7.4.2", extraArguments = "--configuration-cache")
 @TestVariantResource(value = "/injected-gradle-versions", optional = true)
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
