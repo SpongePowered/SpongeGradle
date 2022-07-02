@@ -35,7 +35,7 @@ subprojects {
     }
 
     dependencies {
-        "compileOnlyApi"("org.checkerframework:checker-qual:3.22.1")
+        "compileOnlyApi"("org.checkerframework:checker-qual:3.22.2")
     }
 
     val indraGit = extensions.getByType(net.kyori.indra.git.IndraGitExtension::class)
