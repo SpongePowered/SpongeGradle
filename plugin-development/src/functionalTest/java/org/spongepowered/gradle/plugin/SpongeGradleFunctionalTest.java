@@ -41,9 +41,9 @@ import java.lang.annotation.Target;
 @GradleFunctionalTest
 @GradleParameters({"--warning-mode", "fail", "--stacktrace"})
 @TestVariant(gradleVersion = "6.9.2")
-@TestVariant(gradleVersion = "7.4.2")
+@TestVariant(gradleVersion = "7.5")
 @TestVariant(gradleVersion = "6.9.2", extraArguments = "--configuration-cache")
-@TestVariant(gradleVersion = "7.4.2", extraArguments = "--configuration-cache")
+@TestVariant(gradleVersion = "7.5", extraArguments = "--configuration-cache")
 @TestVariantResource(value = "/injected-gradle-versions", optional = true)
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

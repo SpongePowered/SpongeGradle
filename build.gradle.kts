@@ -51,6 +51,10 @@ subprojects {
         )
     }
 
+    tasks.named("publishPlugins") {
+        onlyIf { net.kyori.indra.util.Versioning.isRelease(project) }
+    }
+
     extensions.configure(IndraExtension::class) {
         github("SpongePowered", "SpongeGradle") {
             ci(true)
