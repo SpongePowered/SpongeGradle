@@ -14,7 +14,7 @@ dependencies {
     implementation(localGroovy())
     api("net.kyori:indra-common:2.1.1")
     api("gradle.plugin.org.cadixdev.gradle:licenser:0.6.1")
-    api("com.google.code.gson:gson:2.9.0")
+    api("com.google.code.gson:gson:2.9.1")
 }
 
 indraPluginPublishing {
