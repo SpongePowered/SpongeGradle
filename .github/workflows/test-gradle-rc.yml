@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    uses: SpongePowered/.github/.github/workflows/shared-codeql-analysis.yaml@master
+    uses: SpongePowered/.github/.github/workflows/shared-test-gradle-rc.yaml@master
     with:
       gradle_version: "${{ inputs.gradle-version }}"
       injected_version_path: 'plugin-development/src/functionalTest/resources/'
