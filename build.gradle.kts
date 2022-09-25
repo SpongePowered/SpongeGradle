@@ -90,6 +90,7 @@ subprojects {
         }
 
         java {
+            target("src/*/java/**/*.java", "src/*/groovy/**/*.java")
             standardOptions()
             formatAnnotations()
             importOrderFile(rootProject.file(".spotless/sponge.importorder"))
@@ -98,6 +99,7 @@ subprojects {
         project.plugins.withId("groovy") {
             groovy {
                 standardOptions()
+                excludeJava()
                 importOrderFile(rootProject.file(".spotless/sponge.importorder"))
             }
         }

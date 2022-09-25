@@ -25,7 +25,7 @@
 package org.spongepowered.gradle.convention;
 
 /**
- * Empty extension to act as a substitute
+ * Empty extension to act as a substitute.
  */
 public class EmptyExtension {
 

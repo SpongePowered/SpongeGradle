@@ -1,35 +1,30 @@
+plugins {
+    `jvm-test-suite`
+}
+
 dependencies {
     implementation("org.spongepowered:plugin-meta:0.8.0")
     // implementation("org.spongepowered:vanillagradle:0.2-SNAPSHOT")
     // implementation("gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.10")
 }
 
-val functionalTest by sourceSets.creating
-
-configurations.named(functionalTest.compileClasspathConfigurationName) { extendsFrom(configurations.testCompileClasspath.get()) }
-configurations.named(functionalTest.runtimeClasspathConfigurationName) { extendsFrom(configurations.testRuntimeClasspath.get()) }
-
-dependencies {
-    functionalTest.implementationConfigurationName("net.kyori:mammoth-test:1.2.0")
-    functionalTest.implementationConfigurationName("com.google.code.gson:gson:2.9.1")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.9.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.0")
+testing.suites.withType(JvmTestSuite::class).configureEach {
+    useJUnitJupiter("5.9.0")
 }
 
-val functionalTestTask = tasks.register("functionalTest", Test::class) {
-    description = "Run functional tests"
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    testClassesDirs = functionalTest.output.classesDirs
-    classpath = functionalTest.runtimeClasspath
-    mustRunAfter(tasks.test)
+val functionalTest = testing.suites.register("functionalTest", JvmTestSuite::class) {
+    dependencies {
+        implementation(project)
+        implementation("net.kyori:mammoth-test:1.2.0")
+        implementation("com.google.code.gson:gson:2.9.1")
+    }
 }
 
 tasks.check {
-    dependsOn(functionalTestTask)
+    dependsOn(functionalTest)
 }
 
-gradlePlugin.testSourceSets(functionalTest)
+gradlePlugin.testSourceSets(functionalTest.get().sources)
 
 indraPluginPublishing {
     plugin(
