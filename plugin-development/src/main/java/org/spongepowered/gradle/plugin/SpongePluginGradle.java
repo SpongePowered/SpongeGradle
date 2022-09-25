@@ -25,7 +25,9 @@
 package org.spongepowered.gradle.plugin;
 
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -34,9 +36,12 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
+import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.initialization.Settings;
+import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.provider.Property;
@@ -57,12 +62,28 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 
-public final class SpongePluginGradle implements Plugin<Project> {
+public final class SpongePluginGradle implements Plugin<Object> {
 
     private @MonotonicNonNull Project project;
 
     @Override
-    public void apply(final Project project) {
+    public void apply(final @NonNull Object target) {
+        if (target instanceof Project) {
+            this.applyToProject((Project) target);
+        } else if (target instanceof Settings) {
+            this.applyToSettings((Settings) target);
+        } else if (target instanceof Gradle) {
+             // no-op
+        } else {
+            throw new GradleException(
+                    "Sponge gradle plugin target '" + target
+                            + "' is of unexpected type " + target.getClass()
+                            + ", expecting a Project or Settings instance"
+            );
+        }
+    }
+
+    public void applyToProject(final Project project) {
         this.project = project;
 
         project.getLogger().lifecycle("SpongePowered Plugin 'GRADLE' Toolset Version '{}'", Constants.VERSION);
@@ -73,6 +94,12 @@ public final class SpongePluginGradle implements Plugin<Project> {
 
         // final MinecraftExtension minecraft = project.getExtensions().getByType(MinecraftExtension.class);
         final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class);
+
+        // Only inject repositories if the project does not have sponge repos from other sources
+        sponge.injectRepositories().convention(
+            !project.getGradle().getPlugins().hasPlugin(SpongePluginGradle.class)
+                && !project.getGradle().getPlugins().hasPlugin("org.spongepowered.gradle.repository")
+        );
 
         this.configurePluginMetaGeneration(sponge);
 
@@ -100,13 +127,25 @@ public final class SpongePluginGradle implements Plugin<Project> {
                 runServer.configure(t -> t.setEnabled(false));
             }
             if (sponge.injectRepositories().get()) {
-                project.getRepositories().maven(r -> {
-                    r.setUrl(Constants.Repositories.SPONGE);
-                    r.setName("sponge");
-                });
+                SpongePluginGradle.addRepository(project.getRepositories());
+            } else {
+                project.getLogger().info("SpongeGradle: Injecting repositories was disabled, not adding the Sponge repository at the project level");
             }
         });
     }
+
+    private void applyToSettings(final Settings settings) {
+       SpongePluginGradle.addRepository(settings.getDependencyResolutionManagement().getRepositories());
+       settings.getGradle().getPlugins().apply(SpongePluginGradle.class);
+    }
+
+    private static void addRepository(final RepositoryHandler handler) {
+        handler.maven(r -> {
+            r.setUrl(Constants.Repositories.SPONGE);
+            r.setName("spongeAll");
+        });
+    }
+
     private static String generateApiReleasedVersion(final String apiVersion) {
         final String[] apiSplit = apiVersion.replace("-SNAPSHOT", "").split("\\.");
         final boolean isSnapshot = apiVersion.contains("-SNAPSHOT");

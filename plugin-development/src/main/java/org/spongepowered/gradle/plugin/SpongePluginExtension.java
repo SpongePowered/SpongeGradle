@@ -59,7 +59,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
 
         this.platform = factory.property(SpongePlatform.class).convention(SpongePlatform.VANILLA);
         this.apiVersion = factory.property(String.class);
-        this.injectRepositories = factory.property(Boolean.class).convention(true);
+        this.injectRepositories = factory.property(Boolean.class);
     }
 
     @Override
