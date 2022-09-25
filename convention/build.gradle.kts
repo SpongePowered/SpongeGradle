@@ -9,8 +9,8 @@ tasks.withType(GroovyCompile::class).configureEach {
 dependencies {
     api(project(":spongegradle-plugin-development"))
     implementation(localGroovy())
-    api("net.kyori:indra-common:2.1.1")
-    api("gradle.plugin.org.cadixdev.gradle:licenser:0.6.1")
+    api("net.kyori:indra-common:2.2.0")
+    api("net.kyori:indra-licenser-spotless:2.2.0")
     api("com.google.code.gson:gson:2.9.1")
 }
 

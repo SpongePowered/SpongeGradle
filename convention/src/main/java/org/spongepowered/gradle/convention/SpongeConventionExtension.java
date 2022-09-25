@@ -28,9 +28,12 @@ import net.kyori.indra.IndraExtension;
 import net.kyori.indra.api.model.ApplyTo;
 import org.gradle.api.Action;
 import org.gradle.api.java.archives.Manifest;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.ExtraPropertiesExtension;
 import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.api.provider.MapProperty;
+import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.bundling.Jar;
 import org.spongepowered.gradle.common.Constants;
 
@@ -40,13 +43,21 @@ import javax.inject.Inject;
 
 public class SpongeConventionExtension {
     private final IndraExtension indra;
-    private final ExtensionAware licenseExtension;
+
+    private final ExtensionAware licensePropertyExtension;
     private final Manifest sharedManifest;
 
     @Inject
-    public SpongeConventionExtension(final IndraExtension indra, final ExtensionAware license, final JavaPluginExtension extension) {
+    public SpongeConventionExtension(
+        final ObjectFactory objects,
+        final ProviderFactory providers,
+        final IndraExtension indra,
+        final MapProperty<String, Object> licenseProperties,
+        final JavaPluginExtension extension
+    ) {
         this.indra = indra;
-        this.licenseExtension = license;
+        this.licensePropertyExtension = (ExtensionAware) objects.newInstance(EmptyExtension.class);
+        licenseProperties.putAll(providers.provider(() -> this.licensePropertyExtension.getExtensions().getExtraProperties().getProperties()));
         this.sharedManifest = extension.manifest();
     }
 
@@ -79,7 +90,7 @@ public class SpongeConventionExtension {
      * @return the parameters
      */
     public ExtraPropertiesExtension licenseParameters() {
-        return this.licenseExtension.getExtensions().getExtraProperties();
+        return this.licensePropertyExtension.getExtensions().getExtraProperties();
     }
 
     /**
@@ -88,9 +99,8 @@ public class SpongeConventionExtension {
      * @param configureAction the action to use to configure license header properties
      */
     public void licenseParameters(final Action<ExtraPropertiesExtension> configureAction) {
-        Objects.requireNonNull(configureAction, "configureAction").execute(this.licenseExtension.getExtensions().getExtraProperties());
+        Objects.requireNonNull(configureAction, "configureAction").execute(this.licensePropertyExtension.getExtensions().getExtraProperties());
     }
-
 
     /**
      * Get a manifest that will be included in all {@link Jar} tasks.
@@ -102,7 +112,6 @@ public class SpongeConventionExtension {
     public Manifest sharedManifest() {
         return this.sharedManifest;
     }
-
 
     /**
      * Configure a manifest that will be included in all {@link Jar} tasks.

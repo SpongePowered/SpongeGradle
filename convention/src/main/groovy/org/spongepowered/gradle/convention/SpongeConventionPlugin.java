@@ -26,11 +26,11 @@ package org.spongepowered.gradle.convention;
 
 import net.kyori.indra.Indra;
 import net.kyori.indra.IndraExtension;
-import net.kyori.indra.IndraLicenseHeaderPlugin;
 import net.kyori.indra.IndraPlugin;
 import net.kyori.indra.git.GitPlugin;
 import net.kyori.indra.git.IndraGitExtension;
-import org.cadixdev.gradle.licenser.LicenseExtension;
+import net.kyori.indra.licenser.spotless.IndraSpotlessLicenserExtension;
+import net.kyori.indra.licenser.spotless.IndraSpotlessLicenserPlugin;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.gradle.api.GradleException;
@@ -40,10 +40,10 @@ import org.gradle.api.java.archives.Attributes;
 import org.gradle.api.java.archives.Manifest;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
-import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -76,7 +76,7 @@ import java.util.Objects;
 public abstract class SpongeConventionPlugin implements Plugin<Project> {
     private static final Logger LOGGER = Logging.getLogger(SpongeConventionPlugin.class);
 
-    private static final String DISABLE_CADIX_LICENSER = "sponge.disableCadixLicenser";
+    private static final String DISABLE_CADIX_LICENSER = "sponge.disableLicenser";
 
     private @MonotonicNonNull Project project;
 
@@ -85,22 +85,25 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
         this.project = target;
         this.applyPlugins(target.getPlugins());
         final IndraExtension indra = Indra.extension(target.getExtensions());
-        ExtensionAware licenseExtension = (ExtensionAware) target.getExtensions().findByType(LicenseExtension.class);
-        if (licenseExtension == null) {
-            licenseExtension = (ExtensionAware) target.getObjects().newInstance(EmptyExtension.class);
+        IndraSpotlessLicenserExtension licenserExtension = target.getExtensions().findByType(IndraSpotlessLicenserExtension.class);
+        MapProperty<String, Object> licenseProperties;
+        if (licenserExtension == null) {
+            licenseProperties = project.getObjects().mapProperty(String.class, Object.class);
+        } else {
+            licenseProperties = licenserExtension.properties();
         }
         final SpongeConventionExtension sponge = target.getExtensions().create(
             "spongeConvention",
             SpongeConventionExtension.class,
             indra,
-            licenseExtension,
+            licenseProperties,
             target.getExtensions().getByType(JavaPluginExtension.class)
         );
 
         this.configurePublicationMetadata(indra);
         this.configureStandardTasks();
         if (!"true".equals(this.project.findProperty(SpongeConventionPlugin.DISABLE_CADIX_LICENSER))) {
-            this.configureLicenseHeaders(target.getExtensions().getByType(LicenseExtension.class));
+            this.configureLicenseHeaders(target.getExtensions().getByType(IndraSpotlessLicenserExtension.class));
         }
         this.configureJarSigning();
 
@@ -145,7 +148,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
     private void applyPlugins(final PluginContainer plugins) {
         plugins.apply(IndraPlugin.class);
         if (!"true".equals(this.project.findProperty(SpongeConventionPlugin.DISABLE_CADIX_LICENSER))) {
-            plugins.apply(IndraLicenseHeaderPlugin.class);
+            plugins.apply(IndraSpotlessLicenserPlugin.class);
         }
         plugins.apply(GitPlugin.class);
     }
@@ -171,11 +174,9 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
 
     }
 
-    private void configureLicenseHeaders(final LicenseExtension licenses) {
-        licenses.setHeader(this.project.getRootProject().file(ConventionConstants.Locations.LICENSE_HEADER));
-        licenses.properties(ext -> {
-            ext.set("name", this.project.getRootProject().getName());
-        });
+    private void configureLicenseHeaders(final IndraSpotlessLicenserExtension licenses) {
+        licenses.licenseHeaderFile(this.project.getRootProject().file(ConventionConstants.Locations.LICENSE_HEADER));
+        licenses.property("name", this.project.getRootProject().getName());
     }
 
     private void configureSigning(final SigningExtension extension) {
