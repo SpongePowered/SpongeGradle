@@ -50,6 +50,7 @@ class SpongeRepositoryExtensionImpl implements SpongeRepositoryExtension {
     @Override
     public MavenArtifactRepository all() {
         return this.repositories.maven(repo -> {
+            repo.setName("spongeAll");
             repo.setUrl(SPONGE_MAVEN_PUBLIC);
         });
     }
@@ -57,6 +58,7 @@ class SpongeRepositoryExtensionImpl implements SpongeRepositoryExtension {
     @Override
     public MavenArtifactRepository releases() {
         return this.repositories.maven(repo -> {
+            repo.setName("spongeReleases");
             repo.setUrl(SPONGE_MAVEN_RELEASES);
             repo.mavenContent(MavenRepositoryContentDescriptor::releasesOnly);
         });
@@ -65,6 +67,7 @@ class SpongeRepositoryExtensionImpl implements SpongeRepositoryExtension {
     @Override
     public MavenArtifactRepository snapshots() {
         return this.repositories.maven(repo -> {
+            repo.setName("spongeSnapshots");
             repo.setUrl(SPONGE_MAVEN_SNAPSHOTS);
             repo.mavenContent(MavenRepositoryContentDescriptor::snapshotsOnly);
         });
