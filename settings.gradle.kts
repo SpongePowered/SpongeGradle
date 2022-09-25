@@ -18,7 +18,7 @@ pluginManagement {
 
 rootProject.name = "SpongeGradle"
 
-sequenceOf("convention", "plugin-development").forEach {
+sequenceOf("convention", "plugin-development", "repository").forEach {
     include(it)
     findProject(":$it")?.name = "${rootProject.name.toLowerCase(java.util.Locale.ROOT)}-$it"
 }
