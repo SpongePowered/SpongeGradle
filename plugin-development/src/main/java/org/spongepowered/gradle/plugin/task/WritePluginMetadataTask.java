@@ -65,7 +65,7 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
     public WritePluginMetadataTask() {
         this.setGroup(Constants.TASK_GROUP);
     }
-    
+
     @Nested
     public abstract Property<MetadataContainerConfiguration> getSourceContainer();
 

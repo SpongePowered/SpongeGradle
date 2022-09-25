@@ -6,11 +6,13 @@ pluginManagement {
     }
 
     plugins {
-        val indraVersion = "2.1.1"
-        id("com.gradle.plugin-publish") version "0.21.0"
-        id("com.diffplug.spotless") version "6.10.0"
+        val indraVersion = "2.2.0"
+        id("com.gradle.plugin-publish") version "1.0.0"
+        id("com.diffplug.spotless") version "6.11.0"
         id("net.kyori.indra") version indraVersion
+        id("net.kyori.indra.crossdoc") version indraVersion
         id("net.kyori.indra.publishing.gradle-plugin") version indraVersion
+        id("net.kyori.indra.licenser.spotless") version indraVersion
     }
 }
 

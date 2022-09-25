@@ -1,11 +1,16 @@
+import com.diffplug.gradle.spotless.FormatExtension
 import com.diffplug.gradle.spotless.SpotlessExtension
 import net.kyori.indra.IndraExtension
+import net.kyori.indra.crossdoc.CrossdocExtension
 import net.kyori.indra.gradle.IndraPluginPublishingExtension
+import net.kyori.indra.licenser.spotless.IndraSpotlessLicenserExtension
 
 plugins {
     id("com.gradle.plugin-publish") apply false
     id("net.kyori.indra") apply false
     id("com.diffplug.spotless") apply false
+    id("net.kyori.indra.crossdoc") apply false
+    id("net.kyori.indra.licenser.spotless") apply false
     id("net.kyori.indra.publishing.gradle-plugin") apply false
 }
 
@@ -17,18 +22,13 @@ subprojects {
         apply(JavaGradlePluginPlugin::class)
         apply("com.gradle.plugin-publish")
         apply("net.kyori.indra")
-        apply("com.diffplug.spotless")
+        apply("net.kyori.indra.crossdoc")
+        apply("net.kyori.indra.licenser.spotless")
         apply("net.kyori.indra.publishing.gradle-plugin")
         apply("net.kyori.indra.git")
     }
 
     repositories {
-        mavenLocal {
-            mavenContent {
-                snapshotsOnly()
-                includeGroup("net.kyori")
-            }
-        }
         maven("https://repo.spongepowered.org/repository/maven-public/") {
             name = "sponge"
         }
@@ -82,27 +82,38 @@ subprojects {
     }
 
     extensions.configure(SpotlessExtension::class) {
+        fun FormatExtension.standardOptions() {
+            endWithNewline()
+            indentWithSpaces(4)
+            trimTrailingWhitespace()
+            this.toggleOffOn("@formatter:off", "@formatter:on")
+        }
+
+        java {
+            standardOptions()
+            formatAnnotations()
+        }
+
+        project.plugins.withId("groovy") {
+            groovy {
+                standardOptions()
+            }
+        }
+
+        kotlinGradle {
+            standardOptions()
+        }
+    }
+
+    extensions.configure(IndraSpotlessLicenserExtension::class) {
         val name: String by project
         val organization: String by project
         val projectUrl: String by project
 
-        java {
-            val lineSep = System.lineSeparator()
-            val contents = rootProject.file("HEADER.txt")
-                .readLines().asSequence()
-                .map { (" * " + it).trimEnd() }
-                .joinToString(prefix = "/*${lineSep}", postfix = "${lineSep} */", separator = lineSep)
-              
-            val formattedContents = groovy.text.SimpleTemplateEngine()
-                .createTemplate(contents)
-                .make(mutableMapOf(
-                    "name" to name,
-                    "organization" to organization,
-                    "url" to projectUrl
-                ))
-            
-            licenseHeader(formattedContents.toString())
-        }
+        licenseHeaderFile(rootProject.file("HEADER.txt"))
+        property("name", name)
+        property("organization", organization)
+        property("url", projectUrl)
     }
 
     extensions.configure(SigningExtension::class) {
@@ -123,5 +134,13 @@ subprojects {
     extensions.findByType(IndraPluginPublishingExtension::class)?.apply {
         pluginIdBase("$group.gradle")
         website("https://spongepowered.org/")
+    }
+
+    extensions.configure(CrossdocExtension::class) {
+        baseUrl(providers.gradleProperty("javadocLinkRoot"))
+        nameBasedDocumentationUrlProvider {
+            projectNamePrefix.set("spongegradle-")
+            lowercaseProjectName.set(true)
+        }
     }
 }
