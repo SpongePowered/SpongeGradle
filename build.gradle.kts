@@ -92,11 +92,13 @@ subprojects {
         java {
             standardOptions()
             formatAnnotations()
+            importOrderFile(rootProject.file(".spotless/sponge.importorder"))
         }
 
         project.plugins.withId("groovy") {
             groovy {
                 standardOptions()
+                importOrderFile(rootProject.file(".spotless/sponge.importorder"))
             }
         }
 

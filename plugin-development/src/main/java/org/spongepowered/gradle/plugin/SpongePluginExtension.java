@@ -28,10 +28,10 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.spongepowered.gradle.common.SpongePlatform;
+import org.spongepowered.gradle.plugin.config.ContainerLoaderConfiguration;
 import org.spongepowered.gradle.plugin.config.MetadataContainerConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginInheritableConfiguration;
-import org.spongepowered.gradle.plugin.config.ContainerLoaderConfiguration;
 
 import javax.inject.Inject;
 
