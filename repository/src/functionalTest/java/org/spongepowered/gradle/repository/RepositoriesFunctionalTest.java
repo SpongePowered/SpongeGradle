@@ -28,14 +28,18 @@ import net.kyori.mammoth.test.GradleFunctionalTest;
 import net.kyori.mammoth.test.TestContext;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.spongepowered.gradle.build.FunctionalTestDisplayNameGenerator;
+import org.spongepowered.gradle.build.SpongeGradleFunctionalTest;
 
 import java.io.IOException;
 
 // These all essentially just test evaluation of the buildscript
+
+@DisplayNameGeneration(FunctionalTestDisplayNameGenerator.class)
 public class RepositoriesFunctionalTest {
 
-    @GradleFunctionalTest
-    @DisplayName("project")
+    @SpongeGradleFunctionalTest
     void testProject(final TestContext ctx) throws IOException {
         ctx.copyInput("build.gradle");
         ctx.copyInput("settings.gradle");
@@ -43,17 +47,14 @@ public class RepositoriesFunctionalTest {
         ctx.build("help");
     }
 
-    @GradleFunctionalTest
-    @DisplayName("settings")
+    @SpongeGradleFunctionalTest
     void testSettings(final TestContext ctx) throws IOException {
         ctx.copyInput("settings.gradle");
 
         ctx.build("help");
     }
 
-    @GradleFunctionalTest
-    @Disabled
-    @DisplayName("kotlinProject")
+    @SpongeGradleFunctionalTest
     void testKotlinProject(final TestContext ctx) throws IOException {
         ctx.copyInput("build.gradle.kts");
         ctx.copyInput("settings.gradle.kts");
@@ -61,9 +62,7 @@ public class RepositoriesFunctionalTest {
         ctx.build("help");
     }
 
-    @GradleFunctionalTest
-    @Disabled
-    @DisplayName("kotlinSettings")
+    @SpongeGradleFunctionalTest
     void testKotlinSettings(final TestContext ctx) throws IOException {
         ctx.copyInput("settings.gradle.kts");
 

@@ -19,13 +19,43 @@ version = "2.0.2"
 
 subprojects {
     plugins.apply {
-        apply(JavaGradlePluginPlugin::class)
-        apply("com.gradle.plugin-publish")
         apply("net.kyori.indra")
-        apply("net.kyori.indra.crossdoc")
         apply("net.kyori.indra.licenser.spotless")
-        apply("net.kyori.indra.publishing.gradle-plugin")
         apply("net.kyori.indra.git")
+    }
+
+    if (project.name != "spongegradle-testlib") {
+        plugins.apply {
+            apply(JavaGradlePluginPlugin::class)
+            apply("com.gradle.plugin-publish")
+            apply("net.kyori.indra.publishing.gradle-plugin")
+            apply("net.kyori.indra.crossdoc")
+        }
+
+        tasks.named("publishPlugins") {
+            onlyIf { net.kyori.indra.util.Versioning.isRelease(project) }
+        }
+
+        extensions.configure(TestingExtension::class) {
+            suites.withType(JvmTestSuite::class).configureEach {
+                useJUnitJupiter("5.9.0")
+            }
+
+            val functionalTest = suites.register("functionalTest", JvmTestSuite::class) {
+                dependencies {
+                    implementation(project)
+                    implementation(project(":spongegradle-testlib"))
+                    implementation("com.google.code.gson:gson:2.9.1")
+                }
+                testType.set(TestSuiteType.FUNCTIONAL_TEST)
+            }
+
+            tasks.named("check") {
+                dependsOn(functionalTest)
+            }
+
+            extensions.getByType(GradlePluginDevelopmentExtension::class).testSourceSets(functionalTest.get().sources)
+        }
     }
 
     repositories {
@@ -49,10 +79,6 @@ subprojects {
             "Implementation-Version" to project.version,
             "Implementation-Vendor" to "SpongePowered"
         )
-    }
-
-    tasks.named("publishPlugins") {
-        onlyIf { net.kyori.indra.util.Versioning.isRelease(project) }
     }
 
     extensions.configure(IndraExtension::class) {
@@ -120,7 +146,7 @@ subprojects {
         property("url", projectUrl)
     }
 
-    extensions.configure(SigningExtension::class) {
+    extensions.findByType(SigningExtension::class)?.apply {
         val spongeSigningKey = project.findProperty("spongeSigningKey") as String?
         val spongeSigningPassword = project.findProperty("spongeSigningPassword") as String?
         if (spongeSigningKey != null && spongeSigningPassword != null) {
@@ -140,7 +166,7 @@ subprojects {
         website("https://spongepowered.org/")
     }
 
-    extensions.configure(CrossdocExtension::class) {
+    extensions.findByType(CrossdocExtension::class)?.apply {
         baseUrl(providers.gradleProperty("javadocLinkRoot"))
         nameBasedDocumentationUrlProvider {
             projectNamePrefix.set("spongegradle-")

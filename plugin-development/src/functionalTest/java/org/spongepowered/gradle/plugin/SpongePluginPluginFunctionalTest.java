@@ -37,6 +37,7 @@ import org.gradle.testkit.runner.UnexpectedBuildFailure;
 import org.gradle.testkit.runner.UnexpectedBuildSuccess;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
+import org.spongepowered.gradle.build.SpongeGradleFunctionalTest;
 
 import java.io.IOException;
 import java.nio.file.Path;

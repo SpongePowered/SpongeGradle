@@ -1,5 +1,5 @@
 /*
- * This file is part of spongegradle-plugin-development, licensed under the MIT License (MIT).
+ * This file is part of spongegradle-testlib, licensed under the MIT License (MIT).
  *
  * Copyright (c) SpongePowered <https://www.spongepowered.org>
  * Copyright (c) contributors
@@ -22,31 +22,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.gradle.plugin;
+package org.spongepowered.gradle.build;
 
-import net.kyori.mammoth.test.GradleFunctionalTest;
-import net.kyori.mammoth.test.GradleParameters;
-import net.kyori.mammoth.test.TestVariant;
-import net.kyori.mammoth.test.TestVariantResource;
+import org.junit.jupiter.api.DisplayNameGenerator;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 
 /**
- * A <em>meta-annotation</em> containing our test configuration.
+ * An extension of the standard display name generator that only uses method names for test display names.
+ *
+ * <p>This is better suited for test directory selection.</p>
  */
-@GradleFunctionalTest
-@GradleParameters({"--warning-mode", "fail", "--stacktrace"})
-@TestVariant(gradleVersion = "6.9.2")
-@TestVariant(gradleVersion = "7.5")
-@TestVariant(gradleVersion = "6.9.2", extraArguments = "--configuration-cache")
-@TestVariant(gradleVersion = "7.5", extraArguments = "--configuration-cache")
-@TestVariantResource(value = "/injected-gradle-versions", optional = true)
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.ANNOTATION_TYPE, ElementType.METHOD})
-public @interface SpongeGradleFunctionalTest {
+public final class FunctionalTestDisplayNameGenerator extends DisplayNameGenerator.Standard {
+
+    @Override
+    public String generateDisplayNameForMethod(final Class<?> testClass, final Method testMethod) {
+        final String name = testMethod.getName();
+        if (name.startsWith("test") && name.length() > 5) {
+            return Character.toLowerCase(name.charAt(4)) + name.substring(5);
+        } else {
+            return name;
+        }
+    }
+
 }
