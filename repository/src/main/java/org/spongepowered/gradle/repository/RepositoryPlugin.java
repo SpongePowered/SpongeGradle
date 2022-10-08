@@ -24,50 +24,52 @@
  */
 package org.spongepowered.gradle.repository;
 
-import org.gradle.api.GradleException;
-import org.gradle.api.Plugin;
+import net.kyori.mammoth.ProjectOrSettingsPlugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.initialization.Settings;
-import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.tasks.TaskContainer;
+import org.gradle.util.GradleVersion;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class RepositoryPlugin implements Plugin<Object> {
+public class RepositoryPlugin implements ProjectOrSettingsPlugin {
+
+    private static final GradleVersion MINIMUM_VERSION = GradleVersion.version("7.4"); // when kts codegen was added for extensions on repositories
 
     @Override
-    public void apply(final @NotNull Object target) {
-        if (target instanceof Project) {
-            this.applyToProject((Project) target);
-        } else if (target instanceof Settings) {
-            this.applyToSettings((Settings) target);
-        } else if (target instanceof Gradle) {
-            // no-op
-        } else {
-            throw new GradleException(
-                    "Sponge repository plugin target '" + target
-                            + "' is of unexpected type " + target.getClass()
-                            + ", expecting a Project or Settings instance"
-            );
-        }
+    public void applyToProject(
+        final @NotNull Project target,
+        final @NotNull PluginContainer plugins,
+        final @NotNull ExtensionContainer extensions,
+        final @NotNull TaskContainer tasks
+    ) {
+        this.registerExtension(target.getRepositories());
     }
 
-    private void applyToProject(final Project project) {
-        this.registerExtension(project.getRepositories());
-    }
-
-    private void applyToSettings(final Settings settings) {
-        settings.getGradle().getPlugins().apply(RepositoryPlugin.class);
-        this.registerExtension(settings.getDependencyResolutionManagement().getRepositories());
+    @Override
+    public void applyToSettings(
+        final @NotNull Settings target,
+        final @NotNull PluginContainer plugins,
+        final @NotNull ExtensionContainer extensions
+    ) {
+        this.registerExtension(target.getDependencyResolutionManagement().getRepositories());
     }
 
     private void registerExtension(final RepositoryHandler repositories) {
         ((ExtensionAware) repositories).getExtensions().create(
-            SpongeRepositoryExtension.class,
-            "sponge",
-            SpongeRepositoryExtensionImpl.class,
-            repositories
+                SpongeRepositoryExtension.class,
+                "sponge",
+                SpongeRepositoryExtensionImpl.class,
+                repositories
         );
     }
 
+    @Override
+    public @Nullable GradleVersion minimumGradleVersion() {
+        return MINIMUM_VERSION;
+    }
 }

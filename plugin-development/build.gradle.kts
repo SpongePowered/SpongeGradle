@@ -2,6 +2,7 @@ dependencies {
     implementation(libs.pluginMeta) {
         exclude(group = "org.checkerframework", module = "checker-qual")
     }
+    api(libs.mammoth)
     // implementation("org.spongepowered:vanillagradle:0.2-SNAPSHOT")
     // implementation("gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:0.10")
 }

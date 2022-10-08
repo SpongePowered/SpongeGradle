@@ -24,10 +24,7 @@
  */
 package org.spongepowered.gradle.repository;
 
-import net.kyori.mammoth.test.GradleFunctionalTest;
 import net.kyori.mammoth.test.TestContext;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.spongepowered.gradle.build.FunctionalTestDisplayNameGenerator;
 import org.spongepowered.gradle.build.SpongeGradleFunctionalTest;

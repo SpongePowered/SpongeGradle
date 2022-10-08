@@ -24,10 +24,9 @@
  */
 package org.spongepowered.gradle.plugin;
 
+import net.kyori.mammoth.ProjectOrSettingsPlugin;
 import org.gradle.api.Action;
-import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectProvider;
-import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
@@ -39,14 +38,16 @@ import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.initialization.Settings;
-import org.gradle.api.invocation.Gradle;
+import org.gradle.api.plugins.ExtensionContainer;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
+import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.process.CommandLineArgumentProvider;
@@ -62,42 +63,31 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 
-public final class SpongePluginGradle implements Plugin<Object> {
+public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
 
     private @UnknownNullability Project project;
 
     @Override
-    public void apply(final @NotNull Object target) {
-        if (target instanceof Project) {
-            this.applyToProject((Project) target);
-        } else if (target instanceof Settings) {
-            this.applyToSettings((Settings) target);
-        } else if (target instanceof Gradle) {
-             // no-op
-        } else {
-            throw new GradleException(
-                    "Sponge gradle plugin target '" + target
-                            + "' is of unexpected type " + target.getClass()
-                            + ", expecting a Project or Settings instance"
-            );
-        }
-    }
-
-    public void applyToProject(final Project project) {
-        this.project = project;
+    public void applyToProject(
+        final @NotNull Project target,
+        final @NotNull PluginContainer plugins,
+        final @NotNull ExtensionContainer extensions,
+        final @NotNull TaskContainer tasks
+    ) {
+        this.project = target;
 
         project.getLogger().lifecycle("SpongePowered Plugin 'GRADLE' Toolset Version '{}'", Constants.VERSION);
-        project.getPlugins().apply(JavaLibraryPlugin.class);
+        plugins.apply(JavaLibraryPlugin.class);
         // project.getPlugins().apply(ProvideMinecraftPlugin.class);
         // project.getPlugins().apply(IdeaExtPlugin.class);
         // project.getPlugins().apply(EclipsePlugin.class);
 
         // final MinecraftExtension minecraft = project.getExtensions().getByType(MinecraftExtension.class);
-        final SpongePluginExtension sponge = project.getExtensions().create("sponge", SpongePluginExtension.class);
+        final SpongePluginExtension sponge = extensions.create("sponge", SpongePluginExtension.class);
 
         // Only inject repositories if the project does not have sponge repos from other sources
         sponge.injectRepositories().convention(
-            !project.getGradle().getPlugins().hasPlugin(SpongePluginGradle.class)
+            !this.isAppliedToSettingsOf(target)
                 && !project.getGradle().getPlugins().hasPlugin("org.spongepowered.gradle.repository")
         );
 
@@ -134,9 +124,9 @@ public final class SpongePluginGradle implements Plugin<Object> {
         });
     }
 
-    private void applyToSettings(final Settings settings) {
-       SpongePluginGradle.addRepository(settings.getDependencyResolutionManagement().getRepositories());
-       settings.getGradle().getPlugins().apply(SpongePluginGradle.class);
+    @Override
+    public void applyToSettings(@NotNull Settings target, @NotNull PluginContainer plugins, @NotNull ExtensionContainer extensions) {
+       SpongePluginGradle.addRepository(target.getDependencyResolutionManagement().getRepositories());
     }
 
     private static void addRepository(final RepositoryHandler handler) {

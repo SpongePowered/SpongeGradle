@@ -114,6 +114,7 @@ subprojects {
             standardOptions()
             formatAnnotations()
             importOrderFile(rootProject.file(".spotless/sponge.importorder"))
+            removeUnusedImports()
         }
 
         project.plugins.withId("groovy") {

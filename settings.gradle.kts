@@ -8,9 +8,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        pluginManagement.repositories.forEach { add(it) }
-    }
+    repositories { pluginManagement.repositories.forEach { add(it) } }
 }
 
 rootProject.name = "SpongeGradle"

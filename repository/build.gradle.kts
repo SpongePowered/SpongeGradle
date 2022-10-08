@@ -1,3 +1,7 @@
+dependencies {
+    api(libs.mammoth)
+}
+
 indraPluginPublishing {
     plugin(
         "repository",
