@@ -1,5 +1,5 @@
 dependencies {
-    api("net.kyori:mammoth-test:1.2.0")
+    api(libs.mammoth.test)
 }
 
 tasks.javadoc {

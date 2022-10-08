@@ -9,9 +9,9 @@ tasks.withType(GroovyCompile::class).configureEach {
 dependencies {
     api(project(":spongegradle-plugin-development"))
     implementation(localGroovy())
-    api("net.kyori:indra-common:3.0.0")
-    api("net.kyori:indra-licenser-spotless:3.0.0")
-    api("com.google.code.gson:gson:2.9.1")
+    api(libs.indra.common)
+    api(libs.indra.licenserSpotless)
+    api(libs.gson)
 }
 
 indraPluginPublishing {

@@ -1,5 +1,5 @@
 dependencies {
-    implementation("org.spongepowered:plugin-meta:0.8.0") {
+    implementation(libs.pluginMeta) {
         exclude(group = "org.checkerframework", module = "checker-qual")
     }
     // implementation("org.spongepowered:vanillagradle:0.2-SNAPSHOT")
@@ -8,7 +8,7 @@ dependencies {
 
 testing.suites.named("functionalTest", JvmTestSuite::class) {
     dependencies {
-        implementation("com.google.code.gson:gson:2.9.1")
+        implementation(libs.gson)
     }
 }
 

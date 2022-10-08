@@ -6,12 +6,12 @@ import net.kyori.indra.gradle.IndraPluginPublishingExtension
 import net.kyori.indra.licenser.spotless.IndraSpotlessLicenserExtension
 
 plugins {
-    id("com.gradle.plugin-publish") apply false
-    id("net.kyori.indra") apply false
-    id("com.diffplug.spotless") apply false
-    id("net.kyori.indra.crossdoc") apply false
-    id("net.kyori.indra.licenser.spotless") apply false
-    id("net.kyori.indra.publishing.gradle-plugin") apply false
+    alias(libs.plugins.gradlePluginPublish) apply false
+    alias(libs.plugins.indra) apply false
+    alias(libs.plugins.spotless) apply false
+    alias(libs.plugins.indra.crossdoc) apply false
+    alias(libs.plugins.indra.licenserSpotless) apply false
+    alias(libs.plugins.indra.gradlePlugin) apply false
 }
 
 group = "org.spongepowered"
@@ -38,14 +38,13 @@ subprojects {
 
         extensions.configure(TestingExtension::class) {
             suites.withType(JvmTestSuite::class).configureEach {
-                useJUnitJupiter("5.9.0")
+                useJUnitJupiter(rootProject.libs.versions.junit.get())
             }
 
             val functionalTest = suites.register("functionalTest", JvmTestSuite::class) {
                 dependencies {
                     implementation(project)
                     implementation(project(":spongegradle-testlib"))
-                    implementation("com.google.code.gson:gson:2.9.1")
                 }
                 testType.set(TestSuiteType.FUNCTIONAL_TEST)
             }
@@ -60,7 +59,7 @@ subprojects {
 
 
     dependencies {
-        "compileOnlyApi"("org.jetbrains:annotations:23.0.0")
+        "compileOnlyApi"(rootProject.libs.jetbrainsAnnotations)
     }
 
     val indraGit = extensions.getByType(net.kyori.indra.git.IndraGitExtension::class)
