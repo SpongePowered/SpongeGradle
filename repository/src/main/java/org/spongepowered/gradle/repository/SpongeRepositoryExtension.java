@@ -26,9 +26,9 @@ package org.spongepowered.gradle.repository;
 
 import static java.util.Objects.requireNonNull;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.gradle.api.Action;
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Extension for configuring Sponge's repositories.
@@ -50,7 +50,7 @@ public interface SpongeRepositoryExtension {
      * @return the created repository
      * @since 2.1.0
      */
-    default MavenArtifactRepository all(final @NonNull Action<MavenArtifactRepository> extraConfig) {
+    default MavenArtifactRepository all(final @NotNull Action<MavenArtifactRepository> extraConfig) {
         final MavenArtifactRepository ret = all();
         requireNonNull(extraConfig, "extraConfig").execute(ret);
         return ret;
@@ -71,7 +71,7 @@ public interface SpongeRepositoryExtension {
      * @return the created repository
      * @since 2.1.0
      */
-    default MavenArtifactRepository releases(final @NonNull Action<MavenArtifactRepository> extraConfig) {
+    default MavenArtifactRepository releases(final @NotNull Action<MavenArtifactRepository> extraConfig) {
         final MavenArtifactRepository ret = releases();
         requireNonNull(extraConfig, "extraConfig").execute(ret);
         return ret;
@@ -92,7 +92,7 @@ public interface SpongeRepositoryExtension {
      * @return the created repository
      * @since 2.1.0
      */
-    default MavenArtifactRepository snapshots(final @NonNull Action<MavenArtifactRepository> extraConfig) {
+    default MavenArtifactRepository snapshots(final @NotNull Action<MavenArtifactRepository> extraConfig) {
         final MavenArtifactRepository ret = snapshots();
         requireNonNull(extraConfig, "extraConfig").execute(ret);
         return ret;

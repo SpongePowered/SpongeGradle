@@ -58,14 +58,9 @@ subprojects {
         }
     }
 
-    repositories {
-        maven("https://repo.spongepowered.org/repository/maven-public/") {
-            name = "sponge"
-        }
-    }
 
     dependencies {
-        "compileOnlyApi"("org.checkerframework:checker-qual:3.24.0")
+        "compileOnlyApi"("org.jetbrains:annotations:23.0.0")
     }
 
     val indraGit = extensions.getByType(net.kyori.indra.git.IndraGitExtension::class)

@@ -16,6 +16,13 @@ pluginManagement {
     }
 }
 
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        pluginManagement.repositories.forEach { add(it) }
+    }
+}
+
 rootProject.name = "SpongeGradle"
 
 sequenceOf("convention", "plugin-development", "repository", "testlib").forEach {

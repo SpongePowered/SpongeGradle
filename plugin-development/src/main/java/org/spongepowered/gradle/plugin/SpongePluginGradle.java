@@ -24,8 +24,6 @@
  */
 package org.spongepowered.gradle.plugin;
 
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectProvider;
@@ -52,6 +50,8 @@ import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.process.CommandLineArgumentProvider;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnknownNullability;
 import org.spongepowered.gradle.common.Constants;
 import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
@@ -64,10 +64,10 @@ import java.util.Collections;
 
 public final class SpongePluginGradle implements Plugin<Object> {
 
-    private @MonotonicNonNull Project project;
+    private @UnknownNullability Project project;
 
     @Override
-    public void apply(final @NonNull Object target) {
+    public void apply(final @NotNull Object target) {
         if (target instanceof Project) {
             this.applyToProject((Project) target);
         } else if (target instanceof Settings) {

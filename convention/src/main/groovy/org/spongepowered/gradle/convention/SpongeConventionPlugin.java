@@ -31,8 +31,6 @@ import net.kyori.indra.git.GitPlugin;
 import net.kyori.indra.git.IndraGitExtension;
 import net.kyori.indra.licenser.spotless.IndraSpotlessLicenserExtension;
 import net.kyori.indra.licenser.spotless.IndraSpotlessLicenserPlugin;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -55,6 +53,8 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
 import org.gradle.plugins.signing.SigningExtension;
 import org.gradle.plugins.signing.SigningPlugin;
 import org.gradle.plugins.signing.signatory.pgp.PgpSignatoryProvider;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnknownNullability;
 import org.spongepowered.gradle.convention.task.SignJarTask;
 
 import java.io.BufferedReader;
@@ -78,7 +78,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
 
     private static final String DISABLE_CADIX_LICENSER = "sponge.disableLicenser";
 
-    private @MonotonicNonNull Project project;
+    private @UnknownNullability Project project;
 
     @Override
     public void apply(final Project target) {

@@ -24,7 +24,6 @@
  */
 package org.spongepowered.gradle.repository;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -32,11 +31,12 @@ import org.gradle.api.artifacts.dsl.RepositoryHandler;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.invocation.Gradle;
 import org.gradle.api.plugins.ExtensionAware;
+import org.jetbrains.annotations.NotNull;
 
 public class RepositoryPlugin implements Plugin<Object> {
 
     @Override
-    public void apply(final @NonNull Object target) {
+    public void apply(final @NotNull Object target) {
         if (target instanceof Project) {
             this.applyToProject((Project) target);
         } else if (target instanceof Settings) {
