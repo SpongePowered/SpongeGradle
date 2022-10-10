@@ -24,18 +24,17 @@
  */
 package org.spongepowered.gradle.ore.internal.model;
 
-import java.time.ZonedDateTime;
 
 public class AuthenticationResponse {
     private final String session;
-    private final ZonedDateTime expires;
+    private final String expires;
     private final KeyType type;
 
     public enum KeyType {
         KEY, USER, PUBLIC, DEV;
     }
 
-    public AuthenticationResponse(final String session, final ZonedDateTime expires, final KeyType type) {
+    public AuthenticationResponse(final String session, final String expires, final KeyType type) {
         this.session = session;
         this.expires = expires;
         this.type = type;
@@ -45,7 +44,7 @@ public class AuthenticationResponse {
         return this.session;
     }
 
-    public ZonedDateTime expires() {
+    public String expires() {
         return this.expires;
     }
 

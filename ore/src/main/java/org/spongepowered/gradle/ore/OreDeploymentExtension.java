@@ -27,7 +27,7 @@ package org.spongepowered.gradle.ore;
 import static java.util.Objects.requireNonNull;
 
 import org.gradle.api.Action;
-import org.gradle.api.NamedDomainObjectCollection;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.provider.Property;
 import org.jetbrains.annotations.NotNull;
 
@@ -93,14 +93,14 @@ public interface OreDeploymentExtension {
      * @return publications collection
      * @since 2.1.0
      */
-    @NotNull NamedDomainObjectCollection<OrePublication> publications();
+    @NotNull NamedDomainObjectContainer<OrePublication> publications();
 
     /**
      * Configure the publications on this project.
      *
      * @param configureAction the configure action
      */
-    default void publications(final @NotNull Action<NamedDomainObjectCollection<OrePublication>> configureAction) {
+    default void publications(final @NotNull Action<NamedDomainObjectContainer<OrePublication>> configureAction) {
         requireNonNull(configureAction, "configureAction").execute(this.publications());
     }
 

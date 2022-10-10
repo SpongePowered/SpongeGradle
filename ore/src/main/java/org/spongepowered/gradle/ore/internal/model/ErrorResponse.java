@@ -24,22 +24,31 @@
  */
 package org.spongepowered.gradle.ore.internal.model;
 
+import com.google.gson.JsonElement;
+import com.google.gson.annotations.SerializedName;
 import org.jetbrains.annotations.Nullable;
 
 public class ErrorResponse {
-    private final String error;
+    private final JsonElement error;
+
+    @SerializedName("user_error")
+    private final String userError;
+
     private final int requestId;
 
-    public ErrorResponse(final String error, final int requestId) {
+    public ErrorResponse(final JsonElement error, final String userError, final int requestId) {
         this.error = error;
+        this.userError = userError;
         this.requestId = requestId;
     }
 
     public @Nullable String error() {
-        return this.error;
-    }
+        if (this.userError != null) {
+            return this.userError;
+        } else if (this.error == null) {
+            return null;
+        }
 
-    public int requestId() {
-        return this.requestId;
+        return this.error.isJsonObject() ? this.error.getAsJsonObject().getAsJsonPrimitive("message").getAsString() : this.error.getAsString();
     }
 }

@@ -30,16 +30,19 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.services.BuildService;
 import org.gradle.api.services.BuildServiceParameters;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public abstract class OreSessionService implements BuildService<OreSessionService.Parameters>, AutoCloseable {
 
@@ -65,13 +68,27 @@ public abstract class OreSessionService implements BuildService<OreSessionServic
         final List<CompletableFuture<?>> futures = new ArrayList<>();
 
         for (final CompletableFuture<OreSession> session : sessions.values()) {
-            futures.add(session.thenCompose(OreSession::terminate));
+            futures.add(session.thenCompose(sess -> {
+                final CompletableFuture<OreResponse<Void>> termination = sess.terminate();
+                termination.handle(($, $$) -> {
+                    try {
+                        sess.close();
+                    } catch (final IOException ex) {
+                        throw new CompletionException(ex);
+                    }
+                    return null;
+                });
+                return termination;
+            }).exceptionally(err -> {
+                LOGGER.error("Failed to shut down an ore session", err);
+                return OreResponse.failure(-1, err.getMessage());
+            }));
         }
 
         try {
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0])).get();
-        } catch (final InterruptedException | ExecutionException ex) {
-            LOGGER.error("Failed to shut down an ore session", ex);
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0])).get(30, TimeUnit.SECONDS);
+        } catch (final InterruptedException | ExecutionException | TimeoutException ex) {
+            LOGGER.error("Failed to await ore session shutdowns ore session", ex);
         }
 
         this.executor.shutdown();

@@ -46,9 +46,9 @@ public class OrePublicationImpl implements OrePublication {
         this.name = name;
 
         this.projectId = objects.property(String.class);
-        this.createForumPost = objects.property(Boolean.class);
-        this.versionBody = objects.property(String.class);
-        this.channel = objects.property(String.class);
+        this.createForumPost = objects.property(Boolean.class).convention(true);
+        this.versionBody = objects.property(String.class).convention("");
+        this.channel = objects.property(String.class).convention("Release");
         this.publishArtifacts = objects.fileCollection();
     }
 

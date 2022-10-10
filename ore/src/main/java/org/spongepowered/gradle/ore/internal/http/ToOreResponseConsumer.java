@@ -77,15 +77,18 @@ final class ToOreResponseConsumer<V> implements AsyncResponseConsumer<OreRespons
             final AsyncEntityConsumer<V> responseConsumer = Objects.requireNonNull(this.entityConsumerSupplier.get(), "entity consumer");
             this.entityConsumerRef.set(responseConsumer);
 
-            responseConsumer.streamStart(entityDetails, new CallbackContribution<V>(resultCallback) {
-                @Override
-                public void completed(final V result) {
-                    if (resultCallback != null) {
-                        resultCallback.completed(OreResponse.success(result));
+            if (entityDetails != null) {
+                responseConsumer.streamStart(entityDetails, new CallbackContribution<V>(resultCallback) {
+                    @Override
+                    public void completed(final V result) {
+                        if (resultCallback != null) {
+                            resultCallback.completed(OreResponse.success(result));
+                        }
                     }
-                }
-            });
-
+                });
+            } else if (resultCallback != null) {
+                resultCallback.completed(OreResponse.success(null));
+            }
         } else if (code == HttpStatus.SC_UNAUTHORIZED) {
             if (resultCallback != null) {
                 resultCallback.completed(OreResponse.reauthenticate());
@@ -103,6 +106,10 @@ final class ToOreResponseConsumer<V> implements AsyncResponseConsumer<OreRespons
                         }
                     }
                 });
+            } else {
+                if (resultCallback != null) {
+                    resultCallback.completed(OreResponse.failure(code, null));
+                }
             }
         }
     }

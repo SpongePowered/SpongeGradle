@@ -42,11 +42,12 @@ import org.apache.hc.core5.util.Timeout;
 import org.gradle.util.GradleVersion;
 import org.spongepowered.gradle.ore.internal.OreResponse;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-public final class HttpWrapper {
+public final class HttpWrapper implements AutoCloseable {
 
     private final CloseableHttpAsyncClient client;
     public HttpWrapper(final Consumer<HttpAsyncClientBuilder> builderConfigurer) {
@@ -61,19 +62,24 @@ public final class HttpWrapper {
             .setTlsStrategy(tlsStrategy)
             .build();
 
-        this.client = HttpAsyncClientBuilder.create()
+        final HttpAsyncClientBuilder clientBuilder = HttpAsyncClientBuilder.create()
             .setIOReactorConfig(config)
-            .setUserAgent("SpongeGradle-Ore/" + this.getClass().getPackage().getImplementationVersion() + " Gradle/" + GradleVersion.current() + " Java/" + System.getProperty("java.version"))
+            .setUserAgent(
+                "SpongeGradle-Ore/" + this.getClass().getPackage().getImplementationVersion() + " Gradle/" + GradleVersion.current() + " Java/"
+                    + System.getProperty("java.version"))
             .setVersionPolicy(HttpVersionPolicy.NEGOTIATE)
             .setConnectionManager(cm)
-            .setRetryStrategy(new DefaultHttpRequestRetryStrategy(5, TimeValue.ofMilliseconds(500)))
-            .build();
+            .setRetryStrategy(new DefaultHttpRequestRetryStrategy(5, TimeValue.ofMilliseconds(500)));
+        builderConfigurer.accept(clientBuilder);
+        this.client = clientBuilder.build();
     }
 
     public CloseableHttpAsyncClient client() {
         this.client.start();
         return this.client;
     }
+
+    // TODO: Pass request URLs to be exposed via responses?
 
     public <T> CompletableFuture<OreResponse<T>> request(final SimpleHttpRequest request, final AsyncEntityConsumer<T> responseConsumer) {
         return this.request(SimpleRequestProducer.create(request), responseConsumer);
@@ -91,5 +97,10 @@ public final class HttpWrapper {
 
     public <T> CompletableFuture<OreResponse<T>> get(final URI destination, final AsyncEntityConsumer<T> responseConsumer) {
         return this.request(SimpleHttpRequest.create(Method.GET, destination), responseConsumer);
+    }
+
+    @Override
+    public void close() throws IOException {
+        this.client.close();
     }
 }

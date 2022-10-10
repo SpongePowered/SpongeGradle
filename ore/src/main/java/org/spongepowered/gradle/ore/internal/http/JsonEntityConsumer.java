@@ -53,7 +53,7 @@ public final class JsonEntityConsumer<T> extends AbstractCharAsyncEntityConsumer
 
     @Override
     protected void streamStart(final ContentType contentType) throws HttpException {
-        if (!ContentType.APPLICATION_JSON.equals(contentType)) {
+        if (!ContentType.APPLICATION_JSON.isSameMimeType(contentType)) {
             throw new HttpException("Incorrect content type received for a json object, expected " + ContentType.APPLICATION_JSON + " but got " + contentType);
         }
     }

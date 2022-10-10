@@ -58,19 +58,22 @@ public abstract class PublishToOreTask extends OreTask {
         final @Nullable String channel = pub.getChannel().getOrNull();
 
         try {
-            final Version result = session.thenCompose(api -> {
-                return api.publishVersion(
-                    pub.getProjectId().get(),
-                    new DeployVersionInfo(
-                        versionBody,
-                        createForumPost,
-                        Collections.singletonMap("Channel", Collections.singletonList(channel))
-                    ),
-                    toPublish.toPath()
-                );
-            }).get();
+            // TODO: Log info about published version (like URL?)
+            final Version result = session.thenCompose(api -> api.publishVersion(
+                pub.getProjectId().get(),
+                new DeployVersionInfo(
+                    versionBody,
+                    createForumPost,
+                    Collections.singletonMap("Channel", Collections.singletonList(channel))
+                ),
+                toPublish.toPath()
+            )).get();
         } catch (ExecutionException e) {
-            throw new GradleException("Failed to publish to Ore: " + e.getMessage(), e.getCause());
+            if (e.getCause() instanceof GradleException) {
+                throw (GradleException) e.getCause();
+            } else {
+                throw new GradleException("Failed to publish to Ore: " + e.getMessage(), e.getCause());
+            }
         }
     }
 

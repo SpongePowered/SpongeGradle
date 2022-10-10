@@ -36,6 +36,8 @@ import org.spongepowered.gradle.ore.internal.OreSessionService;
 import org.spongepowered.gradle.ore.task.OreTask;
 import org.spongepowered.gradle.ore.task.PublishToOreTask;
 
+import java.time.Duration;
+
 public class OreDeploymentPlugin implements ProjectPlugin {
 
     private static final String ORE_DEPLOYMENT_EXTENSION = "oreDeployment";
@@ -54,7 +56,7 @@ public class OreDeploymentPlugin implements ProjectPlugin {
             "oreSessions",
             OreSessionService.class,
             params -> {
-                // todo: session expiration
+                params.getParameters().getSessionDuration().set(Duration.ofHours(3));
             }
         );
 

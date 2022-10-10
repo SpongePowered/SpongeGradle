@@ -24,7 +24,7 @@
  */
 package org.spongepowered.gradle.ore.internal;
 
-import org.gradle.api.NamedDomainObjectCollection;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.ProviderFactory;
@@ -41,7 +41,7 @@ public class OreDeploymentExtensionImpl implements OreDeploymentExtension {
     private final Property<String> oreEndpoint;
     private final Property<String> apiKey;
 
-    private final NamedDomainObjectCollection<OrePublication> publications;
+    private final NamedDomainObjectContainer<OrePublication> publications;
 
     @Inject
     public OreDeploymentExtensionImpl(final ObjectFactory objects, final ProviderFactory providers) {
@@ -68,7 +68,7 @@ public class OreDeploymentExtensionImpl implements OreDeploymentExtension {
     }
 
     @Override
-    public @NotNull NamedDomainObjectCollection<OrePublication> publications() {
+    public @NotNull NamedDomainObjectContainer<OrePublication> publications() {
         return this.publications;
     }
 

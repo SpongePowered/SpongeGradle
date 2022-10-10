@@ -47,6 +47,7 @@ import org.spongepowered.gradle.ore.internal.model.AuthenticationResponse;
 import org.spongepowered.gradle.ore.internal.model.DeployVersionInfo;
 import org.spongepowered.gradle.ore.internal.model.Version;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
@@ -56,7 +57,9 @@ import java.util.function.Supplier;
 /**
  * Represents a session with the Ore API
  */
-public class OreSession {
+public class OreSession implements AutoCloseable {
+
+    private static final String API_V2 = "api/v2";
 
     public static final Gson GSON = new Gson();
 
@@ -85,9 +88,13 @@ public class OreSession {
     }
 
     private static URI make(final String apiBase, final String endpoint) {
-        final StringBuilder builder = new StringBuilder(apiBase.length() + endpoint.length());
+        final StringBuilder builder = new StringBuilder(apiBase.length() + API_V2.length() + endpoint.length());
         builder.append(apiBase);
-        if (!apiBase.endsWith("/") && !endpoint.startsWith("/")) {
+        if (!apiBase.endsWith("/")) {
+            builder.append("/");
+        }
+        builder.append(API_V2);
+        if (!endpoint.startsWith("/")) {
             builder.append("/");
         }
         builder.append(endpoint);
@@ -104,7 +111,7 @@ public class OreSession {
     }
 
     CompletableFuture<OreResponse<AuthenticationResponse>> authenticate() {
-        final AsyncRequestProducer request = AsyncRequestBuilder.get(OreSession.make(this.apiBase, "authenticate"))
+        final AsyncRequestProducer request = AsyncRequestBuilder.post(OreSession.make(this.apiBase, "authenticate"))
             .setHeader(HttpHeaders.AUTHORIZATION, "OreApi apikey=\"" + this.apiKey + "\"")
             .setEntity(new JsonEntityProducer(GSON, new ApiSessionProperties(false, this.sessionDurationSeconds)))
             .build();
@@ -146,20 +153,28 @@ public class OreSession {
     }
 
     private <V> CompletableFuture<V> doRequest(final Supplier<CompletableFuture<OreResponse<V>>> action) {
-        return this.sessionFuture.thenCompose(session -> action.get().thenCompose(response -> {
-            if (response instanceof OreResponse.Reauthenticate<?>) {
-                this.authenticate();
-                return this.doRequest(action);
-            } else {
-                final CompletableFuture<V> result = new CompletableFuture<>();
-                if (response instanceof OreResponse.Success<?>) {
-                    result.complete(((OreResponse.Success<V>) response).value());
+        return this.sessionFuture.thenCompose(session -> {
+            System.out.println("Session expires " + session.asSuccessOrThrow(GradleException::new).value().expires());
+            return action.get().thenCompose(response -> {
+                if (response instanceof OreResponse.Reauthenticate<?>) {
+                    this.authenticate();
+                    return this.doRequest(action);
                 } else {
-                    result.completeExceptionally(new GradleException(((OreResponse.Failure<V>) response).errorMessage()));
+                    final CompletableFuture<V> result = new CompletableFuture<>();
+                    if (response instanceof OreResponse.Success<?>) {
+                        result.complete(((OreResponse.Success<V>) response).value());
+                    } else {
+                        final OreResponse.Failure<V> error = (OreResponse.Failure<V>) response;
+                        result.completeExceptionally(new GradleException("Encountered error while performing Ore API request [" + error.responseCode() + "]: " + error.errorMessage()));
+                    }
+                    return result;
                 }
-                return result;
-            }
-        }));
+            });
+        });
     }
 
+    @Override
+    public void close() throws IOException {
+        this.http.close();
+    }
 }
