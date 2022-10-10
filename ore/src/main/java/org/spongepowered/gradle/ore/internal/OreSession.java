@@ -26,6 +26,7 @@ package org.spongepowered.gradle.ore.internal;
 
 import com.google.gson.Gson;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
+import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.entity.mime.FileBody;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
@@ -38,6 +39,7 @@ import org.apache.hc.core5.http.nio.AsyncRequestProducer;
 import org.apache.hc.core5.http.nio.entity.NoopEntityConsumer;
 import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
 import org.gradle.api.GradleException;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.gradle.ore.internal.http.AsyncLegacyEntityProducer;
 import org.spongepowered.gradle.ore.internal.http.HttpWrapper;
 import org.spongepowered.gradle.ore.internal.http.JsonEntityConsumer;
@@ -45,6 +47,7 @@ import org.spongepowered.gradle.ore.internal.http.JsonEntityProducer;
 import org.spongepowered.gradle.ore.internal.model.ApiSessionProperties;
 import org.spongepowered.gradle.ore.internal.model.AuthenticationResponse;
 import org.spongepowered.gradle.ore.internal.model.DeployVersionInfo;
+import org.spongepowered.gradle.ore.internal.model.KeyPermissions;
 import org.spongepowered.gradle.ore.internal.model.Version;
 
 import java.io.IOException;
@@ -152,25 +155,47 @@ public class OreSession implements AutoCloseable {
         ));
     }
 
+    public CompletableFuture<KeyPermissions> globalPermissions() {
+        return doRequest(() -> this.http.request(
+            SimpleHttpRequest.create(Method.GET, OreSession.make(this.apiBase, "permissions")),
+            new JsonEntityConsumer<>(GSON, KeyPermissions.class)
+        ));
+    }
+
+    public CompletableFuture<KeyPermissions> projectPermissions(final @NotNull String pluginId) {
+        return doRequest(() -> this.http.request(
+            SimpleRequestBuilder.get(OreSession.make(this.apiBase, "permissions"))
+                .addParameter("pluginId", pluginId)
+                .build(),
+            new JsonEntityConsumer<>(GSON, KeyPermissions.class)
+        ));
+    }
+
+    public CompletableFuture<KeyPermissions> organizationPermissions(final @NotNull String organizationName) {
+        return doRequest(() -> this.http.request(
+            SimpleRequestBuilder.get(OreSession.make(this.apiBase, "permissions"))
+                .addParameter("organizationName", organizationName)
+                .build(),
+            new JsonEntityConsumer<>(GSON, KeyPermissions.class)
+        ));
+    }
+
     private <V> CompletableFuture<V> doRequest(final Supplier<CompletableFuture<OreResponse<V>>> action) {
-        return this.sessionFuture.thenCompose(session -> {
-            System.out.println("Session expires " + session.asSuccessOrThrow(GradleException::new).value().expires());
-            return action.get().thenCompose(response -> {
-                if (response instanceof OreResponse.Reauthenticate<?>) {
-                    this.authenticate();
-                    return this.doRequest(action);
+        return this.sessionFuture.thenCompose(session -> action.get().thenCompose(response -> {
+            if (response instanceof OreResponse.Reauthenticate<?>) {
+                this.authenticate();
+                return this.doRequest(action);
+            } else {
+                final CompletableFuture<V> result = new CompletableFuture<>();
+                if (response instanceof OreResponse.Success<?>) {
+                    result.complete(((OreResponse.Success<V>) response).value());
                 } else {
-                    final CompletableFuture<V> result = new CompletableFuture<>();
-                    if (response instanceof OreResponse.Success<?>) {
-                        result.complete(((OreResponse.Success<V>) response).value());
-                    } else {
-                        final OreResponse.Failure<V> error = (OreResponse.Failure<V>) response;
-                        result.completeExceptionally(new GradleException("Encountered error while performing Ore API request [" + error.responseCode() + "]: " + error.errorMessage()));
-                    }
-                    return result;
+                    final OreResponse.Failure<V> error = (OreResponse.Failure<V>) response;
+                    result.completeExceptionally(new GradleException("Encountered error while performing Ore API request [" + error.responseCode() + "]: " + error.errorMessage()));
                 }
-            });
-        });
+                return result;
+            }
+        }));
     }
 
     @Override

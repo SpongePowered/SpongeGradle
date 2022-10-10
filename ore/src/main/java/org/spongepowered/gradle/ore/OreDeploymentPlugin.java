@@ -27,14 +27,17 @@ package org.spongepowered.gradle.ore;
 import net.kyori.mammoth.ProjectPlugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.plugins.HelpTasksPlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.publish.plugins.PublishingPlugin;
 import org.gradle.api.tasks.TaskContainer;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.gradle.ore.internal.OreDeploymentExtensionImpl;
 import org.spongepowered.gradle.ore.internal.OreSessionService;
 import org.spongepowered.gradle.ore.task.OreTask;
 import org.spongepowered.gradle.ore.task.PublishToOreTask;
+import org.spongepowered.gradle.ore.task.ViewOrePermissions;
 
 import java.time.Duration;
 
@@ -42,6 +45,8 @@ public class OreDeploymentPlugin implements ProjectPlugin {
 
     private static final String ORE_DEPLOYMENT_EXTENSION = "oreDeployment";
     private static final String PUBLISH_TO_ORE_TASK = "publishToOre";
+
+    private static final String ORE_GROUP = "ore";
 
     @Override
     public void apply(
@@ -68,16 +73,21 @@ public class OreDeploymentPlugin implements ProjectPlugin {
 
         this.registerPublicationTasks(extension, tasks);
 
+        tasks.register("orePermissions", ViewOrePermissions.class, task -> {
+            task.setGroup(HelpTasksPlugin.HELP_GROUP);
+        });
     }
 
     private void registerPublicationTasks(final OreDeploymentExtension extension, final TaskContainer tasks) {
         tasks.register(PUBLISH_TO_ORE_TASK, task -> {
             task.dependsOn(tasks.withType(PublishToOreTask.class));
+            task.setGroup(PublishingPlugin.PUBLISH_TASK_GROUP);
         });
 
         extension.publications().all(publication -> {
             tasks.register(publishTaskName(publication.getName()), PublishToOreTask.class, task -> {
                 task.getPublication().set(publication);
+                task.setGroup(PublishingPlugin.PUBLISH_TASK_GROUP);
             });
         });
     }

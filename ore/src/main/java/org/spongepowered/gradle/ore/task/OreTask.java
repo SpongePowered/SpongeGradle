@@ -25,6 +25,7 @@
 package org.spongepowered.gradle.ore.task;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Internal;
@@ -32,6 +33,9 @@ import org.spongepowered.gradle.ore.internal.OreSession;
 import org.spongepowered.gradle.ore.internal.OreSessionService;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public abstract class OreTask extends DefaultTask {
 
@@ -49,5 +53,21 @@ public abstract class OreTask extends DefaultTask {
             this.getOreApiKey().get(),
             this.getOreEndpoint().get()
         );
+    }
+
+    protected <V> V responseOrThrow(final CompletableFuture<V> request) {
+        try {
+            return request.get(5, TimeUnit.MINUTES);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof GradleException) {
+                throw (GradleException) e.getCause();
+            } else {
+                throw new GradleException("Failed to publish to Ore: " + e.getMessage(), e.getCause());
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new GradleException("Ore API request in " + this.getName() + " timed out!");
+        }
     }
 }

@@ -24,47 +24,24 @@
  */
 package org.spongepowered.gradle.ore.task;
 
-import org.gradle.api.provider.Property;
-import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.TaskAction;
-import org.jetbrains.annotations.Nullable;
-import org.spongepowered.gradle.ore.OrePublication;
 import org.spongepowered.gradle.ore.internal.OreSession;
-import org.spongepowered.gradle.ore.internal.model.DeployVersionInfo;
-import org.spongepowered.gradle.ore.internal.model.Version;
+import org.spongepowered.gradle.ore.internal.model.KeyPermissions;
 
-import java.io.File;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Publish an artifact to the Ore plugin repository.
- */
-public abstract class PublishToOreTask extends OreTask {
-
-    @Nested
-    public abstract Property<OrePublication> getPublication();
+public abstract class ViewOrePermissions extends OreTask {
 
     @TaskAction
-    public void doPublish() throws InterruptedException {
+    void printOrePermissions() {
         final CompletableFuture<OreSession> session = this.session();
 
-        final OrePublication pub = this.getPublication().get();
-        final File toPublish = pub.getPublishArtifacts().getSingleFile();
-        final boolean createForumPost = pub.getCreateForumPost().get();
-        final String versionBody = pub.getVersionBody().get();
-        final @Nullable String channel = pub.getChannel().getOrNull();
+        final KeyPermissions perms = this.responseOrThrow(session.thenCompose(OreSession::globalPermissions));
 
-        // TODO: Log info about published version (like URL?)
-        final Version result = this.responseOrThrow(session.thenCompose(api -> api.publishVersion(
-            pub.getProjectId().get(),
-            new DeployVersionInfo(
-                versionBody,
-                createForumPost,
-                Collections.singletonMap("Channel", Collections.singletonList(channel))
-            ),
-            toPublish.toPath()
-        )));
+        this.getLogger().lifecycle("Your permissions (in scope {}) are:", perms.type());
+        for (final String permission : perms.permissions()) {
+            this.getLogger().lifecycle("  - {}", permission);
+        }
     }
 
 }
