@@ -46,7 +46,7 @@ public abstract class PublishToOreTask extends OreTask {
     public abstract Property<OrePublication> getPublication();
 
     @TaskAction
-    public void doPublish() throws InterruptedException {
+    public void doPublish() {
         final CompletableFuture<OreSession> session = this.session();
 
         final OrePublication pub = this.getPublication().get();

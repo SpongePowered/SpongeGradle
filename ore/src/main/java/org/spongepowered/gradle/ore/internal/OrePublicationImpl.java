@@ -34,6 +34,8 @@ import javax.inject.Inject;
 
 public class OrePublicationImpl implements OrePublication {
 
+    public static final String DEFAULT_NAME = "default";
+
     private final String name;
     private final Property<String> projectId;
     private final Property<Boolean> createForumPost;

@@ -50,6 +50,7 @@ import java.util.function.Consumer;
 public final class HttpWrapper implements AutoCloseable {
 
     private final CloseableHttpAsyncClient client;
+
     public HttpWrapper(final Consumer<HttpAsyncClientBuilder> builderConfigurer) {
         // Configure the HTTP client
         // This won't actually launch a thread pool until the first request is performed.

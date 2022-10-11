@@ -30,6 +30,7 @@ import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.provider.Property;
 import org.jetbrains.annotations.NotNull;
+import org.spongepowered.gradle.ore.internal.OrePublicationImpl;
 
 /**
  * Properties to configure all ore deployment tasks.
@@ -88,6 +89,22 @@ public interface OreDeploymentExtension {
     }
 
     /**
+     * Configure the default publication, creating it if necessary.
+     *
+     * <p>This publication will be automatically configured when SpongeGradle is present.</p>
+     *
+     * @param configureAction the action to configure
+     * @since 2.1.0
+     */
+    default void defaultPublication(final @NotNull Action<? super OrePublication> configureAction) {
+        if (this.publications().getNames().contains(OrePublicationImpl.DEFAULT_NAME)) {
+            this.publications().named(OrePublicationImpl.DEFAULT_NAME).configure(configureAction);
+        } else {
+            this.publications().register(OrePublicationImpl.DEFAULT_NAME, configureAction);
+        }
+    }
+
+    /**
      * Get publications for this project.
      *
      * @return publications collection
@@ -99,6 +116,7 @@ public interface OreDeploymentExtension {
      * Configure the publications on this project.
      *
      * @param configureAction the configure action
+     * @since 2.1.0
      */
     default void publications(final @NotNull Action<NamedDomainObjectContainer<OrePublication>> configureAction) {
         requireNonNull(configureAction, "configureAction").execute(this.publications());

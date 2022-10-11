@@ -1,5 +1,14 @@
+plugins {
+    groovy
+}
+
+tasks.withType(GroovyCompile::class).configureEach {
+    options.compilerArgs.add("-Xlint:all")
+}
+
 dependencies {
     api(libs.mammoth)
+    implementation(localGroovy())
     implementation(libs.gson)
     implementation(libs.apacheHttp.client)
 }

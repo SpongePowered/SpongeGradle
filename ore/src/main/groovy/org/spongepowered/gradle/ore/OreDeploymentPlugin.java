@@ -72,6 +72,7 @@ public class OreDeploymentPlugin implements ProjectPlugin {
         });
 
         this.registerPublicationTasks(extension, tasks);
+        this.registerDefaultPublication(project, extension);
 
         tasks.register("orePermissions", ViewOrePermissions.class, task -> {
             task.setGroup(HelpTasksPlugin.HELP_GROUP);
@@ -92,8 +93,8 @@ public class OreDeploymentPlugin implements ProjectPlugin {
         });
     }
 
-    private void registerDefaultPublication(final OreDeploymentExtension extension, final PluginContainer plugins) {
-        // todo: grab plugin ID from SG?
+    private void registerDefaultPublication(final Project project, final OreDeploymentExtension extension) {
+        SpongeGradleConfigurationSource.configureSpongeGradle(project, extension);
     }
 
     private String publishTaskName(final String publicationName) {
