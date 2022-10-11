@@ -24,8 +24,10 @@
  */
 package org.spongepowered.gradle.ore
 
+import groovy.transform.PackageScope
 import org.gradle.api.Project
 
+@PackageScope
 class SpongeGradleConfigurationSource {
 
     private SpongeGradleConfigurationSource() {
