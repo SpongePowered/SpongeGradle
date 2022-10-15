@@ -37,6 +37,8 @@ import javax.inject.Inject;
 public class OreDeploymentExtensionImpl implements OreDeploymentExtension {
 
     private static final String DEFAULT_ENDPOINT = "https://ore.spongepowered.org/";
+
+    private static final String API_KEY_GRADLE_PROPERTY = "org.spongepowered.ore.apiToken";
     private static final String API_KEY_ENVIRONMENT_VARIABLE = "ORE_TOKEN";
     private final Property<String> oreEndpoint;
     private final Property<String> apiKey;
@@ -46,10 +48,13 @@ public class OreDeploymentExtensionImpl implements OreDeploymentExtension {
     @Inject
     public OreDeploymentExtensionImpl(final ObjectFactory objects, final ProviderFactory providers) {
         this.oreEndpoint = objects.property(String.class)
-                .convention(OreDeploymentExtensionImpl.DEFAULT_ENDPOINT);
+            .convention(OreDeploymentExtensionImpl.DEFAULT_ENDPOINT);
 
         this.apiKey = objects.property(String.class)
-                .convention(providers.environmentVariable(OreDeploymentExtensionImpl.API_KEY_ENVIRONMENT_VARIABLE));
+            .convention(
+                providers.gradleProperty(OreDeploymentExtensionImpl.API_KEY_GRADLE_PROPERTY)
+                    .orElse(providers.environmentVariable(OreDeploymentExtensionImpl.API_KEY_ENVIRONMENT_VARIABLE))
+            );
 
         this.publications = objects.domainObjectContainer(
             OrePublication.class,
