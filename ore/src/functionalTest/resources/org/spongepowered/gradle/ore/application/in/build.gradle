@@ -1,0 +1,10 @@
+plugins {
+    id 'java'
+    id 'org.spongepowered.gradle.ore'
+}
+
+oreDeployment.defaultPublication {
+    projectId = "test"
+    channel = "Release"
+    publishArtifacts.from(tasks.named('jar').map { it.outputs })
+}

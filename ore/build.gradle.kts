@@ -11,6 +11,8 @@ dependencies {
     implementation(localGroovy())
     implementation(libs.gson)
     implementation(libs.apacheHttp.client)
+
+    runtimeOnly(project(":spongegradle-plugin-development")) // for pluginUnderTestMetadata
 }
 
 sourceSets.main {
