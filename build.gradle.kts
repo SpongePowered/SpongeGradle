@@ -18,19 +18,15 @@ group = "org.spongepowered"
 version = "2.1.0-SNAPSHOT"
 
 subprojects {
-    plugins.apply {
-        apply("net.kyori.indra")
-        apply("net.kyori.indra.licenser.spotless")
-        apply("net.kyori.indra.git")
-    }
+    apply(plugin = "net.kyori.indra")
+    apply(plugin = "net.kyori.indra.licenser.spotless")
+    apply(plugin = "net.kyori.indra.git")
 
     if (project.name != "spongegradle-testlib") {
-        plugins.apply {
-            apply(JavaGradlePluginPlugin::class)
-            apply("com.gradle.plugin-publish")
-            apply("net.kyori.indra.publishing.gradle-plugin")
-            apply("net.kyori.indra.crossdoc")
-        }
+        plugins.apply(JavaGradlePluginPlugin::class)
+        apply(plugin = "com.gradle.plugin-publish")
+        apply(plugin = "net.kyori.indra.publishing.gradle-plugin")
+        apply(plugin = "net.kyori.indra.crossdoc")
 
         tasks.named("publishPlugins") {
             onlyIf { net.kyori.indra.util.Versioning.isRelease(project) }
