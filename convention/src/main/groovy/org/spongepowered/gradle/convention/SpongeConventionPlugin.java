@@ -76,7 +76,7 @@ import java.util.Objects;
 public abstract class SpongeConventionPlugin implements Plugin<Project> {
     private static final Logger LOGGER = Logging.getLogger(SpongeConventionPlugin.class);
 
-    private static final String DISABLE_CADIX_LICENSER = "sponge.disableLicenser";
+    private static final String DISABLE_SPOTLESS_LICENSER = "sponge.disableSpotlessLicenser";
 
     private @UnknownNullability Project project;
 
@@ -102,7 +102,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
 
         this.configurePublicationMetadata(indra);
         this.configureStandardTasks();
-        if (!"true".equals(this.project.findProperty(SpongeConventionPlugin.DISABLE_CADIX_LICENSER))) {
+        if (SpongeConventionPlugin.shouldApplyLicenser(this.project)) {
             this.configureLicenseHeaders(target.getExtensions().getByType(IndraSpotlessLicenserExtension.class));
         }
         this.configureJarSigning();
@@ -147,7 +147,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
 
     private void applyPlugins(final PluginContainer plugins) {
         plugins.apply(IndraPlugin.class);
-        if (!"true".equals(this.project.findProperty(SpongeConventionPlugin.DISABLE_CADIX_LICENSER))) {
+        if (SpongeConventionPlugin.shouldApplyLicenser(this.project)) {
             plugins.apply(IndraSpotlessLicenserPlugin.class);
         }
         plugins.apply(GitPlugin.class);
@@ -269,5 +269,9 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
                 });
             }
         });
+    }
+
+    private static boolean shouldApplyLicenser(final Project project) {
+        return !"true".equals(project.findProperty(SpongeConventionPlugin.DISABLE_SPOTLESS_LICENSER));
     }
 }
