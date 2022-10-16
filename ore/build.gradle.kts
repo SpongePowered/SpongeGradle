@@ -27,6 +27,6 @@ indraPluginPublishing {
         "org.spongepowered.gradle.ore.OreDeploymentPlugin",
         "Ore Deployment",
         "Deploy Sponge plugins to the Ore plugin repository",
-        listOf("ore", "publishing", "sponge", "minecraft", "plugin")
+        listOf("ore", "publishing", "sponge", "minecraft")
     )
 }
