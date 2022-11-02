@@ -19,7 +19,7 @@ indra-common = { module = "net.kyori:indra-common", version.ref = "indra" }
 indra-licenserSpotless = { module = "net.kyori:indra-licenser-spotless", version.ref = "indra" }
 
 # plugin-development
-pluginMeta = { module = "org.spongepowered:plugin-meta", version = "0.8.0"}
+pluginMeta = { module = "org.spongepowered:plugin-meta", version = "0.8.1"}
 
 # ore
 apacheHttp-client = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.1.3"}
