@@ -39,7 +39,7 @@ subprojects {
 
             val functionalTest = suites.register("functionalTest", JvmTestSuite::class) {
                 dependencies {
-                    implementation(project)
+                    implementation(project())
                     implementation(project(":spongegradle-testlib"))
                 }
                 testType.set(TestSuiteType.FUNCTIONAL_TEST)
