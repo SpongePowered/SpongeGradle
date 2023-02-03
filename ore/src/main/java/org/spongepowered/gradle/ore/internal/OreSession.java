@@ -36,7 +36,7 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.nio.AsyncRequestProducer;
-import org.apache.hc.core5.http.nio.entity.NoopEntityConsumer;
+import org.apache.hc.core5.http.nio.entity.DiscardingEntityConsumer;
 import org.apache.hc.core5.http.nio.support.AsyncRequestBuilder;
 import org.gradle.api.GradleException;
 import org.jetbrains.annotations.NotNull;
@@ -134,7 +134,7 @@ public class OreSession implements AutoCloseable {
         return this.sessionFuture.thenCompose(session -> {
             final CompletableFuture<OreResponse<Void>> result = this.http.request(
                 SimpleHttpRequest.create(Method.DELETE, OreSession.make(this.apiBase, "sessions/current")),
-                new NoopEntityConsumer()
+                new DiscardingEntityConsumer<>()
             );
             this.sessionFuture = null;
             return result;

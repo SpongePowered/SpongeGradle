@@ -29,13 +29,9 @@ import org.apache.hc.client5.http.async.methods.SimpleRequestProducer;
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
-import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
-import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
 import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.nio.AsyncEntityConsumer;
 import org.apache.hc.core5.http.nio.AsyncRequestProducer;
-import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
-import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
@@ -58,18 +54,11 @@ public final class HttpWrapper implements AutoCloseable {
             .setSoTimeout(Timeout.ofSeconds(5))
             .build();
 
-        final TlsStrategy tlsStrategy = TlsStrategyProvider.provide();
-        final PoolingAsyncClientConnectionManager cm = PoolingAsyncClientConnectionManagerBuilder.create()
-            .setTlsStrategy(tlsStrategy)
-            .build();
-
         final HttpAsyncClientBuilder clientBuilder = HttpAsyncClientBuilder.create()
             .setIOReactorConfig(config)
             .setUserAgent(
                 "SpongeGradle-Ore/" + this.getClass().getPackage().getImplementationVersion() + " Gradle/" + GradleVersion.current() + " Java/"
                     + System.getProperty("java.version"))
-            .setVersionPolicy(HttpVersionPolicy.NEGOTIATE)
-            .setConnectionManager(cm)
             .setRetryStrategy(new DefaultHttpRequestRetryStrategy(5, TimeValue.ofMilliseconds(500)));
         builderConfigurer.accept(clientBuilder);
         this.client = clientBuilder.build();
