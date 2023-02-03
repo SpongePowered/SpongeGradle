@@ -239,8 +239,7 @@ public abstract class SpongeConventionPlugin implements Plugin<Project> {
             keyStoreFile.deleteOnExit();
         }
 
-        this.project.getTasks().matching(it -> it.getName().equals("jar") && it instanceof Jar).whenTaskAdded(task -> {
-            final Jar jarTask = (Jar) task;
+        this.project.getTasks().withType(Jar.class).matching(it -> it.getName().equals("jar")).whenTaskAdded(jarTask -> {
             jarTask.getArchiveClassifier().set("unsigned");
             final TaskProvider<SignJarTask> sign = this.project.getTasks().register("signJar", SignJarTask.class, config -> {
                 config.dependsOn(jarTask);

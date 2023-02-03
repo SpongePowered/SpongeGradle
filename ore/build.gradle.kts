@@ -15,12 +15,6 @@ dependencies {
     runtimeOnly(project(":spongegradle-plugin-development")) // for pluginUnderTestMetadata
 }
 
-sourceSets.main {
-    multirelease {
-        alternateVersions(9)
-    }
-}
-
 indraPluginPublishing {
     plugin(
         "ore",
