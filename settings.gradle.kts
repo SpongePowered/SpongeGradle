@@ -6,6 +6,10 @@ pluginManagement {
     }
 }
 
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.5.0"
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories { pluginManagement.repositories.forEach { add(it) } }
@@ -21,5 +25,5 @@ sequenceOf(
     "testlib"
 ).forEach {
     include(it)
-    findProject(":$it")?.name = "${rootProject.name.toLowerCase(java.util.Locale.ROOT)}-$it"
+    findProject(":$it")?.name = "${rootProject.name.lowercase()}-$it"
 }

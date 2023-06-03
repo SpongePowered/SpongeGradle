@@ -89,6 +89,7 @@ subprojects {
             }
         }
 
+        signWithKeyFromPrefixedProperties("sponge")
         val spongeSnapshotRepo = project.findProperty("spongeSnapshotRepo") as String?
         val spongeReleaseRepo = project.findProperty("spongeReleaseRepo") as String?
         if (spongeReleaseRepo != null && spongeSnapshotRepo != null) {
@@ -135,21 +136,6 @@ subprojects {
         property("name", name)
         property("organization", organization)
         property("url", projectUrl)
-    }
-
-    extensions.findByType(SigningExtension::class)?.apply {
-        val spongeSigningKey = project.findProperty("spongeSigningKey") as String?
-        val spongeSigningPassword = project.findProperty("spongeSigningPassword") as String?
-        if (spongeSigningKey != null && spongeSigningPassword != null) {
-            val keyFile = file(spongeSigningKey)
-            if (keyFile.exists()) {
-                useInMemoryPgpKeys(file(spongeSigningKey).readText(Charsets.UTF_8), spongeSigningPassword)
-            } else {
-                useInMemoryPgpKeys(spongeSigningKey, spongeSigningPassword)
-            }
-        } else {
-            signatories = PgpSignatoryProvider() // don't use gpg agent
-        }
     }
 
     extensions.findByType(IndraPluginPublishingExtension::class)?.apply {
