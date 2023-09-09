@@ -27,6 +27,7 @@ package org.spongepowered.gradle.plugin.task;
 import com.google.gson.Gson;
 import org.apache.maven.artifact.versioning.InvalidVersionSpecificationException;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.Property;
@@ -54,6 +55,7 @@ import org.spongepowered.plugin.metadata.builtin.model.StandardPluginDependency;
 import org.spongepowered.plugin.metadata.builtin.model.StandardPluginLinks;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -122,16 +124,20 @@ public abstract class WritePluginMetadataTask extends DefaultTask {
 
         final StandardPluginLinks.Builder linksBuilder = StandardPluginLinks.builder();
         final PluginLinksConfiguration linksConfiguration = src.getLinks();
-        if (linksConfiguration.getHomepage().isPresent()) {
-            linksBuilder.homepage(linksConfiguration.getHomepage().get());
+        try {
+            if (linksConfiguration.getHomepageLink().isPresent()) {
+                linksBuilder.homepage(linksConfiguration.getHomepageLink().get().toURL());
+            }
+            if (linksConfiguration.getSourceLink().isPresent()) {
+                linksBuilder.source(linksConfiguration.getSourceLink().get().toURL());
+            }
+            if (linksConfiguration.getIssuesLink().isPresent()) {
+                linksBuilder.issues(linksConfiguration.getIssuesLink().get().toURL());
+            }
+            builder.links(linksBuilder.build());
+        } catch (final MalformedURLException ex) {
+            throw new GradleException("Failed to convert URIs back to URLs for writing to plugin meta file");
         }
-        if (linksConfiguration.getSource().isPresent()) {
-            linksBuilder.source(linksConfiguration.getSource().get());
-        }
-        if (linksConfiguration.getIssues().isPresent()) {
-            linksBuilder.issues(linksConfiguration.getIssues().get());
-        }
-        builder.links(linksBuilder.build());
 
         // TODO: validate paths here?
         final StandardPluginBranding.Builder brandingBuilder = StandardPluginBranding.builder();
