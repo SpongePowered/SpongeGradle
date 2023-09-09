@@ -24,56 +24,96 @@
  */
 package org.spongepowered.gradle.plugin.config;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
 
-import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import javax.inject.Inject;
 
 public class PluginLinksConfiguration {
 
-    private final Property<URL> homepage;
-    private final Property<URL> source;
-    private final Property<URL> issues;
+    private final Property<URI> homepage;
+    private final Property<URI> source;
+    private final Property<URI> issues;
+
+    private final Property<URL> legacyHomepage;
+    private final Property<URL> legacySource;
+    private final Property<URL> legacyIssues;
 
     @Inject
     public PluginLinksConfiguration(final ObjectFactory factory) {
-        this.homepage = factory.property(URL.class);
-        this.source = factory.property(URL.class);
-        this.issues = factory.property(URL.class);
+        this.legacyHomepage = factory.property(URL.class);
+        this.legacySource = factory.property(URL.class);
+        this.legacyIssues = factory.property(URL.class);
+
+        this.homepage = factory.property(URI.class).convention(urlToUri(this.legacyHomepage));
+        this.source = factory.property(URI.class).convention(urlToUri(this.legacySource));
+        this.issues = factory.property(URI.class).convention(urlToUri(this.legacyIssues));
+    }
+
+    private Provider<URI> urlToUri(final Property<URL> url) {
+        return url.map(old -> {
+            try {
+                return old.toURI();
+            } catch (final URISyntaxException ex) {
+                throw new GradleException("Failed to convert the provided URL to a URI, please set the URI directly", ex);
+            }
+        });
     }
 
     @Input
     @Optional
-    public Property<URL> getHomepage() {
+    public Property<URI> getHomepageLink() {
         return this.homepage;
     }
 
-    public void homepage(final String homepage) throws MalformedURLException {
-        this.homepage.set(new URL(homepage));
+    @Deprecated
+    @Internal
+    public Property<URL> getHomepage() {
+        return this.legacyHomepage;
+    }
+
+    public void homepage(final String homepage) throws URISyntaxException {
+        this.homepage.set(new URI(homepage));
     }
 
     @Input
     @Optional
-    public Property<URL> getSource() {
+    public Property<URI> getSourceLink() {
         return this.source;
     }
 
-    public void source(final String source) throws MalformedURLException {
-        this.source.set(new URL(source));
+    @Internal
+    @Deprecated
+    public Property<URL> getSource() {
+        return this.legacySource;
+    }
+
+    public void source(final String source) throws URISyntaxException {
+        this.source.set(new URI(source));
     }
 
     @Input
     @Optional
-    public Property<URL> getIssues() {
+    public Property<URI> getIssuesLink() {
         return this.issues;
     }
 
-    public void issues(final String issues) throws MalformedURLException {
-        this.issues.set(new URL(issues));
+    @Deprecated
+    @Internal
+    public Property<URL> getIssues() {
+        return this.legacyIssues;
+    }
+
+    public void issues(final String issues) throws URISyntaxException {
+        this.issues.set(new URI(issues));
     }
 }
