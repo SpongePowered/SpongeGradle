@@ -22,7 +22,7 @@ indra-licenserSpotless = { module = "net.kyori:indra-licenser-spotless", version
 pluginMeta = { module = "org.spongepowered:plugin-meta", version = "0.8.1"}
 
 # ore
-apacheHttp-client = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.2.3"}
+apacheHttp-client = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.3"}
 
 [plugins]
 gradlePluginPublish = { id = "com.gradle.plugin-publish", version.ref = "pluginPublish" }
