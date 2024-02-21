@@ -55,6 +55,13 @@ public final class Constants {
         }
     }
 
+    public static final class Directories {
+        public static final String CACHES = "caches";
+
+        private Directories() {
+        }
+    }
+
     private Constants() {
     }
 
