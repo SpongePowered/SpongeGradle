@@ -24,8 +24,14 @@
  */
 package org.spongepowered.gradle.plugin;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import net.kyori.mammoth.ProjectOrSettingsPlugin;
+import net.kyori.mammoth.Properties;
+import org.gradle.StartParameter;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -44,6 +50,7 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
+import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.JavaExec;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
@@ -57,13 +64,27 @@ import org.spongepowered.gradle.common.Constants;
 import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 import org.spongepowered.gradle.plugin.task.WritePluginMetadataTask;
+import org.spongepowered.gradle.vanilla.resolver.Downloader;
+import org.spongepowered.gradle.vanilla.resolver.ResolutionResult;
+import org.spongepowered.gradle.vanilla.resolver.apache.ApacheHttpDownloader;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.ForkJoinPool;
+import java.util.stream.Collectors;
 
 public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
+
+    private static final int STORAGE_VERSION = 0;
+    private static final String GRADLE_PROPERTY_PREFIX = "org.spongepowered.gradle.plugin.";
+    private static final String GRADLE_PROPERTY_SHARED_CACHE = GRADLE_PROPERTY_PREFIX + "sharedCacheRoot";
 
     private @UnknownNullability Project project;
 
@@ -136,6 +157,12 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
         });
     }
 
+    private static String downloadsApiApiVersion(final String apiVersion) {
+        // TODO: API doesn't accept strings like 11.0.0?
+        final String[] split = generateApiReleasedVersion(apiVersion).split("\\.");
+        return Arrays.stream(split).limit(2).collect(Collectors.joining("."));
+    }
+
     private static String generateApiReleasedVersion(final String apiVersion) {
         final String[] apiSplit = apiVersion.replace("-SNAPSHOT", "").split("\\.");
         final boolean isSnapshot = apiVersion.contains("-SNAPSHOT");
@@ -187,14 +214,78 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
         this.project.getDependencies().getAttributesSchema().attribute(SpongeVersioningMetadataRule.API_TARGET).getCompatibilityRules().add(ApiVersionCompatibilityRule.class);
         return this.project.getConfigurations().register("spongeRuntime", conf -> {
             conf.defaultDependencies(a -> {
-                final Dependency dep = this.project.getDependencies().create(
-                    Constants.Dependencies.SPONGE_GROUP
-                        + ":" + sponge.platform().get().artifactId()
-                        + ":+:universal");
+                final StartParameter params = this.project.getGradle().getStartParameter();
+                final Downloader.ResolveMode mode;
+                if (params.isOffline()) {
+                    mode = Downloader.ResolveMode.LOCAL_ONLY;
+                } else if (params.isRefreshDependencies()) {
+                    mode = Downloader.ResolveMode.REMOTE_ONLY;
+                } else {
+                    mode = Downloader.ResolveMode.LOCAL_THEN_REMOTE;
+                }
+                final ApacheHttpDownloader downloader = new ApacheHttpDownloader(
+                        ForkJoinPool.commonPool(),
+                        resolveCache(
+                                this.project.getRootDir(),
+                                this.project.getProviders(),
+                                GRADLE_PROPERTY_SHARED_CACHE,
+                                this.project.getGradle().getGradleUserHomeDir()
+                        ).get().toPath(),
+                        mode
+                );
+                final URL url;
+                final String apiVer = downloadsApiApiVersion(sponge.apiVersion().get());
+                try {
+                    url = new URL(
+                            "https://dl-api.spongepowered.org/v2/groups/org.spongepowered/artifacts/spongevanilla/versions?limit=1&tags=,api:" + apiVer);
+                } catch (final MalformedURLException e) {
+                    throw new GradleException("Error forming URL", e);
+                }
+                final ResolutionResult<String> result = downloader.download(url, String.format("api-%s-latest-runtime.json", apiVer)).join()
+                        .mapIfPresent(($, path) -> {
+                            try (final Reader r = Files.newBufferedReader(path)) {
+                                final JsonElement element = new Gson().fromJson(r, JsonElement.class);
+                                final JsonObject artifacts = element.getAsJsonObject().get("artifacts").getAsJsonObject();
+                                return artifacts.entrySet().iterator().next().getKey();
+                            } catch (final IOException e) {
+                                throw new GradleException("Error reading Sponge downloads API response", e);
+                            }
+                        });
+                final String ver;
+                if (result.isPresent()) {
+                    ver = result.get();
+                } else {
+                    ver = "+";
+                }
 
+                final Dependency dep = this.project.getDependencies().create(
+                        Constants.Dependencies.SPONGE_GROUP
+                                + ":" + sponge.platform().get().artifactId()
+                                + ":" + ver
+                                + ":universal"
+                );
                 a.add(dep);
             });
         });
+    }
+
+    private static Provider<File> resolveCache(
+            final File relativeTo,
+            final ProviderFactory providers,
+            final String propertyName,
+            final File root
+    ) {
+        return Properties.forUseAtConfigurationTime(providers.gradleProperty(propertyName))
+                .map(dirName -> {
+                    final File dir = new File(dirName);
+                    if (dir.isAbsolute()) {
+                        return dir;
+                    } else {
+                        return new File(relativeTo, dirName);
+                    }
+                })
+                .orElse(new File(new File(root, Constants.Directories.CACHES), Constants.NAME))
+                .map(loc -> new File(loc, "v" + STORAGE_VERSION));
     }
 
     private TaskProvider<JavaExec> createRunTask(final NamedDomainObjectProvider<Configuration> spongeRuntime, final SpongePluginExtension sponge) {
