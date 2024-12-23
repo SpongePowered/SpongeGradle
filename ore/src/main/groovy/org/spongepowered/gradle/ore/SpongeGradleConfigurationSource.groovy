@@ -26,6 +26,7 @@ package org.spongepowered.gradle.ore
 
 import groovy.transform.PackageScope
 import org.gradle.api.Project
+import org.spongepowered.gradle.ore.internal.OrePublicationImpl
 
 @PackageScope
 class SpongeGradleConfigurationSource {
@@ -36,12 +37,15 @@ class SpongeGradleConfigurationSource {
     static def configureSpongeGradle(Project project, OreDeploymentExtension extension) {
         project.plugins.withId('org.spongepowered.gradle.plugin') {
             def first = true
+            def jar = project.tasks.named('jar').flatMap { it.archiveFile }
+            extension.defaultPublication {}
+            def defPub = extension.publications().named(OrePublicationImpl.DEFAULT_NAME)
             project.sponge.plugins.whenObjectAdded { plugin ->
                 if (first) {
                     first = false
-                    extension.defaultPublication {
+                    defPub.configure {
                         projectId.set(plugin.name)
-                        publishArtifacts.from(project.tasks.named('jar').map { it.outputs })
+                        publishArtifacts.from(jar)
                     }
                 }
             }
