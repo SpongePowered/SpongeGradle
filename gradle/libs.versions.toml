@@ -10,7 +10,7 @@ mammoth = "1.4.0"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version = "2.11.0" }
-jetbrainsAnnotations = { module = "org.jetbrains:annotations", version = "26.0.1"}
+jetbrainsAnnotations = { module = "org.jetbrains:annotations", version = "26.0.2"}
 mammoth = { module = "net.kyori:mammoth", version.ref = "mammoth" }
 mammoth-test = { module = "net.kyori:mammoth-test", version.ref = "mammoth" }
 
@@ -22,7 +22,7 @@ indra-licenserSpotless = { module = "net.kyori:indra-licenser-spotless", version
 pluginMeta = { module = "org.spongepowered:plugin-meta", version = "0.8.2"}
 
 # ore
-apacheHttp-client = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.4.1"}
+apacheHttp-client = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.4.2"}
 
 [plugins]
 gradlePluginPublish = { id = "com.gradle.plugin-publish", version.ref = "pluginPublish" }
