@@ -44,7 +44,6 @@ subprojects {
                     implementation(project())
                     implementation(project(":spongegradle-testlib"))
                 }
-                testType.set(TestSuiteType.FUNCTIONAL_TEST)
                 targets {
                     testTargets.forEach { runtimeVersion ->
                         register("functionalTestJava$runtimeVersion") {
