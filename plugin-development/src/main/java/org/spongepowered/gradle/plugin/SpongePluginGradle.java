@@ -98,13 +98,19 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
         final TaskProvider<JavaExec> runServer = this.createRunTask(spongeRuntime, sponge);
 
         project.afterEvaluate(a -> {
-            if (sponge.apiVersion().isPresent()) {
+            if (sponge.minecraftVersion().isPresent() && sponge.apiVersion().isPresent()) {
                 // TODO: client run task
                 /*project.getLogger().lifecycle("SpongeAPI '{}' has been set within the 'spongeApi' configuration. 'runClient' and 'runServer'"
                     + " tasks will be available. You may use these to test your plugin.", sponge.version().get());*/
 
                 spongeRuntime.configure(config -> {
+                    final String minecraftVersion = sponge.minecraftVersion().get();
                     final String apiVersion = sponge.apiVersion().get();
+
+                    config.getAttributes().attribute(
+                        SpongeVersioningMetadataRule.MINECRAFT_TARGET,
+                        minecraftVersion
+                    );
 
                     config.getAttributes().attribute(
                         SpongeVersioningMetadataRule.API_TARGET,
@@ -112,8 +118,15 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
                     );
                 });
             } else {
-                project.getLogger().info("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
-                    + "tasks will be available to run a client or server session for debugging.");
+                if (!sponge.minecraftVersion().isPresent()) {
+                    project.getLogger().info("Minecraft version has not been set within the 'sponge' configuration via the 'minecraftVersion' task. No "
+                        + "tasks will be available to run a client or server session for debugging.");
+                }
+
+                if (!sponge.apiVersion().isPresent()) {
+                    project.getLogger().info("SpongeAPI version has not been set within the 'sponge' configuration via the 'version' task. No "
+                        + "tasks will be available to run a client or server session for debugging.");
+                }
                 runServer.configure(t -> t.setEnabled(false));
             }
             if (sponge.injectRepositories().get()) {
@@ -184,13 +197,14 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
 
     private NamedDomainObjectProvider<Configuration> addRuntimeDependency(final SpongePluginExtension sponge) {
         this.project.getDependencies().getComponents().withModule("org.spongepowered:spongevanilla", SpongeVersioningMetadataRule.class);
+        this.project.getDependencies().getAttributesSchema().attribute(SpongeVersioningMetadataRule.MINECRAFT_TARGET).getCompatibilityRules().add(ApiVersionCompatibilityRule.class);
         this.project.getDependencies().getAttributesSchema().attribute(SpongeVersioningMetadataRule.API_TARGET).getCompatibilityRules().add(ApiVersionCompatibilityRule.class);
         return this.project.getConfigurations().register("spongeRuntime", conf -> {
             conf.defaultDependencies(a -> {
                 final Dependency dep = this.project.getDependencies().create(
                     Constants.Dependencies.SPONGE_GROUP
                         + ":" + sponge.platform().get().artifactId()
-                        + ":+:universal");
+                        + ":" + sponge.minecraftVersion().getOrElse("") + "+:universal");
 
                 a.add(dep);
             });
