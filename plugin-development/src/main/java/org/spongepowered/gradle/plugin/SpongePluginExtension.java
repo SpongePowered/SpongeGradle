@@ -46,6 +46,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
 
     // Dependency management
     private final Property<SpongePlatform> platform;
+    private final Property<String> minecraftVersion;
     private final Property<String> apiVersion;
     private final Property<Boolean> injectRepositories;
 
@@ -58,6 +59,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
         this.plugins = factory.domainObjectContainer(PluginConfiguration.class);
 
         this.platform = factory.property(SpongePlatform.class).convention(SpongePlatform.VANILLA);
+        this.minecraftVersion = factory.property(String.class);
         this.apiVersion = factory.property(String.class);
         this.injectRepositories = factory.property(Boolean.class);
     }
@@ -93,6 +95,14 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
 
     public void platform(final SpongePlatform platform) {
         this.platform.set(platform);
+    }
+
+    protected Property<String> minecraftVersion() {
+        return this.minecraftVersion;
+    }
+
+    public void minecraftVersion(final String minecraftVersion) {
+        this.minecraftVersion.set(minecraftVersion);
     }
 
     protected Property<String> apiVersion() {
