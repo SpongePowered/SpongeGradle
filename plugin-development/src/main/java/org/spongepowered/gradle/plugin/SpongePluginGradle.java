@@ -151,7 +151,7 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
         final int latestReleasedVersion = Math.max(Integer.parseInt(minorVersion) - 1, 0);
         // And then here, we determine if the api version still has a patch version, to just ignore it.
         final String latestReleasedApiMinor = isSnapshot ? String.valueOf(latestReleasedVersion) : minorVersion;
-        return apiMajor + "." + latestReleasedApiMinor + ".0";
+        return apiMajor + "." + latestReleasedApiMinor;
     }
 
     private void addApiDependency(final SpongePluginExtension sponge) {
