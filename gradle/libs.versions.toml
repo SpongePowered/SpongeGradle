@@ -10,7 +10,7 @@ mammoth = "1.4.0"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version = "2.13.2" }
-jetbrainsAnnotations = { module = "org.jetbrains:annotations", version = "26.0.2"}
+jetbrainsAnnotations = { module = "org.jetbrains:annotations", version = "26.0.2-1"}
 mammoth = { module = "net.kyori:mammoth", version.ref = "mammoth" }
 mammoth-test = { module = "net.kyori:mammoth-test", version.ref = "mammoth" }
 
