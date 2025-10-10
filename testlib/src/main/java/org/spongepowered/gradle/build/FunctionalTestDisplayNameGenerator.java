@@ -27,6 +27,7 @@ package org.spongepowered.gradle.build;
 import org.junit.jupiter.api.DisplayNameGenerator;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * An extension of the standard display name generator that only uses method names for test display names.
@@ -36,7 +37,7 @@ import java.lang.reflect.Method;
 public final class FunctionalTestDisplayNameGenerator extends DisplayNameGenerator.Standard {
 
     @Override
-    public String generateDisplayNameForMethod(final Class<?> testClass, final Method testMethod) {
+    public String generateDisplayNameForMethod(final List<Class<?>> enclosing, final Class<?> testClass, final Method testMethod) {
         final String name = testMethod.getName();
         if (name.startsWith("test") && name.length() > 5) {
             return Character.toLowerCase(name.charAt(4)) + name.substring(5);

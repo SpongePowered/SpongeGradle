@@ -116,7 +116,7 @@ subprojects {
     extensions.configure(SpotlessExtension::class) {
         fun FormatExtension.standardOptions() {
             endWithNewline()
-            indentWithSpaces(4)
+            leadingTabsToSpaces(4)
             trimTrailingWhitespace()
             this.toggleOffOn("@formatter:off", "@formatter:on")
         }
