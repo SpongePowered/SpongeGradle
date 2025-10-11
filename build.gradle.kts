@@ -90,6 +90,7 @@ subprojects {
         mitLicense()
 
         javaVersions {
+            minimumToolchain(17)
             testWith().addAll(testTargets)
         }
 
