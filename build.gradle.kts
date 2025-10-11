@@ -23,7 +23,7 @@ subprojects {
     apply(plugin = "net.kyori.indra.git")
 
     val indra = extensions.getByType(IndraExtension::class)
-    val testTargets = listOf(11, 17, 21)
+    val testTargets = listOf(11, 17, 21, 25)
     if (project.name != "spongegradle-testlib") {
         plugins.apply(JavaGradlePluginPlugin::class)
         apply(plugin = "com.gradle.plugin-publish")
@@ -90,6 +90,7 @@ subprojects {
         mitLicense()
 
         javaVersions {
+            minimumToolchain(17)
             testWith().addAll(testTargets)
         }
 
