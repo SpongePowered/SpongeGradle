@@ -42,7 +42,8 @@ import java.lang.annotation.Target;
 @GradleParameters({"--warning-mode", "fail", "--stacktrace"})
 @TestVariant(gradleVersion = "7.6.4", maximumRuntimeVersion = 20)
 @TestVariant(gradleVersion = "7.6.4", extraArguments = "--configuration-cache", maximumRuntimeVersion = 20)
-@TestVariant(gradleVersion = "8.10", extraArguments = "--configuration-cache", minimumRuntimeVersion = 17)
+@TestVariant(gradleVersion = "8.14.3", extraArguments = "--configuration-cache", minimumRuntimeVersion = 17, maximumRuntimeVersion = 24)
+@TestVariant(gradleVersion = "9.1.0", extraArguments = "--configuration-cache", minimumRuntimeVersion = 17)
 @TestVariantResource(value = "/injected-gradle-versions", optional = true, minimumRuntimeVersion = 17)
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

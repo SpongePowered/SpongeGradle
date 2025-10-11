@@ -28,10 +28,13 @@ import org.gradle.api.Project;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 
 public class EmptyBuildTest {
 
     @Test
+    @DisabledForJreRange(max = JRE.JAVA_16)
     void testEmptyBuild() {
         final Project project = ProjectBuilder.builder().build();
         project.getPlugins().apply("org.spongepowered.gradle.plugin");
