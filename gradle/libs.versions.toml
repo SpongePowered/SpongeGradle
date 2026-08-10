@@ -2,7 +2,7 @@
 version = "1.0"
 
 [versions]
-indra = "3.2.0"
+indra = "4.1.0"
 pluginPublish = "2.0.0"
 spotless = "8.0.0"
 junit = "5.9.3"
