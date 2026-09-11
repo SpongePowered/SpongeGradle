@@ -3,8 +3,8 @@ version = "1.0"
 
 [versions]
 indra = "3.2.0"
-pluginPublish = "2.0.0"
-spotless = "8.0.0"
+pluginPublish = "2.2.1"
+spotless = "8.10.2"
 junit = "5.9.3"
 mammoth = "1.5.0"
 
