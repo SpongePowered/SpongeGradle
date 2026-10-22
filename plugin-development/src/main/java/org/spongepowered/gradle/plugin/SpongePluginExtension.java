@@ -24,11 +24,14 @@
  */
 package org.spongepowered.gradle.plugin;
 
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
+import org.gradle.api.tasks.Internal;
 import org.spongepowered.gradle.common.SpongePlatform;
 import org.spongepowered.gradle.plugin.config.ContainerLoaderConfiguration;
+import org.spongepowered.gradle.plugin.config.GameTestConfiguration;
 import org.spongepowered.gradle.plugin.config.MetadataContainerConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginConfiguration;
 import org.spongepowered.gradle.plugin.config.PluginInheritableConfiguration;
@@ -49,6 +52,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
     private final Property<String> minecraftVersion;
     private final Property<String> apiVersion;
     private final Property<Boolean> injectRepositories;
+    private final GameTestConfiguration gameTests;
 
     @Inject
     public SpongePluginExtension(final ObjectFactory factory) {
@@ -62,6 +66,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
         this.minecraftVersion = factory.property(String.class);
         this.apiVersion = factory.property(String.class);
         this.injectRepositories = factory.property(Boolean.class);
+        this.gameTests = factory.newInstance(GameTestConfiguration.class);
     }
 
     @Override
@@ -111,6 +116,21 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
 
     public void apiVersion(final String version) {
         this.apiVersion.set(version);
+    }
+
+    /** The gametest setup, see {@link GameTestConfiguration}; configuring it turns it on. Not plugin metadata. */
+    @Internal
+    public GameTestConfiguration getGameTests() {
+        return this.gameTests;
+    }
+
+    public void gameTests() {
+        this.gameTests.getEnabled().set(true);
+    }
+
+    public void gameTests(final Action<? super GameTestConfiguration> action) {
+        this.gameTests.getEnabled().set(true);
+        action.execute(this.gameTests);
     }
 
     public Property<Boolean> injectRepositories() {
