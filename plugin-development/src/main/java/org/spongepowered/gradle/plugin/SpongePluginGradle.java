@@ -34,6 +34,7 @@ import org.gradle.api.NamedDomainObjectProvider;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
@@ -50,9 +51,11 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileSystemLocation;
 import org.gradle.api.initialization.Settings;
 import org.gradle.api.plugins.ExtensionContainer;
+import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaLibraryPlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.PluginContainer;
+import org.gradle.api.plugins.jvm.JvmTestSuite;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Input;
@@ -64,6 +67,7 @@ import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.AbstractArchiveTask;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.process.CommandLineArgumentProvider;
+import org.gradle.testing.base.TestingExtension;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
@@ -351,11 +355,11 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
     }
 
     /**
-     * Gametests through the {@code test} task, when {@code sponge.gameTests} is configured: the platform's gametest module
-     * on the test classpath, at the version of the Sponge runtime unless one is given; the Sponge runtime on the test
-     * runtime classpath, whose JUnit launcher interceptor boots the game before discovery; the plugin's own files as one
-     * plugin resource through Sponge's {@code SPONGE_PLUGINS} environment locator; and the rest of the test runtime
-     * classpath as game-layer libraries through {@code sponge.resources}.
+     * Gametests through their own test suite, {@code gametest} unless another is chosen, when {@code sponge.gameTests} is
+     * configured: the platform's gametest module on the suite's classpath, at the version of the Sponge runtime unless one
+     * is given; the Sponge runtime on its runtime classpath, whose JUnit launcher interceptor boots the game before
+     * discovery; the plugin's own files as one plugin resource through Sponge's {@code SPONGE_PLUGINS} environment
+     * locator; and the rest of its runtime classpath as game-layer libraries through {@code sponge.resources}.
      */
     private void configureGameTests(final NamedDomainObjectProvider<Configuration> spongeRuntime, final SpongePluginExtension sponge) {
         final GameTestConfiguration gameTests = sponge.getGameTests();
@@ -370,17 +374,37 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
             throw new GradleException("No Sponge runtime to take the gametest module version from; set sponge.gameTests.version");
         }));
         final Provider<String> module = version.map(v -> Constants.Dependencies.SPONGE_GROUP + ":" + sponge.platform().get().artifactId() + "-gametest:" + v);
-        this.project.getPlugins().withType(JavaPlugin.class, v -> this.project.afterEvaluate(p -> {
+        final TestingExtension testing = this.project.getExtensions().getByType(TestingExtension.class);
+        // The suite, created as soon as gametests are turned on for the build script to add to, unless one by that name exists:
+        // test, or a suite the build script registered, is used as it is
+        final Runnable createSuite = () -> {
+            if (!testing.getSuites().getNames().contains(gameTests.getSuite().get())) {
+                // It builds on the plugin as test does: main's output and dependencies, its compile-only API included
+                testing.getSuites().register(gameTests.getSuite().get(), JvmTestSuite.class, suite -> {
+                    final SourceSet main = this.project.getExtensions().getByType(SourceSetContainer.class).getByName(SourceSet.MAIN_SOURCE_SET_NAME);
+                    final SourceSet sources = suite.getSources();
+                    sources.setCompileClasspath(sources.getCompileClasspath().plus(main.getOutput()));
+                    sources.setRuntimeClasspath(sources.getRuntimeClasspath().plus(main.getOutput()));
+                    final ConfigurationContainer configurations = this.project.getConfigurations();
+                    configurations.getByName(sources.getImplementationConfigurationName()).extendsFrom(configurations.getByName(main.getImplementationConfigurationName()));
+                    configurations.getByName(sources.getRuntimeOnlyConfigurationName()).extendsFrom(configurations.getByName(main.getRuntimeOnlyConfigurationName()));
+                    configurations.getByName(sources.getCompileOnlyConfigurationName()).extendsFrom(configurations.getByName(main.getCompileOnlyApiConfigurationName()));
+                }).get();
+            }
+        };
+        sponge.onGameTests(createSuite);
+        this.project.afterEvaluate(p -> {
             if (!gameTests.getEnabled().get()) {
                 return;
             }
+            createSuite.run(); // turned on through the property rather than gameTests()
             final SourceSetContainer sourceSets = p.getExtensions().getByType(SourceSetContainer.class);
-            final SourceSet test = sourceSets.getByName(SourceSet.TEST_SOURCE_SET_NAME);
+            final SourceSet gametest = sourceSets.getByName(gameTests.getSuite().get());
             final SourceSet main = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
             if (gameTests.getPluginFiles().isEmpty()) { // the default; ConfigurableFileCollection.convention needs Gradle 8.8
                 // This project's outputs, and the projects it depends on: a multi-module plugin's other parts
-                final Configuration runtime = p.getConfigurations().getByName(test.getRuntimeClasspathConfigurationName());
-                gameTests.getPluginFiles().from(main.getOutput(), test.getOutput(),
+                final Configuration runtime = p.getConfigurations().getByName(gametest.getRuntimeClasspathConfigurationName());
+                gameTests.getPluginFiles().from(main.getOutput(), gametest.getOutput(),
                     runtime.getIncoming().artifactView(view -> view.componentFilter(id -> id instanceof ProjectComponentIdentifier)).getFiles());
             }
             gameTests.getWorkingDirectory().convention(p.getLayout().getBuildDirectory().dir("gametest-run"));
@@ -388,20 +412,23 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
 
             final DependencyHandler dependencies = p.getDependencies();
             // The test declaration and engine to compile against, and, being a plugin itself, found on the classpath at runtime
-            dependencies.addProvider(test.getCompileOnlyConfigurationName(), module);
-            dependencies.addProvider(test.getRuntimeOnlyConfigurationName(), module);
-            dependencies.add(test.getRuntimeOnlyConfigurationName(), p.files(spongeRuntime));
+            dependencies.addProvider(gametest.getCompileOnlyConfigurationName(), module);
+            dependencies.addProvider(gametest.getRuntimeOnlyConfigurationName(), module);
+            dependencies.add(gametest.getRuntimeOnlyConfigurationName(), p.files(spongeRuntime));
             // A plugin built against Sponge's dev jar must not load it as a second copy of Sponge; the runtime provides it
             final Map<String, String> spongeDevJar = new HashMap<>();
             spongeDevJar.put("group", Constants.Dependencies.SPONGE_GROUP);
             spongeDevJar.put("module", "sponge");
-            p.getConfigurations().named(test.getRuntimeClasspathConfigurationName(), c -> c.exclude(spongeDevJar));
+            p.getConfigurations().named(gametest.getRuntimeClasspathConfigurationName(), c -> c.exclude(spongeDevJar));
 
-            p.getTasks().named(JavaPlugin.TEST_TASK_NAME, Test.class, task -> {
+            // It runs with check, and its failures fail the build unless made optional with required(false)
+            p.getTasks().named(JavaBasePlugin.CHECK_TASK_NAME, task -> task.dependsOn(gameTests.getSuite().get()));
+            p.getTasks().named(gameTests.getSuite().get(), Test.class, task -> {
                 task.useJUnitPlatform();
+                task.setIgnoreFailures(!gameTests.getRequired().get());
                 task.getInputs().files(gameTests.getPluginFiles());
-                // Where the engine looks for the tests: the compiled test classes, under the plugin they belong to
-                final Provider<String> roots = test.getOutput().getClassesDirs().getElements()
+                // Where the engine looks for the tests: the compiled gametest classes, under the plugin they belong to
+                final Provider<String> roots = gametest.getOutput().getClassesDirs().getElements()
                     .map(dirs -> dirs.stream().map(dir -> dir.getAsFile().getAbsolutePath()).collect(Collectors.joining("&")))
                     .zip(gameTests.getPluginId().orElse(""), (dirs, id) -> id.isEmpty() ? dirs : id + "=" + dirs);
                 task.getJvmArgumentProviders().add(new GameTestArguments(gameTests.getLaunchTarget(), roots));
@@ -413,11 +440,11 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
                         .sorted(Comparator.comparing(File::isDirectory))
                         .map(File::getAbsolutePath)
                         .collect(Collectors.joining("&")));
-                // Its libraries: whatever was added, then the rest of the test runtime classpath, each its own game-layer
+                // Its libraries: whatever was added, then the rest of the gametest runtime classpath, each its own game-layer
                 // module as on a dev run's classpath. Anything the game loads itself stays out, so the plugin runs against
                 // the game's copy as it does in production, and JUnit stays out since the launcher must keep its own.
                 final Provider<Set<String>> excludes = gameTests.getExcludes();
-                final Configuration runtime = p.getConfigurations().getByName(test.getRuntimeClasspathConfigurationName());
+                final Configuration runtime = p.getConfigurations().getByName(gametest.getRuntimeClasspathConfigurationName());
                 final GameModules game = new GameModules(runtime, spongeRuntime.get());
                 gameTests.getLibraries().from(runtime.getIncoming().artifactView(view -> view.componentFilter(id -> SpongePluginGradle.isLibrary(id)
                     && !game.contains(id) && !SpongePluginGradle.isExcluded(id, excludes.get()))).getFiles());
@@ -443,7 +470,7 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
                     }
                 });
             });
-        }));
+        });
     }
 
     /**

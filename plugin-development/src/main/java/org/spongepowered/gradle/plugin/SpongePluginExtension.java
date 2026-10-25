@@ -53,6 +53,7 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
     private final Property<String> apiVersion;
     private final Property<Boolean> injectRepositories;
     private final GameTestConfiguration gameTests;
+    private transient Runnable onGameTests = () -> {}; // configuration only, kept out of the configuration cache
 
     @Inject
     public SpongePluginExtension(final ObjectFactory factory) {
@@ -126,11 +127,18 @@ public class SpongePluginExtension implements MetadataContainerConfiguration {
 
     public void gameTests() {
         this.gameTests.getEnabled().set(true);
+        this.onGameTests.run();
     }
 
     public void gameTests(final Action<? super GameTestConfiguration> action) {
         this.gameTests.getEnabled().set(true);
-        action.execute(this.gameTests);
+        action.execute(this.gameTests); // first, since the suite to create or use can be chosen here
+        this.onGameTests.run();
+    }
+
+    // Set by the plugin to create or find the gametest suite as soon as gametests are turned on, so the build script can configure it
+    void onGameTests(final Runnable action) {
+        this.onGameTests = action;
     }
 
     public Property<Boolean> injectRepositories() {

@@ -106,6 +106,28 @@ class SpongePluginPluginFunctionalTest {
         );
     }
 
+    @DisplayName("gametest")
+    @SpongeGradleFunctionalTest
+    void testGameTestsGetTheirOwnSuite(final TestContext ctx) throws IOException {
+        ctx.copyInput("build.gradle.kts");
+        ctx.copyInput("settings.gradle.kts");
+
+        // The build script asserts the wiring itself: its own suite, a required check, and test left without the game
+        final BuildResult result = ctx.build("help");
+        assertTrue(result.getOutput().contains("gametest suite configured"));
+    }
+
+    @DisplayName("gametestintest")
+    @SpongeGradleFunctionalTest
+    void testGameTestsCanUseTheTestSuite(final TestContext ctx) throws IOException {
+        ctx.copyInput("build.gradle.kts");
+        ctx.copyInput("settings.gradle.kts");
+
+        // The build script asserts the wiring itself: gametests on test, as in 2.4.0, and no suite of their own
+        final BuildResult result = ctx.build("help");
+        assertTrue(result.getOutput().contains("test suite configured"));
+    }
+
     @DisplayName("complexbuild")
     @SpongeGradleFunctionalTest
     void testComplexBuild(final TestContext ctx) throws IOException {

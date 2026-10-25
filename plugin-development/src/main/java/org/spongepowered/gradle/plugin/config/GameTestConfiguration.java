@@ -33,13 +33,17 @@ import org.gradle.api.provider.SetProperty;
 import javax.inject.Inject;
 
 /**
- * Runs the plugin's gametests, the {@code @GameTest} methods under {@code src/test}, through the {@code test} task:
- * the platform's gametest module is added to the test classpath, the Sponge runtime boots in the test JVM before
- * JUnit discovers anything, and the plugin's own output is handed to it to load. Every value has a working default.
+ * Runs the plugin's gametests, the {@code @GameTest} methods under {@code src/gametest}, through the {@code gametest} test
+ * suite and its task, or another one, see {@link #getSuite()}: the platform's gametest module is added to the suite's
+ * classpath, the Sponge runtime boots in its JVM before JUnit discovers anything, and the plugin's own output is handed to
+ * it to load. Unless gametests are put in {@code test}, it is left alone, so unit tests run without a game. Every value
+ * has a working default.
  */
 public abstract class GameTestConfiguration {
 
     private final Property<Boolean> enabled;
+    private final Property<Boolean> required;
+    private final Property<String> suite;
     private final Property<String> version;
     private final Property<String> launchTarget;
     private final Property<String> pluginId;
@@ -51,6 +55,8 @@ public abstract class GameTestConfiguration {
     @Inject
     public GameTestConfiguration(final ObjectFactory factory) {
         this.enabled = factory.property(Boolean.class).convention(false);
+        this.required = factory.property(Boolean.class).convention(true);
+        this.suite = factory.property(String.class).convention("gametest");
         this.version = factory.property(String.class);
         this.launchTarget = factory.property(String.class).convention("sponge_server_gametest");
         this.pluginId = factory.property(String.class);
@@ -60,9 +66,35 @@ public abstract class GameTestConfiguration {
         this.workingDirectory = factory.directoryProperty();
     }
 
-    /** Whether the {@code test} task runs gametests; {@code sponge.gameTests { }} turns it on. */
+    /** Whether the {@code gametest} suite is set up; {@code sponge.gameTests { }} turns it on. */
     public Property<Boolean> getEnabled() {
         return this.enabled;
+    }
+
+    /**
+     * Whether failing gametests fail the build, the default. The {@code gametest} task always runs as part of {@code check};
+     * {@code required(false)} makes it an optional check, whose failures are reported without failing the build.
+     */
+    public Property<Boolean> getRequired() {
+        return this.required;
+    }
+
+    public void required(final boolean required) {
+        this.required.set(required);
+    }
+
+    /**
+     * The JVM test suite the gametests run in, with its source set and task of the same name; {@code gametest} by default. A
+     * suite of that name that exists already is used as it is, as {@code test} is with {@code suite("test")}, which runs
+     * the gametests in {@code src/test} through the {@code test} task alongside any unit tests. Otherwise the plugin creates
+     * it, on top of the plugin's own classes and dependencies, once {@code sponge.gameTests} is configured.
+     */
+    public Property<String> getSuite() {
+        return this.suite;
+    }
+
+    public void suite(final String suite) {
+        this.suite.set(suite);
     }
 
     /**
@@ -100,7 +132,7 @@ public abstract class GameTestConfiguration {
     }
 
     /**
-     * What Sponge loads as the plugin under test, as one plugin resource: by default the main and test outputs and the
+     * What Sponge loads as the plugin under test, as one plugin resource: by default the main and gametest outputs and the
      * jars of the projects this one depends on, a multi-module plugin's other parts. A built jar can stand in, e.g.
      * {@code plugin(tasks.named("shadowJar"))}. Jars are listed before directories, since Sponge reads the manifest
      * from the last path.
@@ -114,7 +146,7 @@ public abstract class GameTestConfiguration {
     }
 
     /**
-     * What Sponge loads beside the plugin as game-layer libraries, each its own module. The modules on the test runtime
+     * What Sponge loads beside the plugin as game-layer libraries, each its own module. The modules on the gametest runtime
      * classpath are there by default, less JUnit and anything the game loads itself: Minecraft and the API with their
      * dependencies, and the libraries the Sponge runtime installs. {@code libraries(...)} adds to that: a file
      * dependency, a configuration, a task's jar.
@@ -128,7 +160,7 @@ public abstract class GameTestConfiguration {
     }
 
     /**
-     * Modules of the test runtime classpath kept out of the libraries, as {@code group:module} or a whole {@code group}:
+     * Modules of the gametest runtime classpath kept out of the libraries, as {@code group:module} or a whole {@code group}:
      * what another platform's module brings along, or a test-only dependency the game should not see.
      */
     public SetProperty<String> getExcludes() {
