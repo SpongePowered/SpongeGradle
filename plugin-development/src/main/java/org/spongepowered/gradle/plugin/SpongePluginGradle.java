@@ -379,7 +379,7 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
         // test, or a suite the build script registered, is used as it is
         final Runnable createSuite = () -> {
             if (!testing.getSuites().getNames().contains(gameTests.getSuite().get())) {
-                // It builds on the plugin as test does: main's output and dependencies, its compile-only API included
+                // It builds on the plugin: main's output and dependencies, its compile-only ones included, as the game provides them
                 testing.getSuites().register(gameTests.getSuite().get(), JvmTestSuite.class, suite -> {
                     final SourceSet main = this.project.getExtensions().getByType(SourceSetContainer.class).getByName(SourceSet.MAIN_SOURCE_SET_NAME);
                     final SourceSet sources = suite.getSources();
@@ -388,7 +388,7 @@ public final class SpongePluginGradle implements ProjectOrSettingsPlugin {
                     final ConfigurationContainer configurations = this.project.getConfigurations();
                     configurations.getByName(sources.getImplementationConfigurationName()).extendsFrom(configurations.getByName(main.getImplementationConfigurationName()));
                     configurations.getByName(sources.getRuntimeOnlyConfigurationName()).extendsFrom(configurations.getByName(main.getRuntimeOnlyConfigurationName()));
-                    configurations.getByName(sources.getCompileOnlyConfigurationName()).extendsFrom(configurations.getByName(main.getCompileOnlyApiConfigurationName()));
+                    configurations.getByName(sources.getCompileOnlyConfigurationName()).extendsFrom(configurations.getByName(main.getCompileOnlyConfigurationName()));
                 }).get();
             }
         };
