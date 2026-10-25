@@ -15,7 +15,7 @@ plugins {
 }
 
 group = "org.spongepowered"
-version = "2.5.1"
+version = "2.5.2-SNAPSHOT"
 
 subprojects {
     apply(plugin = "net.kyori.indra")
